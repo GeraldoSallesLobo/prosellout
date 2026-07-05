@@ -1,0 +1,38 @@
+# --- Sistema operacional / editor ---
+.DS_Store
+*.log
+
+# --- Segredos e ambiente (nunca versionar) ---
+.env
+.env.*
+!.env.example
+*.tfvars
+!example.tfvars
+
+# --- frontend (Next.js) ---
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# --- database (Supabase CLI) ---
+database/supabase/.temp/
+database/supabase/.branches/
+
+# --- cloud (Terraform + Lambdas) ---
+cloud/lambdas/*/node_modules/
+cloud/terraform/.build/
+cloud/terraform/.terraform/
+cloud/terraform/*.tfstate
+cloud/terraform/*.tfstate.backup
+cloud/terraform/crash.log
+
+#--- Claude ---
+CLAUDE.md
+
+#--- Proposta ---
+ProSellout_proposta_dev.html
+
+#--- Sistema Excel ---
+ProSellout_sistema_excel.xlsx

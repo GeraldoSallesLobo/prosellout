@@ -1,0 +1,7 @@
+{
+  "name": "prosellout-upload-url",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Presigned S3 PUT URLs for portal uploads (AWS SDK v3 ships with the Node 20 runtime)"
+}
