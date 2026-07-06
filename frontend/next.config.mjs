@@ -34,6 +34,14 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // Sem NEXT_PUBLIC_SUPABASE_* definidas, o portal roda em modo demo. O
+  // middleware exige o opt-in explícito NEXT_PUBLIC_DEMO_MODE=true para não
+  // retornar 503 em produção (fail-closed). Este default liga o demo por
+  // padrão no deploy; defina as vars do Supabase no Vercel para usar o backend
+  // real, ou NEXT_PUBLIC_DEMO_MODE=false para exigir autenticação.
+  env: {
+    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE ?? "true",
+  },
   eslint: {
     // Linting runs in CI (`npm run lint`); skip during production builds.
     ignoreDuringBuilds: true,

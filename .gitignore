@@ -31,8 +31,12 @@ cloud/terraform/crash.log
 #--- Claude ---
 CLAUDE.md
 
+#--- Codex ---
+AGENTS.md
+
 #--- Proposta ---
 ProSellout_proposta_dev.html
+ProSellout_proposta_dev_v2.html
 
 #--- Sistema Excel ---
 ProSellout_sistema_excel.xlsx
