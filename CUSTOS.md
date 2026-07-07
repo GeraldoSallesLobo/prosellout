@@ -21,6 +21,15 @@
 
 **A AWS é irrelevante no orçamento** (< 1% do total em todas as fases). O custo de nuvem é praticamente todo **Supabase** — armazenamento e compute do Postgres. É esse plano que precisa subir de degrau por fase.
 
+### O que "12 meses" significa nestes números
+
+Os totais mensais são o **regime estável, depois de ~1 ano de dados acumulados** no banco. Só **um item depende da retenção**: o **armazenamento do Supabase**, que empilha mês a mês (12 meses de sell-out = ~1,5 TB na escala). Todo o resto — AWS inteira, plano base e compute do Supabase — é **custo por mês, independente de retenção** (não muda se você guarda 1 mês ou 5 anos de histórico).
+
+Duas implicações:
+
+- Nos **primeiros meses** de cada fase o custo é **menor** que o da tabela, porque o banco ainda está enchendo (o storage cresce até estabilizar em ~12 meses). No piloto isso nem aparece — cabe nos 8 GB inclusos.
+- A tabela assume **janela móvel de 12 meses** (ao entrar o mês 13, arquiva-se o mês 1 via `DROP`/`DETACH` de partição). **Se nunca arquivar**, o armazenamento cresce indefinidamente além de 1,5 TB e a conta do Supabase sobe junto — por isso o arquivamento é a principal alavanca de custo.
+
 ## Premissas de volume (dos targets do negócio)
 
 
@@ -44,7 +53,7 @@
 | Escala     | 2.500          | 500 mi              | **~1,5 TB**           |
 
 
-³ Retenção de 12 meses, ~250 bytes/linha com índices.
+³ Valor **acumulado** após reter 12 meses de sell-out no banco quente (~250 bytes/linha com índices). É o único número que depende da retenção — ver "O que 12 meses significa" acima.
 
 ## AWS — detalhamento (preço cheio)
 
