@@ -26,6 +26,9 @@ const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
   { value: "channel", label: "Canais" },
 ];
 
+const KPI_GRID_CLASS_NAME =
+  "grid grid-cols-[repeat(auto-fit,minmax(min(100%,13.5rem),1fr))] gap-3";
+
 const KPI_SKELETON_COUNT = 9;
 
 export default function StatusMtdPage() {
@@ -83,14 +86,14 @@ export default function StatusMtdPage() {
       <ReportFilterBar filters={filters} onChange={setFilters} />
 
       {isReportLoading || !report ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div className={KPI_GRID_CLASS_NAME}>
           {Array.from({ length: KPI_SKELETON_COUNT }).map((_, index) => (
             <KpiCardSkeleton key={index} />
           ))}
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <div className={KPI_GRID_CLASS_NAME}>
             <KpiBlockCard
               label="Sell Out R$"
               block={report.sellOutValue}

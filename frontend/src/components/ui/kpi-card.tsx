@@ -38,11 +38,11 @@ function VariationLine({
 
 export function KpiCard({ label, value, vsTarget, vsPrevious, footer }: KpiCardProps) {
   return (
-    <div className="card p-4">
+    <div className="card min-w-0 [container-type:inline-size] p-4">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-text2">
         {label}
       </div>
-      <div className="mt-1.5 text-[22px] font-extrabold leading-tight text-text1">
+      <div className="mt-1.5 max-w-full break-words text-xl font-extrabold leading-tight text-text1 tabular-nums [font-size:clamp(1rem,10cqw,1.375rem)] [overflow-wrap:anywhere]">
         {value}
       </div>
       <div className="mt-1.5 space-y-0.5">

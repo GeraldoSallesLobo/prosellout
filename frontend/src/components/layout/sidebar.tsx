@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  ChevronDown,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  X,
+} from "lucide-react";
 import clsx from "clsx";
 import { NAVIGATION_GROUPS } from "@/lib/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -16,11 +22,18 @@ const NAV_ICON_SIZE = 15;
 const TOGGLE_ICON_SIZE = 16;
 const CHEVRON_ICON_SIZE = 12;
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+  onNavigate?: () => void;
+  variant?: "desktop" | "mobile";
+}
+
+export function Sidebar({ onClose, onNavigate, variant = "desktop" }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isMobile = variant === "mobile";
 
-  const [isCollapsed, setIsCollapsed] = useLocalStorageState(
+  const [isDesktopCollapsed, setIsDesktopCollapsed] = useLocalStorageState(
     SIDEBAR_COLLAPSED_STORAGE_KEY,
     false,
   );
@@ -29,7 +42,10 @@ export function Sidebar() {
     [],
   );
 
+  const isCollapsed = !isMobile && isDesktopCollapsed;
+
   async function handleSignOut() {
+    onNavigate?.();
     const supabase = getSupabaseBrowserClient();
     if (supabase) {
       await supabase.auth.signOut();
@@ -40,7 +56,7 @@ export function Sidebar() {
   }
 
   function toggleSidebar() {
-    setIsCollapsed((current) => !current);
+    setIsDesktopCollapsed((current) => !current);
   }
 
   function toggleGroup(groupLabel: string) {
@@ -54,8 +70,11 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        "flex h-screen shrink-0 flex-col border-r border-line bg-bg2 transition-[width] duration-200",
-        isCollapsed ? "w-14" : "w-56",
+        "flex shrink-0 flex-col border-r border-line bg-bg2",
+        isMobile
+          ? "h-full w-72 max-w-[calc(100vw-3rem)] shadow-xl"
+          : "hidden h-screen transition-[width] duration-200 md:flex",
+        !isMobile && (isCollapsed ? "w-14" : "w-56"),
       )}
     >
       <div
@@ -79,19 +98,31 @@ export function Sidebar() {
             ) : null}
           </div>
         )}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          title={isCollapsed ? "Expandir menu" : "Recolher menu"}
-          aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
-          className="rounded-md p-1.5 text-text2 transition-colors hover:bg-text1/5 hover:text-text1"
-        >
-          {isCollapsed ? (
-            <PanelLeftOpen size={TOGGLE_ICON_SIZE} />
-          ) : (
-            <PanelLeftClose size={TOGGLE_ICON_SIZE} />
-          )}
-        </button>
+        {isMobile ? (
+          <button
+            type="button"
+            onClick={onClose}
+            title="Fechar menu"
+            aria-label="Fechar menu"
+            className="rounded-md p-1.5 text-text2 transition-colors hover:bg-text1/5 hover:text-text1"
+          >
+            <X size={TOGGLE_ICON_SIZE} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            title={isCollapsed ? "Expandir menu" : "Recolher menu"}
+            aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
+            className="rounded-md p-1.5 text-text2 transition-colors hover:bg-text1/5 hover:text-text1"
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen size={TOGGLE_ICON_SIZE} />
+            ) : (
+              <PanelLeftClose size={TOGGLE_ICON_SIZE} />
+            )}
+          </button>
+        )}
       </div>
 
       <nav
@@ -136,6 +167,7 @@ export function Sidebar() {
                       <Link
                         key={item.href}
                         href={item.href}
+                        onClick={onNavigate}
                         title={isCollapsed ? item.label : undefined}
                         className={clsx(
                           "flex items-center gap-2.5 rounded-md py-1.5 text-[13px] transition-colors",
