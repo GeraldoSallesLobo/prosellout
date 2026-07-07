@@ -1,0 +1,29 @@
+# Supabase CLI local development config.
+# `supabase start` boots the local stack (Docker required);
+# `supabase db reset` applies migrations + seed.sql.
+
+project_id = "prosellout"
+
+[api]
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false

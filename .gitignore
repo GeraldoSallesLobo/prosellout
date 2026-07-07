@@ -9,24 +9,25 @@
 *.tfvars
 !example.tfvars
 
+# --- dependencias / build (qualquer nivel) ---
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
 # --- frontend (Next.js) ---
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/*.tsbuildinfo
-frontend/next-env.d.ts
+src/frontend/next-env.d.ts
 
 # --- database (Supabase CLI) ---
-database/supabase/.temp/
-database/supabase/.branches/
+src/database/supabase/.temp/
+src/database/supabase/.branches/
 
 # --- cloud (Terraform + Lambdas) ---
-cloud/lambdas/*/node_modules/
-cloud/terraform/.build/
-cloud/terraform/.terraform/
-cloud/terraform/*.tfstate
-cloud/terraform/*.tfstate.backup
-cloud/terraform/crash.log
+src/cloud/terraform/.build/
+src/cloud/terraform/.terraform/
+src/cloud/terraform/*.tfstate
+src/cloud/terraform/*.tfstate.backup
+src/cloud/terraform/crash.log
 
 #--- Claude ---
 CLAUDE.md
@@ -41,7 +42,7 @@ prosellout-apresentacao.html
 prosellout-custos-apresentacao.html
 
 #--- Formulas excel ---
-Memoria_calculo.docx
+memoria_calculo.md
 
 #--- Dados importacao ---
 dados-importacao
@@ -55,3 +56,7 @@ PRODUCT.md
 #--- Logo ---
 prosellout_logo.png
 !frontend/public/prosellout_logo.png
+
+#--- Pendencias e validacoes ---
+PENDENCIAS_CALCULO.md
+VALIDACOES_CALCULO.md
