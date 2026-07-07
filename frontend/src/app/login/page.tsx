@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TextField } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/env";
 
@@ -60,7 +61,7 @@ export default function LoginPage() {
       />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="text-2xl font-extrabold tracking-tight text-blue">ProSellOut</div>
+          <BrandLogo className="mx-auto" priority size="login" />
           <p className="mt-1 text-sm text-text2">Portal de gestão de Sell Out</p>
         </div>
 

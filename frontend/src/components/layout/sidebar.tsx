@@ -15,6 +15,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/env";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "prosellout.sidebar.is-collapsed";
 const COLLAPSED_GROUPS_STORAGE_KEY = "prosellout.sidebar.collapsed-groups";
@@ -85,14 +86,11 @@ export function Sidebar({ onClose, onNavigate, variant = "desktop" }: SidebarPro
       >
         {!isCollapsed && (
           <div>
-            <Link
-              href="/relatorio/status/mtd"
-              className="text-lg font-extrabold tracking-tight text-blue"
-            >
-              ProSellOut
+            <Link href="/relatorio/status/mtd" className="block w-fit">
+              <BrandLogo priority />
             </Link>
             {isDemoMode ? (
-              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-widest text-yellow">
+              <span className="mt-2 block text-[10px] font-semibold uppercase tracking-widest text-yellow">
                 modo demo
               </span>
             ) : null}

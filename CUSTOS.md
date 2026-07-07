@@ -1,29 +1,29 @@
 # Estimativa de custos de nuvem — ProSellOut
 
-> **Aviso**: estimativas de ordem de grandeza a **preço cheio** (sem free tier / sem créditos promocionais), região **São Paulo (sa-east-1)**, sem impostos (IOF/ICMS incidem sobre a fatura em dólar). Preços de nuvem mudam — valide no [AWS Pricing Calculator](https://calculator.aws) e no [pricing do Supabase](https://supabase.com/pricing) antes de decisão orçamentária. Câmbio: **US$ 1 ≈ R$ 5,40**.
+> **Aviso**: estimativas de ordem de grandeza a **preço cheio** (sem free tier / sem créditos promocionais), região **São Paulo (sa-east-1)**, sem impostos (IOF/ICMS incidem sobre a fatura em dólar). Preços de nuvem mudam — valide no [AWS Pricing Calculator](https://calculator.aws), no [pricing do Supabase](https://supabase.com/pricing) e no [pricing do Cloudflare Workers](https://developers.cloudflare.com/workers/platform/pricing/) antes de decisão orçamentária. Câmbio: **US$ 1 ≈ R$ 5,40**.
 >
-> **Escopo**: AWS (ingestão de arquivos, repo `cloud/`) + Supabase (banco/Auth). **Não inclui** Vercel (frontend — plano Hobby grátis atende o início; Pro ~US$ 20/mês se precisar).
+> **Escopo**: AWS (ingestão de arquivos, repo `cloud/`) + Supabase (banco/Auth) + estimativa opcional de Cloudflare para o frontend. Vercel continua sendo alternativa (Hobby grátis no início; Pro ~US$ 20/mês se precisar).
 
 
 
 ## TL;DR
 
 
-| Fase           | Distribuidores | AWS/mês | Supabase/mês | **Total nuvem/mês** |
-| -------------- | -------------- | ------- | ------------ | ------------------- |
-| **Piloto**     | 10–20          | ~R$ 2   | ~R$ 220      | **~R$ 220**         |
-| **Fase 1**     | 50             | ~R$ 3   | ~R$ 475      | **~R$ 480**         |
-| **Break-even** | 150            | ~R$ 6   | ~R$ 1.300    | **~R$ 1.300**       |
-| **Escala**     | 2.500          | ~R$ 75  | ~R$ 9.400¹   | **~R$ 9.500¹**      |
+| Fase           | Distribuidores | AWS/mês | Supabase/mês | Cloudflare frontend/mês | **Total nuvem/mês** |
+| -------------- | -------------- | ------- | ------------ | ----------------------- | ------------------- |
+| **Piloto**     | 10–20          | ~R$ 2   | ~R$ 220      | R$ 0–30                 | **~R$ 220–250**     |
+| **Fase 1**     | 50             | ~R$ 3   | ~R$ 475      | R$ 0–30                 | **~R$ 480–510**     |
+| **Break-even** | 150            | ~R$ 6   | ~R$ 1.300    | R$ 0–30                 | **~R$ 1.300–1.330** |
+| **Escala**     | 2.500          | ~R$ 75  | ~R$ 9.400¹   | R$ 0–30                 | **~R$ 9.500¹**      |
 
 
-¹ Sem arquivamento de dados. Arquivando partições antigas (manter 6 meses quentes) o Supabase cai para **~R$ 5.000/mês**. 
+¹ Valor já com a política **confirmada de 12 meses** de detalhe (janela móvel). É o **regime estável**: o job de arquivamento mantém o banco nesse patamar arquivando o mês 13 quando ele entra. **Sem** o job, o storage cresce indefinidamente além de 1,5 TB e a conta sobe mês a mês. Nessa faixa negocia-se Enterprise/Postgres dedicado. 
 
-**A AWS é irrelevante no orçamento** (< 1% do total em todas as fases). O custo de nuvem é praticamente todo **Supabase** — armazenamento e compute do Postgres. É esse plano que precisa subir de degrau por fase.
+**A AWS é irrelevante no orçamento** (< 1% do total em todas as fases) e o **Cloudflare tende a ser pequeno** (R$ 0–30/mês no cenário esperado). O custo de nuvem é praticamente todo **Supabase** — armazenamento e compute do Postgres. É esse plano que precisa subir de degrau por fase.
 
 ### O que "12 meses" significa nestes números
 
-Os totais mensais são o **regime estável, depois de ~1 ano de dados acumulados** no banco. Só **um item depende da retenção**: o **armazenamento do Supabase**, que empilha mês a mês (12 meses de sell-out = ~1,5 TB na escala). Todo o resto — AWS inteira, plano base e compute do Supabase — é **custo por mês, independente de retenção** (não muda se você guarda 1 mês ou 5 anos de histórico).
+Os totais mensais são o **regime estável, depois de ~1 ano de dados acumulados** no banco. Só **um item depende da retenção**: o **armazenamento do Supabase**, que empilha mês a mês (12 meses de sell-out = ~1,5 TB na escala). Todo o resto — AWS inteira, Cloudflare, plano base e compute do Supabase — é **custo por mês, independente de retenção** (não muda se você guarda 1 mês ou 5 anos de histórico).
 
 Duas implicações:
 
@@ -87,9 +87,25 @@ Mesmo na escala a AWS fica em ~R$ 75/mês porque o processamento é leve e o egr
 
 Na fase de escala, a conta é dominada por **armazenamento (1,5 TB)** e por uma instância grande de compute. É aqui que o "calcanhar de Aquiles" da nuvem realmente aparece — e onde o crescimento progressivo por distribuidor precisa ser acompanhado de perto.
 
+## Cloudflare — frontend (opcional)
+
+Cloudflare é uma alternativa barata para hospedar o frontend Next.js, especialmente se o app puder ser publicado como assets estáticos ou com pouco runtime no edge. Para orçamento, o intervalo realista é:
+
+
+| Cenário | Quando usar | **Total US$** | **Total R$** |
+| --- | --- | --- | --- |
+| Free / assets estáticos | Frontend exportado/servido como estático, sem SSR dinâmico no edge | **0** | **R$ 0** |
+| Workers Paid | Next.js com runtime via Workers/Pages Functions, previews e mais folga de uso | **~5** | **~R$ 27** |
+| Workers Paid + Cloudflare Pro | Mesmo acima, com plano Pro para recursos extras de CDN/WAF/regras no domínio | **~25** | **~R$ 135** |
+
+
+Preços unitários usados: Workers Paid mínimo de US$ 5/mês; requests de assets estáticos são gratuitos/ilimitados; sem cobrança adicional de egress/banda no Workers Paid; build minutes: 3.000/mês no free e 6.000/mês nos planos pagos, depois US$ 0,005/min. O plano Cloudflare Pro (US$ 20/mês por domínio) **não é requisito para hospedar**; entra apenas se fizer sentido por segurança, regras avançadas ou operação de domínio.
+
+Para o ProSellOut, a expectativa é **R$ 0–30/mês** no frontend. Mesmo com Cloudflare Pro, o custo segue pequeno frente ao Supabase. O domínio não foi incluído porque depende do TLD/registrador e costuma ser custo anual.
+
 ## Onde o custo mora e como controlá-lo
 
-1. **Arquivar partições antigas** (maior alavanca): o particionamento mensal de `sell_out`/`sell_in` permite `DROP`/`DETACH` de meses frios. Manter 6 meses quentes em vez de 12 corta o storage do banco pela metade — na escala, de ~R$ 9.400 para ~R$ 5.000/mês.
+1. **Arquivar partições antigas** (obrigatório, não opcional): retenção definida com o CEO = **12 meses** de detalhe. O job de arquivamento mantém o banco nesse patamar — arquiva o mês 13 (via `DROP`/`DETACH` de partição) quando ele entra. **Sem** o job, o storage cresce sem parar além de 1,5 TB e a conta sobe todo mês; com ele, o custo fica estável no valor da tabela. Não é alavanca de economia abaixo da tabela — é o que segura o número no lugar.
 2. **Relatórios lêem agregados** (`mv_sell_out_daily`), não linhas cruas — segura a necessidade de compute do banco conforme o volume sobe.
 3. **Comprimir (gzip) as partes CSV** antes do COPY — reduz egress e S3 na AWS (já pequenos).
 4. **AWS Budgets + billing alerts no Supabase**: alertas de orçamento para não haver surpresa. Sugiro adicionar `aws_budgets_budget` ao Terraform.
@@ -102,13 +118,13 @@ Na fase de escala, a conta é dominada por **armazenamento (1,5 TB)** e por uma 
 
 | Momento                      | Ação                                                 | Nuvem/mês (aprox.)       |
 | ---------------------------- | ---------------------------------------------------- | ------------------------ |
-| Piloto (10–50)               | Supabase Pro + compute pequeno; AWS quase zero       | **R$ 220–480**           |
-| Aproximando break-even (150) | Subir compute (XL) e ligar arquivamento de partições | **R$ 1.000–1.300**       |
-| Escala (500+)                | Enterprise/dedicado + arquivamento agressivo         | **R$ 5.000+** (negociar) |
+| Piloto (10–50)               | Supabase Pro + compute pequeno; AWS/Cloudflare quase zero | **R$ 220–510**       |
+| Aproximando break-even (150) | Subir compute (XL) e ligar o arquivamento de 12 meses | **R$ 1.000–1.330**      |
+| Escala (500+)                | Enterprise/dedicado; arquivamento de 12 meses já ativo | **R$ 5.000+** (negociar) |
 
 
 Comparativo: manter o mesmo ETL num servidor/EC2 ligado 24/7 custaria facilmente R$ 150–400/mês fixos **só de ingestão**, com ou sem uso. O modelo serverless da AWS torna essa parte desprezível; o investimento de nuvem se concentra no banco, que é onde o valor (relatórios, histórico) efetivamente está.
 
 ---
 
-*Estimativas a preço cheio, baseadas nos targets de negócio informados. Revalide os preços unitários (AWS + Supabase) e o dimensionamento de compute com carga real antes de fechar orçamento.*
+*Estimativas a preço cheio, baseadas nos targets de negócio informados. Revalide os preços unitários (AWS + Supabase + Cloudflare) e o dimensionamento de compute com carga real antes de fechar orçamento.*

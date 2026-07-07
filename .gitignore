@@ -37,9 +37,15 @@ AGENTS.md
 #--- Proposta ---
 ProSellout_proposta_dev.html
 ProSellout_proposta_dev_v2.html
+prosellout-apresentacao.html
+prosellout-custos-apresentacao.html
 
 #--- Sistema Excel ---
 ProSellout_sistema_excel.xlsx
 
 #--- Product ---
 PRODUCT.md
+
+#--- Logo ---
+prosellout_logo.png
+!frontend/public/prosellout_logo.png
