@@ -55,7 +55,7 @@ PRODUCT.md
 
 #--- Logo ---
 prosellout_logo.png
-!frontend/public/prosellout_logo.png
+!src/frontend/public/prosellout_logo.png
 
 #--- Pendencias e validacoes ---
 PENDENCIAS_CALCULO.md
