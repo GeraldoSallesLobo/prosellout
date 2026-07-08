@@ -43,11 +43,58 @@ insert into auth.identities (
   identity_data = excluded.identity_data,
   updated_at = now();
 
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin
+) values (
+  '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated', 'distribuidora.83299743000130@email.com',
+  extensions.crypt('123321', extensions.gen_salt('bf')),
+  now(), '', '', '', '', now(), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"email_verified":true}'::jsonb, false
+) on conflict (id) do update set
+  email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  email_confirmed_at = excluded.email_confirmed_at,
+  confirmation_token = excluded.confirmation_token,
+  recovery_token = excluded.recovery_token,
+  email_change_token_new = excluded.email_change_token_new,
+  email_change = excluded.email_change,
+  raw_app_meta_data = excluded.raw_app_meta_data,
+  raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = now();
+
+delete from auth.identities where user_id = '00000000-0000-0000-0000-000000000003' and provider = 'email';
+
+insert into auth.identities (
+  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) values (
+  '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000003',
+    'email', 'distribuidora.83299743000130@email.com',
+    'email_verified', true,
+    'phone_verified', false
+  ),
+  'email', now(), now(), now()
+) on conflict (provider, provider_id) do update set
+  user_id = excluded.user_id,
+  identity_data = excluded.identity_data,
+  updated_at = now();
+
+insert into admin_users (user_id, status) values
+  ('00000000-0000-0000-0000-000000000001', 'active')
+on conflict (user_id) do update set
+  status = excluded.status,
+  updated_at = now();
+
 insert into distributors (id, code, name, cnpj, status) values
   ('ea6289a9-888c-564b-ae58-d2f465b09b86', 'DIST83299743000130', 'Distribuidora 83299743000130', '83299743000130', 'active');
 
 insert into distributor_users (user_id, distributor_id, role, status) values
-  ('00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', 'owner', 'active')
+  ('00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', 'owner', 'active')
 on conflict (user_id, distributor_id) do update set
   role = excluded.role,
   status = excluded.status,
@@ -62,12 +109,12 @@ insert into file_type_configs (id, code, name, target_table, processing_routine,
   ('55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'TARGETS', 'Metas por Cliente/SKU', 'sales_targets', 'upsert_targets', 'xlsx');
 
 insert into file_imports (file_name, sheet_name, file_type_id, status, total_records, processed_records, error_count, imported_by, distributor_id, finished_at) values
-  ('Layout SellOut.xlsx', 'Planilha1', '6203bef9-2c9a-5429-b370-43506154f057', 'completed'::import_status, 3374, 3057, 0, '00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '1 days'::interval),
-  ('Layout SellIn.xlsx', 'Planilha1', '8dd36250-0d58-5c15-b535-fc16ee81f409', 'completed'::import_status, 30, 30, 0, '00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '2 days'::interval),
-  ('Layout Clientes.xlsx', 'Planilha1', '4933f10f-670d-59c2-bb17-9339099d6830', 'completed_with_errors'::import_status, 6334, 6095, 6, '00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '3 days'::interval),
-  ('Layout Produtos.xlsx', 'Planilha1', '9d6aab7f-3a48-5497-8d55-04f9afcc503e', 'completed'::import_status, 5, 5, 0, '00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '4 days'::interval),
-  ('Layout Vendedores.xlsx', 'Planilha1', 'f2570305-8991-5de9-9e4b-76fc717eb938', 'completed'::import_status, 13, 13, 0, '00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '5 days'::interval),
-  ('Layout SellOut_meta.xlsx', 'Planilha1', '55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'completed'::import_status, 3362, 1469, 0, '00000000-0000-0000-0000-000000000001', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '6 days'::interval);
+  ('Layout SellOut.xlsx', 'Planilha1', '6203bef9-2c9a-5429-b370-43506154f057', 'completed'::import_status, 3374, 3057, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '1 days'::interval),
+  ('Layout SellIn.xlsx', 'Planilha1', '8dd36250-0d58-5c15-b535-fc16ee81f409', 'completed'::import_status, 30, 30, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '2 days'::interval),
+  ('Layout Clientes.xlsx', 'Planilha1', '4933f10f-670d-59c2-bb17-9339099d6830', 'completed_with_errors'::import_status, 6334, 6095, 6, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '3 days'::interval),
+  ('Layout Produtos.xlsx', 'Planilha1', '9d6aab7f-3a48-5497-8d55-04f9afcc503e', 'completed'::import_status, 5, 5, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '4 days'::interval),
+  ('Layout Vendedores.xlsx', 'Planilha1', 'f2570305-8991-5de9-9e4b-76fc717eb938', 'completed'::import_status, 13, 13, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '5 days'::interval),
+  ('Layout SellOut_meta.xlsx', 'Planilha1', '55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'completed'::import_status, 3362, 1469, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '6 days'::interval);
 
 insert into channels (id, distributor_id, name) values
   ('e9614570-c234-5c02-b2b8-fab70a2810d3', 'ea6289a9-888c-564b-ae58-d2f465b09b86', 'Acima 10 Check'),

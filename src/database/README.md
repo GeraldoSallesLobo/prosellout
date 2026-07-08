@@ -53,7 +53,7 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key impressa pelo supabase start — reveja com `supabase status`>
 ```
 
-O seed cria o login local `admin@email.com` / `admin123456` e vincula esse usuário ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
+O seed cria o admin local `admin@email.com` / `123321` em `admin_users` e o usuário distribuidor `distribuidora.83299743000130@email.com` / `123321` vinculado ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
 
 ## Decisões para alto volume
 

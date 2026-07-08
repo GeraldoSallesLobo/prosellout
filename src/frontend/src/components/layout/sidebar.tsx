@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   LogOut,
@@ -11,6 +12,10 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { NAVIGATION_GROUPS } from "@/lib/navigation";
+import {
+  CURRENT_USER_ACCESS_QUERY_KEY,
+  fetchCurrentUserAccess,
+} from "@/lib/data/access";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/env";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
@@ -42,8 +47,20 @@ export function Sidebar({ onClose, onNavigate, variant = "desktop" }: SidebarPro
     COLLAPSED_GROUPS_STORAGE_KEY,
     [],
   );
+  const { data: access } = useQuery({
+    queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
+    queryFn: fetchCurrentUserAccess,
+  });
 
   const isCollapsed = !isMobile && isDesktopCollapsed;
+  const visibleNavigationGroups = NAVIGATION_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (item.visibility === "admin") return access?.isAdmin === true;
+      if (item.visibility === "user") return access ? !access.isAdmin : false;
+      return true;
+    }),
+  })).filter((group) => group.items.length > 0);
 
   async function handleSignOut() {
     onNavigate?.();
@@ -129,7 +146,7 @@ export function Sidebar({ onClose, onNavigate, variant = "desktop" }: SidebarPro
           isCollapsed ? "px-2" : "px-3",
         )}
       >
-        {NAVIGATION_GROUPS.map((group, groupIndex) => {
+        {visibleNavigationGroups.map((group, groupIndex) => {
           const isGroupCollapsed = collapsedGroups.includes(group.label);
           const isFirstGroup = groupIndex === 0;
           const shouldShowItems = isCollapsed || !isGroupCollapsed;

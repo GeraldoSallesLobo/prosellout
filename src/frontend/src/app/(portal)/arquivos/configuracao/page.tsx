@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
+import { UserOnly } from "@/components/access/access-gate";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { SelectField, TextField } from "@/components/ui/field";
@@ -23,7 +24,7 @@ const STATUS_OPTIONS = [
   { value: "inactive", label: "Inativo" },
 ];
 
-export default function FileConfigPage() {
+function FileConfigContent() {
   const [editing, setEditing] = useState<FileTypeConfig | null>(null);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -176,5 +177,13 @@ export default function FileConfigPage() {
         ) : null}
       </Modal>
     </div>
+  );
+}
+
+export default function FileConfigPage() {
+  return (
+    <UserOnly>
+      <FileConfigContent />
+    </UserOnly>
   );
 }

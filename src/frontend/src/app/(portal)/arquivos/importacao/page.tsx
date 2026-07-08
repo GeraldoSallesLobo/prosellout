@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Upload } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
+import { UserOnly } from "@/components/access/access-gate";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { DateField, FieldWrapper, SelectField } from "@/components/ui/field";
@@ -33,7 +34,7 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, meta]) => ({
   label: meta.label,
 }));
 
-export default function FileImportPage() {
+function FileImportContent() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -256,5 +257,13 @@ export default function FileImportPage() {
         )}
       </Modal>
     </div>
+  );
+}
+
+export default function FileImportPage() {
+  return (
+    <UserOnly>
+      <FileImportContent />
+    </UserOnly>
   );
 }

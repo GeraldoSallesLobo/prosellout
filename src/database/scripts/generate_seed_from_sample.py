@@ -25,7 +25,10 @@ NS = uuid.UUID("6f0c3a2e-1b7d-4e5a-9c3b-000000000000")
 ADMIN_USER_ID = "00000000-0000-0000-0000-000000000001"
 ADMIN_IDENTITY_ID = "00000000-0000-0000-0000-000000000002"
 ADMIN_EMAIL = "admin@email.com"
-ADMIN_PASSWORD = "123321"
+DISTRIBUTOR_USER_ID = "00000000-0000-0000-0000-000000000003"
+DISTRIBUTOR_IDENTITY_ID = "00000000-0000-0000-0000-000000000004"
+DISTRIBUTOR_EMAIL = "distribuidora.83299743000130@email.com"
+SEED_PASSWORD = "123321"
 
 
 def uid(*parts: str) -> str:
@@ -72,6 +75,50 @@ def iso(dt) -> str | None:
     if isinstance(dt, datetime):
         return dt.date().isoformat()
     return str(dt)[:10]
+
+
+def emit_auth_user(out: list[str], *, user_id: str, identity_id: str, email: str, password: str) -> None:
+    w = out.append
+    w("insert into auth.users (")
+    w("  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,")
+    w("  confirmation_token, recovery_token, email_change_token_new, email_change,")
+    w("  created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin")
+    w(") values (")
+    w(f"  '{user_id}', '00000000-0000-0000-0000-000000000000',")
+    w(f"  'authenticated', 'authenticated', {sql_str(email)},")
+    w(f"  extensions.crypt({sql_str(password)}, extensions.gen_salt('bf')),")
+    w("  now(), '', '', '', '', now(), now(),")
+    w("  '{\"provider\":\"email\",\"providers\":[\"email\"]}'::jsonb,")
+    w("  '{\"email_verified\":true}'::jsonb, false")
+    w(") on conflict (id) do update set")
+    w("  email = excluded.email,")
+    w("  encrypted_password = excluded.encrypted_password,")
+    w("  email_confirmed_at = excluded.email_confirmed_at,")
+    w("  confirmation_token = excluded.confirmation_token,")
+    w("  recovery_token = excluded.recovery_token,")
+    w("  email_change_token_new = excluded.email_change_token_new,")
+    w("  email_change = excluded.email_change,")
+    w("  raw_app_meta_data = excluded.raw_app_meta_data,")
+    w("  raw_user_meta_data = excluded.raw_user_meta_data,")
+    w("  updated_at = now();\n")
+
+    w(f"delete from auth.identities where user_id = '{user_id}' and provider = 'email';\n")
+
+    w("insert into auth.identities (")
+    w("  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at")
+    w(") values (")
+    w(f"  '{identity_id}', '{user_id}', '{user_id}',")
+    w("  jsonb_build_object(")
+    w(f"    'sub', '{user_id}',")
+    w(f"    'email', {sql_str(email)},")
+    w("    'email_verified', true,")
+    w("    'phone_verified', false")
+    w("  ),")
+    w("  'email', now(), now(), now()")
+    w(") on conflict (provider, provider_id) do update set")
+    w("  user_id = excluded.user_id,")
+    w("  identity_data = excluded.identity_data,")
+    w("  updated_at = now();\n")
 
 
 def main() -> None:
@@ -166,52 +213,32 @@ def main() -> None:
     w("-- Source: .dev_files/dados-importacao (real anonymized single-distributor sample).")
     w("-- Do not edit by hand; regenerate with the script.\n")
 
-    w("insert into auth.users (")
-    w("  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,")
-    w("  confirmation_token, recovery_token, email_change_token_new, email_change,")
-    w("  created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin")
-    w(") values (")
-    w(f"  '{ADMIN_USER_ID}', '00000000-0000-0000-0000-000000000000',")
-    w(f"  'authenticated', 'authenticated', {sql_str(ADMIN_EMAIL)},")
-    w(f"  extensions.crypt({sql_str(ADMIN_PASSWORD)}, extensions.gen_salt('bf')),")
-    w("  now(), '', '', '', '', now(), now(),")
-    w("  '{\"provider\":\"email\",\"providers\":[\"email\"]}'::jsonb,")
-    w("  '{\"email_verified\":true}'::jsonb, false")
-    w(") on conflict (id) do update set")
-    w("  email = excluded.email,")
-    w("  encrypted_password = excluded.encrypted_password,")
-    w("  email_confirmed_at = excluded.email_confirmed_at,")
-    w("  confirmation_token = excluded.confirmation_token,")
-    w("  recovery_token = excluded.recovery_token,")
-    w("  email_change_token_new = excluded.email_change_token_new,")
-    w("  email_change = excluded.email_change,")
-    w("  raw_app_meta_data = excluded.raw_app_meta_data,")
-    w("  raw_user_meta_data = excluded.raw_user_meta_data,")
-    w("  updated_at = now();\n")
+    emit_auth_user(
+        out,
+        user_id=ADMIN_USER_ID,
+        identity_id=ADMIN_IDENTITY_ID,
+        email=ADMIN_EMAIL,
+        password=SEED_PASSWORD,
+    )
+    emit_auth_user(
+        out,
+        user_id=DISTRIBUTOR_USER_ID,
+        identity_id=DISTRIBUTOR_IDENTITY_ID,
+        email=DISTRIBUTOR_EMAIL,
+        password=SEED_PASSWORD,
+    )
 
-    w(f"delete from auth.identities where user_id = '{ADMIN_USER_ID}' and provider = 'email';\n")
-
-    w("insert into auth.identities (")
-    w("  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at")
-    w(") values (")
-    w(f"  '{ADMIN_IDENTITY_ID}', '{ADMIN_USER_ID}', '{ADMIN_USER_ID}',")
-    w("  jsonb_build_object(")
-    w(f"    'sub', '{ADMIN_USER_ID}',")
-    w(f"    'email', {sql_str(ADMIN_EMAIL)},")
-    w("    'email_verified', true,")
-    w("    'phone_verified', false")
-    w("  ),")
-    w("  'email', now(), now(), now()")
-    w(") on conflict (provider, provider_id) do update set")
-    w("  user_id = excluded.user_id,")
-    w("  identity_data = excluded.identity_data,")
+    w("insert into admin_users (user_id, status) values")
+    w(f"  ('{ADMIN_USER_ID}', 'active')")
+    w("on conflict (user_id) do update set")
+    w("  status = excluded.status,")
     w("  updated_at = now();\n")
 
     w("insert into distributors (id, code, name, cnpj, status) values")
     w(f"  ('{dist_id}', 'DIST{dist_cnpj}', 'Distribuidora {dist_cnpj}', {sql_str(dist_cnpj)}, 'active');\n")
 
     w("insert into distributor_users (user_id, distributor_id, role, status) values")
-    w(f"  ('{ADMIN_USER_ID}', '{dist_id}', 'owner', 'active')")
+    w(f"  ('{DISTRIBUTOR_USER_ID}', '{dist_id}', 'owner', 'active')")
     w("on conflict (user_id, distributor_id) do update set")
     w("  role = excluded.role,")
     w("  status = excluded.status,")
@@ -243,7 +270,7 @@ def main() -> None:
     w("insert into file_imports (file_name, sheet_name, file_type_id, status, total_records, processed_records, error_count, imported_by, distributor_id, finished_at) values")
     w(",\n".join(
         f"  ({sql_str(fn)}, 'Planilha1', '{ftc_id[code]}', '{st}'::import_status, {tot}, {proc}, {err}, "
-        f"'{ADMIN_USER_ID}', '{dist_id}', now() - '{i} days'::interval)"
+        f"'{DISTRIBUTOR_USER_ID}', '{dist_id}', now() - '{i} days'::interval)"
         for i, (fn, code, st, tot, proc, err) in enumerate(imports, start=1)) + ";\n")
 
     w("insert into channels (id, distributor_id, name) values")

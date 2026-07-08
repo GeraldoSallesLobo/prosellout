@@ -79,16 +79,16 @@ NEXT_PUBLIC_UPLOAD_API_URL=
 
 Perdeu a chave? Rode `supabase status` dentro de `src/database/` que ela é reimpressa.
 
-### 4. Usuário de login
+### 4. Usuários de login
 
-O seed cria automaticamente o usuário local e o vincula ao distribuidor da amostra:
+O seed cria automaticamente dois usuários locais:
 
-| Campo | Valor |
-|---|---|
-| E-mail | `admin@email.com` |
-| Senha | `admin123456` |
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Admin | `admin@email.com` | `123321` |
+| Usuário distribuidor | `distribuidora.83299743000130@email.com` | `123321` |
 
-Se criar outros usuários manualmente no Studio, vincule-os também em `distributor_users`; sem esse vínculo o banco não retorna dados por tabela nem por RPC.
+Crie novos usuários distribuidores pela tela **Admin › Usuários**. Criar apenas pelo Auth do Supabase não faz o vínculo automático em `distributor_users`; sem esse vínculo o banco não retorna dados por tabela nem por RPC.
 
 ### 5. Rodar o portal
 
@@ -119,7 +119,7 @@ Abra `http://localhost:3000` → você será redirecionado para `/login` → ent
 |---|---|
 | `Cannot connect to the Docker daemon` | Abra o Docker Desktop antes do `supabase start` |
 | Porta 54321/54322/54323 em uso | `supabase stop` (ou pare o outro projeto Supabase local) |
-| Login falha com usuário seedado | Rode `cd src/database && supabase db reset` para recriar o usuário `admin@email.com` |
+| Login falha com usuário seedado | Rode `cd src/database && supabase db reset` para recriar `admin@email.com` e `distribuidora.83299743000130@email.com` |
 | "Não foi possível conectar ao Supabase" no login | `supabase start` parado, ou `.env.local`/`next.config.mjs` alterados sem reiniciar o `npm run dev` |
 | Telas vazias no modo completo | Confira o `.env.local` e reinicie o `npm run dev` (env só carrega no boot) |
 | Quero dados novos | `cd src/database && supabase db reset` regenera o seed |

@@ -10,6 +10,7 @@ import {
   ListTree,
   Package,
   Settings2,
+  ShieldCheck,
   Shuffle,
   Store,
   Target,
@@ -24,6 +25,7 @@ export interface NavigationItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  visibility?: "all" | "admin" | "user";
 }
 
 export interface NavigationGroup {
@@ -33,6 +35,12 @@ export interface NavigationGroup {
 
 /** Sidebar structure — mirrors the approved mockup menu. */
 export const NAVIGATION_GROUPS: NavigationGroup[] = [
+  {
+    label: "Admin",
+    items: [
+      { label: "Usuários", href: "/admin/usuarios", icon: ShieldCheck, visibility: "admin" },
+    ],
+  },
   {
     label: "Cadastros",
     items: [
@@ -44,8 +52,8 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: "Arquivos",
     items: [
-      { label: "Importação", href: "/arquivos/importacao", icon: Upload },
-      { label: "Configuração", href: "/arquivos/configuracao", icon: Settings2 },
+      { label: "Importação", href: "/arquivos/importacao", icon: Upload, visibility: "user" },
+      { label: "Configuração", href: "/arquivos/configuracao", icon: Settings2, visibility: "user" },
     ],
   },
   {
