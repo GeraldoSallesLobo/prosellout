@@ -23,6 +23,7 @@ SAMPLE_DIR = os.environ.get(
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "supabase", "seed.sql")
 NS = uuid.UUID("6f0c3a2e-1b7d-4e5a-9c3b-000000000000")
 ADMIN_USER_ID = "00000000-0000-0000-0000-000000000001"
+ADMIN_IDENTITY_ID = "00000000-0000-0000-0000-000000000002"
 ADMIN_EMAIL = "admin@email.com"
 ADMIN_PASSWORD = "123321"
 
@@ -167,25 +168,33 @@ def main() -> None:
 
     w("insert into auth.users (")
     w("  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,")
+    w("  confirmation_token, recovery_token, email_change_token_new, email_change,")
     w("  created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin")
     w(") values (")
     w(f"  '{ADMIN_USER_ID}', '00000000-0000-0000-0000-000000000000',")
     w(f"  'authenticated', 'authenticated', {sql_str(ADMIN_EMAIL)},")
     w(f"  extensions.crypt({sql_str(ADMIN_PASSWORD)}, extensions.gen_salt('bf')),")
-    w("  now(), now(), now(),")
+    w("  now(), '', '', '', '', now(), now(),")
     w("  '{\"provider\":\"email\",\"providers\":[\"email\"]}'::jsonb,")
-    w("  '{}'::jsonb, false")
+    w("  '{\"email_verified\":true}'::jsonb, false")
     w(") on conflict (id) do update set")
     w("  email = excluded.email,")
     w("  encrypted_password = excluded.encrypted_password,")
     w("  email_confirmed_at = excluded.email_confirmed_at,")
+    w("  confirmation_token = excluded.confirmation_token,")
+    w("  recovery_token = excluded.recovery_token,")
+    w("  email_change_token_new = excluded.email_change_token_new,")
+    w("  email_change = excluded.email_change,")
     w("  raw_app_meta_data = excluded.raw_app_meta_data,")
+    w("  raw_user_meta_data = excluded.raw_user_meta_data,")
     w("  updated_at = now();\n")
+
+    w(f"delete from auth.identities where user_id = '{ADMIN_USER_ID}' and provider = 'email';\n")
 
     w("insert into auth.identities (")
     w("  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at")
     w(") values (")
-    w(f"  '{ADMIN_USER_ID}', '{ADMIN_USER_ID}', {sql_str(ADMIN_EMAIL)},")
+    w(f"  '{ADMIN_IDENTITY_ID}', '{ADMIN_USER_ID}', '{ADMIN_USER_ID}',")
     w("  jsonb_build_object(")
     w(f"    'sub', '{ADMIN_USER_ID}',")
     w(f"    'email', {sql_str(ADMIN_EMAIL)},")
