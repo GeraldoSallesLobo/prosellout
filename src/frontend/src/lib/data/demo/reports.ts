@@ -21,19 +21,21 @@ export const DEMO_STATUS_MTD: StatusMtdReport = {
   avgPrice: buildBlock(500, 400, 350),
   markupPct: buildBlock(0.25, 0.24, 0.23),
   marginPct: buildBlock(0.15, 0.14, 0.135),
+  avgTurnover: buildBlock(2.8, null, 2.4),
+  avgCoverage: buildBlock(0.42, null, 0.38),
   trendValue: { projected: 1_620_000, projectedVsTarget: 1_620_000 / 1_450_000 - 1 },
   probabilityValue: 0.73,
   probabilityCoverage: 0.83,
   probabilityTicket: 0.58,
 };
 
-function buildBlock(current: number, target: number, previous: number) {
+function buildBlock(current: number, target: number | null, previous: number) {
   return {
     current,
     target,
     previous,
-    currentVsTarget: current / target - 1,
-    previousVsTarget: previous / target - 1,
+    currentVsTarget: target ? current / target - 1 : null,
+    previousVsTarget: target ? previous / target - 1 : null,
   };
 }
 
@@ -77,6 +79,8 @@ const AVG_INVOICES_PER_CUSTOMER = 2.1;
 const DEMO_AVG_PRICE = 27.4;
 const DEMO_MARKUP = 0.25;
 const DEMO_MARGIN = 0.15;
+const DEMO_TURNOVER = 2.8;
+const DEMO_AVG_COVERAGE = 0.42;
 
 function toAnalysisRow(seed: AnalysisSeed, index: number): AnalysisRow {
   const random = createSeededRandom(index + 7);
@@ -97,6 +101,8 @@ function toAnalysisRow(seed: AnalysisSeed, index: number): AnalysisRow {
     avgPrice: DEMO_AVG_PRICE * (0.9 + random() * 0.25),
     markupPct: DEMO_MARKUP * (0.9 + random() * 0.3),
     marginPct: DEMO_MARGIN * (0.9 + random() * 0.3),
+    avgTurnover: DEMO_TURNOVER * (0.85 + random() * 0.35),
+    avgCoverage: DEMO_AVG_COVERAGE * (0.8 + random() * 0.4),
   };
 }
 

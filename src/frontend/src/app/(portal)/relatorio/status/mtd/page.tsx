@@ -15,6 +15,7 @@ import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
 import { fetchStatusAnalysis, fetchStatusMtd } from "@/lib/data/reports";
 import {
   formatCurrency,
+  formatDecimal,
   formatInteger,
   formatPercent,
 } from "@/lib/format";
@@ -29,7 +30,7 @@ const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
 const KPI_GRID_CLASS_NAME =
   "grid grid-cols-[repeat(auto-fit,minmax(min(100%,13.5rem),1fr))] gap-3";
 
-const KPI_SKELETON_COUNT = 9;
+const KPI_SKELETON_COUNT = 11;
 
 export default function StatusMtdPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
@@ -77,6 +78,12 @@ export default function StatusMtdPage() {
                 periodo_anterior: row.previousValue,
                 cobertura: row.coverage,
                 ticket_medio: row.avgTicket,
+                drop_size: row.dropSize,
+                preco_medio: row.avgPrice,
+                mark_up_pct: row.markupPct,
+                margem_pct: row.marginPct,
+                giro_medio: row.avgTurnover,
+                cobertura_media: row.avgCoverage,
               }))
             }
           />
@@ -132,6 +139,16 @@ export default function StatusMtdPage() {
             <KpiBlockCard
               label="Margem %"
               block={report.marginPct}
+              formatValue={formatPercent}
+            />
+            <KpiBlockCard
+              label="Giro Médio"
+              block={report.avgTurnover}
+              formatValue={formatDecimal}
+            />
+            <KpiBlockCard
+              label="Cobertura Média"
+              block={report.avgCoverage}
               formatValue={formatPercent}
             />
             <KpiCard

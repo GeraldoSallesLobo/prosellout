@@ -14,9 +14,9 @@ const TABLE_SPECS = {
     stagingTable: "staging_sell_out",
     processFunction: "process_sell_out_staging",
     columns: [
-      "import_id", "line_number", "distributor_code", "customer_cnpj",
-      "product_ean", "invoice_number", "invoice_date", "quantity",
-      "gross_value", "unit_cost",
+      "import_id", "line_number", "distributor_code", "customer_pdv_code",
+      "customer_cnpj", "sales_rep_code", "product_ean", "invoice_number",
+      "invoice_date", "delivery_date", "quantity", "gross_value", "unit_cost",
     ],
   },
   sell_in: {

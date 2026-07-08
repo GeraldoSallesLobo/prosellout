@@ -16,6 +16,8 @@ export interface StatusMtdReport {
   avgPrice: KpiBlock;
   markupPct: KpiBlock;
   marginPct: KpiBlock;
+  avgTurnover: KpiBlock;
+  avgCoverage: KpiBlock;
   trendValue: { projected: number | null; projectedVsTarget: number | null };
   probabilityValue: number;
   probabilityCoverage: number;
@@ -39,6 +41,8 @@ export interface AnalysisRow {
   avgPrice: number | null;
   markupPct: number | null;
   marginPct: number | null;
+  avgTurnover: number | null;
+  avgCoverage: number | null;
 }
 
 export interface WeeklyBucket {

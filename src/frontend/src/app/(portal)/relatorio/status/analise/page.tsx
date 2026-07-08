@@ -51,6 +51,8 @@ export default function StatusAnalysisPage() {
                 preco_medio: row.avgPrice,
                 mark_up_pct: row.markupPct,
                 margem_pct: row.marginPct,
+                giro_medio: row.avgTurnover,
+                cobertura_media: row.avgCoverage,
               }))
             }
           />

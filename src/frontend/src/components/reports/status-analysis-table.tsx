@@ -5,6 +5,7 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { TargetBadge } from "@/components/ui/badge";
 import {
   formatCurrency,
+  formatDecimal,
   formatInteger,
   formatPercent,
   formatVariation,
@@ -47,6 +48,8 @@ function buildTotalRow(rows: AnalysisRow[]): AnalysisRow {
     avgPrice: null,
     markupPct: null,
     marginPct: null,
+    avgTurnover: null,
+    avgCoverage: null,
   };
 }
 
@@ -192,6 +195,20 @@ export function StatusAnalysisTable({
       align: "right",
       render: (row) => formatPercent(row.marginPct),
       sortValue: (row) => row.marginPct,
+    },
+    {
+      key: "turnover",
+      header: "Giro Médio",
+      align: "right",
+      render: (row) => formatDecimal(row.avgTurnover),
+      sortValue: (row) => row.avgTurnover,
+    },
+    {
+      key: "avgCoverage",
+      header: "Cobertura Média",
+      align: "right",
+      render: (row) => formatPercent(row.avgCoverage),
+      sortValue: (row) => row.avgCoverage,
     },
   ];
 

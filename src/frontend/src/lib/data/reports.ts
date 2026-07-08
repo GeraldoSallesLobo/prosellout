@@ -71,6 +71,8 @@ export async function fetchStatusMtd(filters: ReportFilters): Promise<StatusMtdR
     avgPrice: mapKpiBlock(data.avg_price),
     markupPct: mapKpiBlock(data.markup_pct),
     marginPct: mapKpiBlock(data.margin_pct),
+    avgTurnover: mapKpiBlock(data.avg_turnover),
+    avgCoverage: mapKpiBlock(data.avg_coverage),
     trendValue: {
       projected: data.trend_value?.projected ?? null,
       projectedVsTarget: data.trend_value?.projected_vs_target ?? null,
@@ -108,6 +110,8 @@ export async function fetchStatusAnalysis(
     avgPrice: row.avg_price === null ? null : Number(row.avg_price),
     markupPct: row.markup_pct === null ? null : Number(row.markup_pct),
     marginPct: row.margin_pct === null ? null : Number(row.margin_pct),
+    avgTurnover: row.avg_turnover === null ? null : Number(row.avg_turnover),
+    avgCoverage: row.avg_coverage === null ? null : Number(row.avg_coverage),
   }));
 }
 

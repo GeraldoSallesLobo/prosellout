@@ -19,21 +19,33 @@ const TABLE_SPECS = {
     stagingTable: "staging_sell_out",
     processFunction: "process_sell_out_staging",
     columns: [
-      "distributor_code", "customer_cnpj", "product_ean", "invoice_number",
-      "invoice_date", "quantity", "gross_value", "unit_cost",
+      "distributor_code", "customer_pdv_code", "customer_cnpj", "sales_rep_code",
+      "product_ean", "invoice_number", "invoice_date", "delivery_date",
+      "quantity", "gross_value", "unit_cost",
+    ],
+    optionalColumns: [
+      "customer_pdv_code", "customer_cnpj", "invoice_number", "delivery_date", "unit_cost",
     ],
     aliases: {
       distribuidor: "distributor_code",
       cod_distribuidor: "distributor_code",
       codigo_distribuidor: "distributor_code",
+      cod_pdv: "customer_pdv_code",
+      codigo_pdv: "customer_pdv_code",
+      pdv: "customer_pdv_code",
       cnpj: "customer_cnpj",
       cnpj_cliente: "customer_cnpj",
+      vendedor: "sales_rep_code",
+      cod_vendedor: "sales_rep_code",
+      codigo_vendedor: "sales_rep_code",
       ean: "product_ean",
       nf: "invoice_number",
       nota_fiscal: "invoice_number",
       numero_nf: "invoice_number",
       data: "invoice_date",
       data_faturamento: "invoice_date",
+      data_entrega: "delivery_date",
+      entrega: "delivery_date",
       volume: "quantity",
       quantidade: "quantity",
       qtd: "quantity",
@@ -50,6 +62,7 @@ const TABLE_SPECS = {
       "distributor_code", "product_ean", "invoice_number",
       "invoice_date", "quantity", "gross_value", "unit_cost",
     ],
+    optionalColumns: ["invoice_number", "unit_cost"],
     aliases: {
       distribuidor: "distributor_code",
       cod_distribuidor: "distributor_code",
@@ -94,7 +107,7 @@ function normalizeNumber(value) {
 }
 
 function normalizeCell(column, value) {
-  if (column === "invoice_date") return normalizeDate(value);
+  if (["invoice_date", "delivery_date"].includes(column)) return normalizeDate(value);
   if (["quantity", "gross_value", "unit_cost"].includes(column)) return normalizeNumber(value);
   return String(value ?? "").trim();
 }
@@ -150,7 +163,8 @@ function buildColumnMapper(spec, headerRow) {
     if (column && !positions.has(column)) positions.set(column, index);
   });
 
-  const requiredColumns = spec.columns.filter((column) => column !== "unit_cost");
+  const optionalColumns = new Set(spec.optionalColumns ?? []);
+  const requiredColumns = spec.columns.filter((column) => !optionalColumns.has(column));
   const missing = requiredColumns.filter((column) => !positions.has(column));
   if (missing.length > 0) {
     throw new Error(`missing required columns: ${missing.join(", ")}`);

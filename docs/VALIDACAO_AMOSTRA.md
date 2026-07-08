@@ -38,7 +38,7 @@ Números-âncora para conferir no Status MTD (Junho/2026): Sell Out R$ ≈ 1.000
 
 Ao cruzar a amostra com o schema, encontramos e corrigimos:
 
-1. **Sell Out/Sell In sem número de NF** → `invoice_number` agora é opcional. No seed, sintetizamos uma "nota" por PDV/dia para o Drop Size funcionar (aproximação — confirmar regra com o CEO).
+1. **Sell Out/Sell In sem número de NF** → `invoice_number` agora é opcional. Cada linha de Sell Out equivale a uma NF para Drop Size; quando o upload não traz NF, o ETL sintetiza uma identificação por importação/linha.
 2. **Identidade do cliente é (distribuidor, Cód. PDV)** — o CNPJ vem mascarado e não é único. Adicionadas colunas `pdv_code`, `distributor_id`, `trade_name`, `address`; `cnpj` virou opcional; nova unicidade `(distributor_id, pdv_code)`.
 3. **Vendedor é transacional** (vem em cada linha de Sell Out), não é atributo fixo do cliente — o `sell_out.sales_rep_id` já cobre isso.
 4. **Hierarquia comercial tem códigos e Gerente opcional** acima do Supervisor — adicionados `code`, `distributor_id`, `portfolio_size` (carteira) e `manager_id` em `sales_reps`.
@@ -47,6 +47,5 @@ Ao cruzar a amostra com o schema, encontramos e corrigimos:
 
 ## Follow-ups (não feitos ainda)
 
-- **Realinhar o ETL (repo `cloud`)**: as `staging_*` e `TABLE_SPECS` ainda esperam o layout antigo (cnpj/nf/custo). Para importações reais funcionarem, adaptar as colunas de staging e as funções `process_*_staging` ao layout real (PDV, vendedor, sem NF/custo) + normalização de EAN.
-- **Base de Estoque**: sem arquivo na amostra; Cobertura Média fica pendente de dados.
+- **Base de Estoque**: a regra de negócio define estoque como consequência de `Sell In volume - Sell Out volume`; se futuramente houver uma base física de estoque, revisar a Cobertura Média antes de trocar a fonte.
 - **Multi-distribuidor**: a amostra tem 1 distribuidor; produto/EAN globalmente único ainda vale. Para vários distribuidores, revisar unicidade de EAN por distribuidor.
