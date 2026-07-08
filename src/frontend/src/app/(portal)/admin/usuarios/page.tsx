@@ -3,12 +3,12 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserPlus } from "lucide-react";
+import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { AdminOnly } from "@/components/access/access-gate";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import { TextField } from "@/components/ui/field";
+import { FieldWrapper, TextField } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
@@ -19,6 +19,9 @@ import {
 } from "@/lib/data/admin";
 
 const DEFAULT_PASSWORD = "123321";
+const CNPJ_DIGIT_COUNT = 14;
+const CNPJ_DIGIT_LIMIT = 14;
+const DISTRIBUTOR_CODE_PATTERN = /^[A-Z0-9_-]{3,32}$/;
 
 const EMPTY_FORM = {
   email: "",
@@ -30,9 +33,27 @@ const EMPTY_FORM = {
   state: "",
 };
 
+function getDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function formatCnpjInput(value: string): string {
+  const digits = getDigits(value).slice(0, CNPJ_DIGIT_LIMIT);
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function formatDistributorCode(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+}
+
 function AdminUsersContent(): ReactElement {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,11 +74,23 @@ function AdminUsersContent(): ReactElement {
     onError: () => showToast("error", "Erro ao cadastrar usuário distribuidor."),
   });
 
+  const cnpjDigits = getDigits(form.distributorCnpj);
+  const hasValidCnpj = cnpjDigits.length === 0 || cnpjDigits.length === CNPJ_DIGIT_COUNT;
+  const hasValidDistributorCode = DISTRIBUTOR_CODE_PATTERN.test(form.distributorCode);
   const canSubmit =
     form.email.trim().length > 0 &&
     form.password.length >= 6 &&
-    form.distributorCode.trim().length > 0 &&
+    hasValidDistributorCode &&
+    hasValidCnpj &&
     form.distributorName.trim().length > 0;
+
+  function handleCreateDistributorUser(): void {
+    createMutation.mutate({
+      ...form,
+      distributorCode: form.distributorCode.trim().toUpperCase(),
+      distributorCnpj: cnpjDigits,
+    });
+  }
 
   const columns: DataTableColumn<DistributorUser>[] = [
     {
@@ -119,7 +152,7 @@ function AdminUsersContent(): ReactElement {
             </Button>
             <Button
               disabled={!canSubmit || createMutation.isPending}
-              onClick={() => createMutation.mutate(form)}
+              onClick={handleCreateDistributorUser}
             >
               {createMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
@@ -135,23 +168,49 @@ function AdminUsersContent(): ReactElement {
             onChange={(event) => setForm({ ...form, email: event.target.value })}
             placeholder="distribuidora.exemplo@email.com"
           />
-          <TextField
-            label="Senha"
-            type="password"
-            value={form.password}
-            onChange={(event) => setForm({ ...form, password: event.target.value })}
-          />
-          <TextField
-            label="Código"
-            value={form.distributorCode}
-            onChange={(event) => setForm({ ...form, distributorCode: event.target.value })}
-            placeholder="DIST001"
-          />
+          <FieldWrapper label="Senha">
+            <div className="relative">
+              <input
+                className="input-base pr-10"
+                type={isPasswordVisible ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible((current) => !current)}
+                title={isPasswordVisible ? "Ocultar senha" : "Mostrar senha"}
+                aria-label={isPasswordVisible ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-text2 transition-colors hover:bg-text1/5 hover:text-text1"
+              >
+                {isPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </FieldWrapper>
+          <FieldWrapper label="Código">
+            <input
+              className="input-base"
+              value={form.distributorCode}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  distributorCode: formatDistributorCode(event.target.value),
+                })
+              }
+              placeholder="DIST001"
+              maxLength={32}
+              aria-invalid={!hasValidDistributorCode && form.distributorCode.length > 0}
+            />
+          </FieldWrapper>
           <TextField
             label="CNPJ"
             value={form.distributorCnpj}
-            onChange={(event) => setForm({ ...form, distributorCnpj: event.target.value })}
+            onChange={(event) =>
+              setForm({ ...form, distributorCnpj: formatCnpjInput(event.target.value) })
+            }
             placeholder="00.000.000/0000-00"
+            inputMode="numeric"
+            aria-invalid={!hasValidCnpj}
           />
           <TextField
             label="Distribuidor"
