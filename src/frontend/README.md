@@ -11,7 +11,7 @@ npm run dev                  # http://localhost:3000
 npm run typecheck            # tsc --noEmit
 ```
 
-**Modo demo**: sem `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`, todas as telas funcionam com dados de exemplo determinísticos (mesmos números do mockup aprovado). Login é liberado e a sidebar exibe o selo "modo demo". Com as envs preenchidas, o portal usa Supabase Auth (login obrigatório via middleware) e consome as RPCs do `database/`. Guia completo em `../LOCAL_SETUP.md`.
+**Modo demo**: sem `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`, todas as telas funcionam com dados de exemplo determinísticos (mesmos números do mockup aprovado). Login é liberado e a sidebar exibe o selo "modo demo". Com as envs preenchidas, o portal usa Supabase Auth (login obrigatório via middleware) e consome as RPCs do `src/database/`. Guia completo em `../../docs/LOCAL_SETUP.md`.
 
 ## Estrutura
 

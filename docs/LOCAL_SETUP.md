@@ -12,7 +12,7 @@ Guia para subir o sistema na sua máquina, criar o usuário de acesso e testar a
 ## Modo Demo (2 minutos)
 
 ```bash
-cd frontend
+cd src/frontend
 npm install
 npm run dev
 ```
@@ -33,11 +33,11 @@ Abra `http://localhost:3000`. Sem `.env.local` preenchido o portal roda em **mod
 ### 2. Subir o banco
 
 ```bash
-cd database
+cd src/database
 supabase start
 ```
 
-Na primeira execução o Docker baixa as imagens (alguns minutos). Ao final o CLI imprime as URLs e chaves. As migrations e o seed (~4 meses de dados sintéticos) são aplicados automaticamente.
+Na primeira execução o Docker baixa as imagens (alguns minutos). Ao final o CLI imprime as URLs e chaves. As migrations e o seed (~4 meses de dados da amostra) são aplicados automaticamente.
 
 Serviços locais:
 
@@ -55,7 +55,7 @@ Para parar os containers: `supabase stop`.
 Quando novas migrations forem adicionadas em `supabase/migrations/` (ex.: `20260705000900_rls_hardening.sql`), não é preciso recriar containers nem atualizar imagem Docker — basta aplicá-las no banco que já está de pé:
 
 ```bash
-cd database
+cd src/database
 supabase migration up   # aplica apenas as migrations pendentes, preservando os dados
 ```
 
@@ -69,7 +69,7 @@ Para conferir o que já foi aplicado: `supabase migration list --local`.
 
 ### 3. Configurar o frontend
 
-Crie/edite `frontend/.env.local`:
+Crie/edite `src/frontend/.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
@@ -77,27 +77,28 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<chave "Publishable" impressa pelo supabase start>
 NEXT_PUBLIC_UPLOAD_API_URL=
 ```
 
-Perdeu a chave? Rode `supabase status` dentro de `database/` que ela é reimpressa.
+Perdeu a chave? Rode `supabase status` dentro de `src/database/` que ela é reimpressa.
 
-### 4. Criar o usuário de login
+### 4. Usuário de login
 
-1. Abra o Studio: `http://127.0.0.1:54323`
-2. Menu lateral → **Authentication** → **Users**
-3. Clique em **Add user** → **Create new user**
-4. Preencha e-mail e senha (ex.: `admin@prosellout.local` / senha à sua escolha)
-5. Marque **Auto Confirm User** e confirme
+O seed cria automaticamente o usuário local e o vincula ao distribuidor da amostra:
 
-> Sem o "Auto Confirm" o login falha com "E-mail ou senha inválidos", pois localmente não há envio de e-mail de confirmação (os e-mails ficam no Mailpit: `http://127.0.0.1:54324`).
+| Campo | Valor |
+|---|---|
+| E-mail | `admin@email.com` |
+| Senha | `admin123456` |
+
+Se criar outros usuários manualmente no Studio, vincule-os também em `distributor_users`; sem esse vínculo o banco não retorna dados por tabela nem por RPC.
 
 ### 5. Rodar o portal
 
 ```bash
-cd frontend
+cd src/frontend
 npm install   # apenas na primeira vez
 npm run dev
 ```
 
-Abra `http://localhost:3000` → você será redirecionado para `/login` → entre com o usuário criado no passo 4.
+Abra `http://localhost:3000` → você será redirecionado para `/login` → entre com o usuário do passo 4.
 
 ---
 
@@ -118,7 +119,7 @@ Abra `http://localhost:3000` → você será redirecionado para `/login` → ent
 |---|---|
 | `Cannot connect to the Docker daemon` | Abra o Docker Desktop antes do `supabase start` |
 | Porta 54321/54322/54323 em uso | `supabase stop` (ou pare o outro projeto Supabase local) |
-| Login falha com usuário correto | Usuário criado sem **Auto Confirm** — recrie marcando a opção |
+| Login falha com usuário seedado | Rode `cd src/database && supabase db reset` para recriar o usuário `admin@email.com` |
 | "Não foi possível conectar ao Supabase" no login | `supabase start` parado, ou `.env.local`/`next.config.mjs` alterados sem reiniciar o `npm run dev` |
 | Telas vazias no modo completo | Confira o `.env.local` e reinicie o `npm run dev` (env só carrega no boot) |
-| Quero dados novos | `cd database && supabase db reset` regenera o seed |
+| Quero dados novos | `cd src/database && supabase db reset` regenera o seed |

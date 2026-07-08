@@ -8,9 +8,9 @@ Repositório único com uma pasta por camada — deploys independentes, contrato
 
 | Pasta | Stack | Responsabilidade |
 |---|---|---|
-| `frontend/` | Next.js 14 + Tailwind + Recharts | Portal web (21 telas, temas claro/escuro) |
-| `database/` | Supabase (Postgres 17) | Schema, migrations, RLS, funções de relatório, seed |
-| `cloud/` | Terraform + AWS Lambda (Node 20) | Ingestão de arquivos de alto volume (S3 → SQS → ETL) |
+| `src/frontend/` | Next.js 14 + Tailwind + Recharts | Portal web (21 telas, temas claro/escuro) |
+| `src/database/` | Supabase (Postgres 17) | Schema, migrations, RLS, funções de relatório, seed |
+| `src/cloud/` | Terraform + AWS Lambda (Node 20) | Ingestão de arquivos de alto volume (S3 → SQS → ETL) |
 
 Documentação:
 
@@ -58,8 +58,8 @@ Documentação:
 
 ## Ordem de setup (produção)
 
-1. `database/` — criar projeto no Supabase e aplicar migrations (ver `database/README.md`)
-2. `cloud/` — `terraform apply` com as credenciais do banco (ver `cloud/README.md`)
-3. `frontend/` — `cp .env.example .env.local`, preencher chaves e `npm run dev` (ver `frontend/README.md`)
+1. `src/database/` — criar projeto no Supabase e aplicar migrations (ver `src/database/README.md`)
+2. `src/cloud/` — `terraform apply` com as credenciais do banco (ver `src/cloud/README.md`)
+3. `src/frontend/` — `cp .env.example .env.local`, preencher chaves e `npm run dev` (ver `src/frontend/README.md`)
 
 Para desenvolvimento local (Supabase via Docker ou modo demo sem infraestrutura), siga o `LOCAL_SETUP.md`.

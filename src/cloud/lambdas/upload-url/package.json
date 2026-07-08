@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Presigned S3 PUT URLs for portal uploads (AWS SDK v3 ships with the Node 20 runtime)"
+  "description": "Presigned S3 PUT URLs for portal uploads (AWS SDK v3 ships with the Node 20 runtime)",
+  "dependencies": {
+    "pg": "^8.12.0"
+  }
 }

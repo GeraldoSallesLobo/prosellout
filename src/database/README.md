@@ -21,7 +21,7 @@ supabase/
 └── seed.sql                                 # AUTO-GERADO da amostra real (ver docs/VALIDACAO_AMOSTRA.md)
 ```
 
-> `seed.sql` é gerado pelo script a partir dos arquivos reais — **não editar à mão**; regenerar com `python3 scripts/generate_seed_from_sample.py`.
+> `seed.sql` é gerado pelo script a partir dos arquivos reais — **não editar à mão**; regenerar com `python3 scripts/generate_seed_from_sample.py` dentro de `src/database/`, ou `python3 src/database/scripts/generate_seed_from_sample.py` na raiz do repo.
 
 ## Setup
 
@@ -39,21 +39,21 @@ psql "$DATABASE_URL" -f supabase/seed.sql   # opcional: dados de demo
 Pré-requisito: Docker Desktop rodando + Supabase CLI (`brew install supabase/tap/supabase`).
 
 ```bash
-cd database
+cd src/database
 supabase start      # sobe Postgres/Auth/Studio locais e imprime a anon key
 supabase db reset   # aplica migrations + seed (dados de demonstração)
 ```
 
 Serviços locais: API `http://127.0.0.1:54321` · Studio `http://127.0.0.1:54323` · Postgres `54322`.
 
-Depois, no frontend (`frontend/.env.local`):
+Depois, no frontend (`src/frontend/.env.local`):
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key impressa pelo supabase start — reveja com `supabase status`>
 ```
 
-Crie o usuário de login no Studio: Authentication › Users › **Add user** (marque "Auto confirm"). Aí `npm run dev` no frontend usa o banco local com auth real.
+O seed cria o login local `admin@email.com` / `admin123456` e vincula esse usuário ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
 
 ## Decisões para alto volume
 
@@ -64,7 +64,7 @@ Crie o usuário de login no Studio: Authentication › Users › **Add user** (m
 
 ## Tipos de arquivo de importação
 
-`file_type_configs` (seed) registra os tipos aceitos pela tela de Importação. Hoje **apenas `SELL_OUT` e `SELL_IN` têm pipeline de ETL completo** (staging + `process_*_staging` + spec nas Lambdas). Os demais (`CUSTOMERS`, `TARGETS`, `STOCK`, `PLANNER`, `PRODUCTS`) estão cadastrados, mas processá-los exige criar: tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas do repo `cloud` — ver contratos no `CLAUDE.md` da raiz.
+`file_type_configs` (seed) registra os tipos aceitos pela tela de Importação. Hoje **apenas `SELL_OUT` e `SELL_IN` têm pipeline de ETL completo** (staging + `process_*_staging` + spec nas Lambdas). Os demais (`CUSTOMERS`, `TARGETS`, `STOCK`, `PLANNER`, `PRODUCTS`) estão cadastrados, mas processá-los exige criar: tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas em `src/cloud` — ver contratos no `CLAUDE.md` da raiz.
 
 ## Restrições do seed
 

@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { UPLOAD_API_URL } from "@/lib/env";
 import type { FileImport, FileImportLog, FileTypeConfig, ImportStatus } from "@/types/domain";
 import {
   DEMO_FILE_IMPORTS,
@@ -126,6 +127,22 @@ export async function updateFileTypeConfig(input: FileTypeConfig): Promise<void>
   if (error) throw error;
 }
 
+async function fetchCurrentDistributorId(): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return "demo-distributor-id";
+
+  const { data, error } = await supabase
+    .from("distributor_users")
+    .select("distributor_id")
+    .eq("status", "active")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .single();
+  if (error) throw error;
+
+  return String(data.distributor_id);
+}
+
 /**
  * Registers an import and returns its id. The actual file goes to S3 through
  * a presigned URL (cloud repo); the ETL takes over from there.
@@ -142,6 +159,7 @@ export async function registerFileImport(input: {
   }
 
   const { data: userData } = await supabase.auth.getUser();
+  const distributorId = await fetchCurrentDistributorId();
   const { data, error } = await supabase
     .from("file_imports")
     .insert({
@@ -149,9 +167,66 @@ export async function registerFileImport(input: {
       sheet_name: input.sheetName,
       file_type_id: input.fileTypeId,
       imported_by: userData.user?.id ?? null,
+      distributor_id: distributorId,
     })
     .select("id")
     .single();
   if (error) throw error;
   return data.id;
+}
+
+async function uploadFileToStorage(importId: string, file: File): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase || !UPLOAD_API_URL) return;
+
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) throw new Error("Missing authenticated session");
+
+  const uploadUrlResponse = await fetch(UPLOAD_API_URL, {
+    method: "POST",
+    headers: {
+      "authorization": `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      importId,
+      fileName: file.name,
+      contentType: file.type || "application/octet-stream",
+    }),
+  });
+
+  if (!uploadUrlResponse.ok) {
+    throw new Error("Could not create upload URL");
+  }
+
+  const { uploadUrl } = (await uploadUrlResponse.json()) as { uploadUrl: string };
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "content-type": file.type || "application/octet-stream",
+    },
+    body: file,
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error("Could not upload file");
+  }
+}
+
+export async function registerAndUploadFileImport(input: {
+  file: File;
+  sheetName: string | null;
+  fileTypeId: string;
+}): Promise<string> {
+  const importId = await registerFileImport({
+    fileName: input.file.name,
+    sheetName: input.sheetName,
+    fileTypeId: input.fileTypeId,
+  });
+
+  await uploadFileToStorage(importId, input.file);
+  return importId;
 }

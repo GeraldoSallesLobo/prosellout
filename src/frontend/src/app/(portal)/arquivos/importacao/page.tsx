@@ -14,7 +14,7 @@ import {
   fetchFileImports,
   fetchFileTypeConfigs,
   fetchImportLogs,
-  registerFileImport,
+  registerAndUploadFileImport,
 } from "@/lib/data/imports";
 import { formatInteger } from "@/lib/format";
 import type { FileImport, ImportStatus } from "@/types/domain";
@@ -70,8 +70,8 @@ export default function FileImportPage() {
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!selectedFile || !uploadTypeId) return;
-      await registerFileImport({
-        fileName: selectedFile.name,
+      await registerAndUploadFileImport({
+        file: selectedFile,
         sheetName: null,
         fileTypeId: uploadTypeId,
       });

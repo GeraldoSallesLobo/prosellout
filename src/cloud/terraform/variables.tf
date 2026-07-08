@@ -26,6 +26,17 @@ variable "database_url" {
   sensitive   = true
 }
 
+variable "supabase_url" {
+  description = "Supabase project API URL used by upload-url to validate user JWTs"
+  type        = string
+}
+
+variable "supabase_anon_key" {
+  description = "Supabase anon key used by upload-url to call Auth /user"
+  type        = string
+  sensitive   = true
+}
+
 variable "portal_origin" {
   description = "Frontend origin allowed to upload via presigned URLs (CORS)"
   type        = string

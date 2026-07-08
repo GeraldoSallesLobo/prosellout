@@ -4,17 +4,17 @@ A pasta `.dev_files/dados-importacao` traz uma amostra real (um distribuidor, da
 
 ## Como carregar
 
-O seed já foi gerado a partir da amostra (`database/supabase/seed.sql`). Para recarregar:
+O seed já foi gerado a partir da amostra (`src/database/supabase/seed.sql`). Para recarregar:
 
 ```bash
-cd database
+cd src/database
 supabase db reset      # aplica migrations + seed real
 ```
 
 Para regerar o seed a partir dos arquivos (se a amostra mudar):
 
 ```bash
-python3 database/scripts/generate_seed_from_sample.py
+python3 src/database/scripts/generate_seed_from_sample.py
 ```
 
 ## O que o seed carrega

@@ -41,7 +41,10 @@ resource "aws_lambda_function" "upload_url" {
 
   environment {
     variables = {
-      BUCKET_NAME = aws_s3_bucket.imports.bucket
+      BUCKET_NAME       = aws_s3_bucket.imports.bucket
+      DATABASE_URL      = var.database_url
+      SUPABASE_ANON_KEY = var.supabase_anon_key
+      SUPABASE_URL      = var.supabase_url
     }
   }
 }
@@ -53,7 +56,7 @@ resource "aws_lambda_function_url" "upload_url" {
   cors {
     allow_origins = [var.portal_origin, "http://localhost:3000"]
     allow_methods = ["POST"]
-    allow_headers = ["content-type"]
+    allow_headers = ["authorization", "content-type"]
   }
 }
 

@@ -34,13 +34,15 @@ cd terraform
 terraform init
 terraform apply \
   -var 'database_url=postgresql://postgres:...@db.<ref>.supabase.co:5432/postgres' \
+  -var 'supabase_url=https://<ref>.supabase.co' \
+  -var 'supabase_anon_key=<anon-key>' \
   -var 'portal_origin=https://portal.prosellout.com.br' \
   -var 'alarm_email=ops@empresa.com.br'
 ```
 
 Importante: use a conexão **direta ou pooler em session mode (porta 5432)** do Supabase — o pooler em transaction mode (6543) não suporta `COPY` streaming.
 
-Saída `upload_api_url` → configure como `NEXT_PUBLIC_UPLOAD_API_URL` no frontend.
+Saída `upload_api_url` → configure como `NEXT_PUBLIC_UPLOAD_API_URL` no frontend. O endpoint `/upload-url` exige `Authorization: Bearer <access_token>` e só emite URL para importações `pending` pertencentes ao usuário autenticado e ao distribuidor ativo dele.
 
 ## Estrutura
 
