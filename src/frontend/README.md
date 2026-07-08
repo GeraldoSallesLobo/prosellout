@@ -47,6 +47,7 @@ src/
 ## Padrões
 
 - **Camada de dados com fallback demo**: toda função de `lib/data/*` tem caminho Supabase e caminho demo com o mesmo contrato — as telas não sabem qual está ativo.
+- **Cache por sessão**: o `AppProviders` escuta mudanças do Supabase Auth e limpa o TanStack Query quando o usuário muda ou desloga, evitando dados de uma sessão anterior após novo login.
 - **Filtros persistentes**: seleção de período/dimensões fica em `sessionStorage` ao navegar entre relatórios.
 - **Tabelas (`DataTable`)**: paginação no servidor (`range()`), tamanho de página configurável, ordenação e busca por coluna — server-side via PostgREST (`order`/`ilike`) no modo conectado, em memória no demo. Clientes suporta multi-seleção de canais.
 - **Badge-toggle**: telas consolidadas (Análise Status e Análise Evolução) trocam o agrupamento sem recarregar.

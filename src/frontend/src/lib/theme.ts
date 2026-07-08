@@ -1,8 +1,8 @@
 export type Theme = "dark" | "light";
 
 export const THEME_STORAGE_KEY = "prosellout.theme";
-export const DEFAULT_THEME: Theme = "dark";
-export const THEMES: readonly Theme[] = ["dark", "light"];
+export const DEFAULT_THEME: Theme = "light";
+export const THEMES: readonly Theme[] = ["light", "dark"];
 
 export function isTheme(value: unknown): value is Theme {
   return value === "dark" || value === "light";
