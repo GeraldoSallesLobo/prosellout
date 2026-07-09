@@ -25,6 +25,8 @@ supabase/
 
 > `seed.sql` é gerado pelo script a partir dos arquivos reais — **não editar à mão**; regenerar com `python3 scripts/generate_seed_from_sample.py` dentro de `src/database/`, ou `python3 src/database/scripts/generate_seed_from_sample.py` na raiz do repo.
 
+
+
 ## Setup
 
 ```bash
@@ -35,6 +37,8 @@ supabase link --project-ref <ref-do-projeto>
 supabase db push              # aplica as migrations
 psql "$DATABASE_URL" -f supabase/seed.sql   # opcional: dados de demo
 ```
+
+
 
 ## Rodando local (sem projeto na nuvem)
 
@@ -51,6 +55,7 @@ Para testar importação em uma base limpa, sem carregar a amostra real:
 ```bash
 cd src/database
 supabase db reset --sql-paths ./seeds/admin-only.sql
+supabase db reset --linked --sql-paths ./seeds/admin-only.sql
 ```
 
 Esse comando aplica todas as migrations e roda apenas o seed mínimo. Ele cria
@@ -81,6 +86,8 @@ O seed padrão cria o admin local `admin@email.com` / `123321` em `admin_users` 
 - Relatórios usam `mv_sell_out_daily` para somas; cobertura (distinct clientes) calculada na partição do período com índices dedicados.
 - `refresh_report_views()` roda após cada carga (chamada pelo ETL) e às 4h via pg_cron.
 
+
+
 ## Tipos de arquivo de importação
 
 `file_type_configs` (seed) registra os tipos conhecidos pela tela de Arquivos. Os layouts reais de `CUSTOMERS`, `PRODUCTS`, `SELLERS`, `TARGETS`, `SELL_OUT` e `SELL_IN` têm pipeline completo (staging + `process_*_staging` + spec nas Lambdas) e ficam ativos para upload. Novos tipos futuros, como `STOCK` ou `PLANNER`, exigem criar tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas em `src/cloud` — ver contratos no `CLAUDE.md` da raiz.
@@ -91,14 +98,16 @@ O Supabase CLI envia o `seed.sql` como lote de prepared statements: **todos os s
 
 ## Contratos de RPC (frontend)
 
-| Função | Retorno | Tela |
-|---|---|---|
-| `report_status_mtd(...)` | jsonb com 12 KPIs (atual/meta/anterior + variações) | Status MTD |
-| `report_status_analysis(group_by, ...)` | tabela por vendedor/categoria/canal | Status › Análise |
-| `report_fast_facts(...)` | jsonb por dimensão (atingiram meta, melhor/pior, probabilidade) | Fast Facts |
-| `report_evolution_weekly(...)` | buckets semanais | Evoluções › Mensal |
-| `report_three_month_history(...)` | 3 linhas mensais | Evoluções › 3M |
-| `report_evolution_analysis(group_by, ...)` | atual × anterior por grupo | Evoluções › Análise |
+
+| Função                                     | Retorno                                                         | Tela                |
+| ------------------------------------------ | --------------------------------------------------------------- | ------------------- |
+| `report_status_mtd(...)`                   | jsonb com 12 KPIs (atual/meta/anterior + variações)             | Status MTD          |
+| `report_status_analysis(group_by, ...)`    | tabela por vendedor/categoria/canal                             | Status › Análise    |
+| `report_fast_facts(...)`                   | jsonb por dimensão (atingiram meta, melhor/pior, probabilidade) | Fast Facts          |
+| `report_evolution_weekly(...)`             | buckets semanais                                                | Evoluções › Mensal  |
+| `report_three_month_history(...)`          | 3 linhas mensais                                                | Evoluções › 3M      |
+| `report_evolution_analysis(group_by, ...)` | atual × anterior por grupo                                      | Evoluções › Análise |
+
 
 Todas `security definer` com `search_path = public`; execução liberada apenas para `authenticated`. Funções de ETL são exclusivas do service role.
 
