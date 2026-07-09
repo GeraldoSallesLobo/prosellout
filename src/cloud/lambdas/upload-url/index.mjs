@@ -79,6 +79,13 @@ async function canUploadImport(database, importId, userId) {
   return rows.length > 0;
 }
 
+async function updateImportStorageKey(database, importId, storageKey) {
+  await database.query(
+    "update file_imports set storage_key = $2 where id = $1",
+    [importId, storageKey],
+  );
+}
+
 /**
  * POST { importId, fileName, contentType } -> { uploadUrl, key }
  * The portal registers the import in Supabase first (file_imports insert) and
@@ -109,6 +116,13 @@ export async function handler(event) {
     return jsonResponse(400, { error: `extension must be one of ${ALLOWED_EXTENSIONS.join(", ")}` });
   }
 
+  const key = `uploads/${importId}/${sanitizeFileName(fileName)}`;
+  const command = new PutObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: key,
+    ContentType: contentType ?? "application/octet-stream",
+  });
+
   let database;
   try {
     const userId = await getAuthenticatedUserId(accessToken);
@@ -121,20 +135,14 @@ export async function handler(event) {
     if (!hasImportAccess) {
       return jsonResponse(403, { error: "import does not belong to current user or is not pending" });
     }
+
+    const uploadUrl = await getSignedUrl(s3, command, {
+      expiresIn: URL_EXPIRATION_SECONDS,
+    });
+    await updateImportStorageKey(database, importId, key);
+
+    return jsonResponse(200, { uploadUrl, key });
   } finally {
     await database?.end();
   }
-
-  const key = `uploads/${importId}/${sanitizeFileName(fileName)}`;
-  const command = new PutObjectCommand({
-    Bucket: process.env.BUCKET_NAME,
-    Key: key,
-    ContentType: contentType ?? "application/octet-stream",
-  });
-
-  const uploadUrl = await getSignedUrl(s3, command, {
-    expiresIn: URL_EXPIRATION_SECONDS,
-  });
-
-  return jsonResponse(200, { uploadUrl, key });
 }

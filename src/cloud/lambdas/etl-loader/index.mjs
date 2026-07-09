@@ -27,6 +27,42 @@ const TABLE_SPECS = {
       "invoice_number", "invoice_date", "quantity", "gross_value", "unit_cost",
     ],
   },
+  customers: {
+    stagingTable: "staging_customers",
+    processFunction: "process_customers_staging",
+    columns: [
+      "import_id", "line_number", "distributor_code", "customer_pdv_code",
+      "customer_cnpj", "legal_name", "trade_name", "address", "district",
+      "city", "state", "zip_code", "channel_name", "cluster_name",
+    ],
+  },
+  products: {
+    stagingTable: "staging_products",
+    processFunction: "process_products_staging",
+    columns: [
+      "import_id", "line_number", "distributor_code", "product_ean",
+      "product_name", "box_count", "units_per_pack", "subcategory_name",
+      "category_name", "macro_category_name", "sku_code",
+    ],
+  },
+  sales_reps: {
+    stagingTable: "staging_sellers",
+    processFunction: "process_sellers_staging",
+    columns: [
+      "import_id", "line_number", "distributor_code", "seller_code",
+      "seller_name", "portfolio_size", "supervisor_code", "supervisor_name",
+      "manager_code", "manager_name",
+    ],
+  },
+  sales_targets: {
+    stagingTable: "staging_targets",
+    processFunction: "process_targets_staging",
+    columns: [
+      "import_id", "line_number", "distributor_code", "customer_pdv_code",
+      "customer_cnpj", "sales_rep_code", "product_ean", "target_date",
+      "delivery_date", "quantity", "gross_value",
+    ],
+  },
 };
 
 async function connectDatabase() {

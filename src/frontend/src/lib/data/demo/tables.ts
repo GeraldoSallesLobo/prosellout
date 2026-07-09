@@ -103,11 +103,12 @@ export const DEMO_TARGET_ROWS: TargetRow[] = (() => {
 export const DEMO_FILE_TYPE_CONFIGS: FileTypeConfig[] = [
   { id: "ftc-1", code: "SELL_OUT", name: "Sell Out Distribuidor", targetTable: "sell_out", processingRoutine: "process_sell_out_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
   { id: "ftc-2", code: "SELL_IN", name: "Sell In Indústria", targetTable: "sell_in", processingRoutine: "process_sell_in_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-3", code: "CUSTOMERS", name: "Base de Clientes", targetTable: "customers", processingRoutine: "upsert_customers", fileFormat: "csv", origin: "upload", status: "active" },
-  { id: "ftc-4", code: "TARGETS", name: "Metas por Cliente/SKU", targetTable: "sales_targets", processingRoutine: "upsert_targets", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-5", code: "STOCK", name: "Estoque Distribuidor", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
-  { id: "ftc-6", code: "PLANNER", name: "Planificador", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-7", code: "PRODUCTS", name: "Base de Produtos", targetTable: "products", processingRoutine: "upsert_products", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-3", code: "CUSTOMERS", name: "Base de Clientes", targetTable: "customers", processingRoutine: "process_customers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-4", code: "PRODUCTS", name: "Base de Produtos", targetTable: "products", processingRoutine: "process_products_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-5", code: "SELLERS", name: "Base de Vendedores", targetTable: "sales_reps", processingRoutine: "process_sellers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-6", code: "TARGETS", name: "Metas por Cliente/SKU", targetTable: "sales_targets", processingRoutine: "process_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-7", code: "STOCK", name: "Estoque Distribuidor", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
+  { id: "ftc-8", code: "PLANNER", name: "Planificador", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "inactive" },
 ];
 
 /** Fontes cíclicas do histórico demo, para o filtro "Tipo Arquivo" ter resultados variados. */

@@ -110,7 +110,7 @@ Abra `http://localhost:3000` → você será redirecionado para `/login` → ent
 4. **Tabelas** — nas telas de Dados (Sell Out, Clientes etc.): paginação no servidor, ordenação e busca por coluna.
 5. **Export com feedback** — botão Exportar em qualquer relatório: gera CSV respeitando os filtros ativos e mostra toast de sucesso.
 6. **Cadastros** — inclua um distribuidor ou um nó de hierarquia: modal + toast + atualização imediata (grava no banco local de verdade).
-7. **Importação** (`/arquivos/importacao`) — histórico com status e log de erros por linha vindos do seed. *O processamento automático de novos uploads depende do deploy do repo `cloud` na AWS — localmente o upload apenas registra a importação.*
+7. **Importação** (`/arquivos/importacao`) — histórico com status e log de erros por linha vindos do seed. *Novos uploads exigem `NEXT_PUBLIC_UPLOAD_API_URL` apontando para o deploy AWS do repo `cloud`; sem essa URL, a tela mantém o histórico, mas não processa arquivos novos. Os layouts esperados ficam em `docs/IMPORTACAO_ARQUIVOS.md`.*
 8. **Skeleton loading** — recarregue qualquer relatório e observe os placeholders animados durante a consulta.
 
 ## Problemas comuns

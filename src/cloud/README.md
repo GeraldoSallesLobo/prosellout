@@ -54,9 +54,9 @@ lambdas/
 └── etl-loader/     # COPY para staging + merge set-based
 ```
 
-## Adicionando um novo tipo de arquivo
+## Tipos de arquivo
 
-Hoje o ETL processa `sell_out` e `sell_in`. Para um novo tipo (ex.: metas, estoque):
+Hoje o ETL processa os layouts reais de clientes, produtos, vendedores, metas, sell-out e sell-in: `customers`, `products`, `sales_reps`, `sales_targets`, `sell_out` e `sell_in`. Para um novo tipo futuro (ex.: estoque físico ou planificador):
 
 1. No `database/`: criar tabela `staging_*` + função `process_*_staging` (migration) e registrar em `file_type_configs`.
 2. Aqui: adicionar a entrada em `TABLE_SPECS` no `file-validator/index.mjs` (colunas canônicas + aliases de cabeçalho pt-BR) **e** no `etl-loader/index.mjs` (mesmas colunas, **na mesma ordem** — o COPY é posicional).

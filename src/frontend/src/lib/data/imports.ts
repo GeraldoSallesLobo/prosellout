@@ -15,6 +15,19 @@ export interface ImportFilters {
   end?: string;
 }
 
+const UPLOADABLE_TARGET_TABLES = new Set([
+  "sell_out",
+  "sell_in",
+  "customers",
+  "products",
+  "sales_reps",
+  "sales_targets",
+]);
+
+export function canUploadFileType(config: FileTypeConfig): boolean {
+  return config.status === "active" && UPLOADABLE_TARGET_TABLES.has(config.targetTable);
+}
+
 export async function fetchFileImports(filters: ImportFilters): Promise<FileImport[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -177,13 +190,16 @@ export async function registerFileImport(input: {
 
 async function uploadFileToStorage(importId: string, file: File): Promise<void> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase || !UPLOAD_API_URL) return;
+  if (!supabase) return;
+  if (!UPLOAD_API_URL) {
+    throw new Error("A URL da API de upload não está configurada.");
+  }
 
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw sessionError;
 
   const accessToken = sessionData.session?.access_token;
-  if (!accessToken) throw new Error("Missing authenticated session");
+  if (!accessToken) throw new Error("Sessão autenticada ausente.");
 
   const uploadUrlResponse = await fetch(UPLOAD_API_URL, {
     method: "POST",
@@ -199,7 +215,8 @@ async function uploadFileToStorage(importId: string, file: File): Promise<void> 
   });
 
   if (!uploadUrlResponse.ok) {
-    throw new Error("Could not create upload URL");
+    const responseText = await uploadUrlResponse.text();
+    throw new Error(responseText || "Could not create upload URL");
   }
 
   const { uploadUrl } = (await uploadUrlResponse.json()) as { uploadUrl: string };
@@ -221,6 +238,11 @@ export async function registerAndUploadFileImport(input: {
   sheetName: string | null;
   fileTypeId: string;
 }): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
+  if (supabase && !UPLOAD_API_URL) {
+    throw new Error("A URL da API de upload não está configurada.");
+  }
+
   const importId = await registerFileImport({
     fileName: input.file.name,
     sheetName: input.sheetName,

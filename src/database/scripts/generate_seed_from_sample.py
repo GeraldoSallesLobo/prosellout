@@ -246,18 +246,25 @@ def main() -> None:
 
     # File type configs + a small import history so the Arquivos screens have content.
     ftc = [
-        ("SELL_OUT", "Sell Out Distribuidor", "sell_out", "process_sell_out_staging", "xlsx"),
-        ("SELL_IN", "Sell In Indústria", "sell_in", "process_sell_in_staging", "xlsx"),
-        ("CUSTOMERS", "Base de Clientes", "customers", "upsert_customers", "xlsx"),
-        ("PRODUCTS", "Base de Produtos", "products", "upsert_products", "xlsx"),
-        ("SELLERS", "Base de Vendedores", "sales_reps", "upsert_sellers", "xlsx"),
-        ("TARGETS", "Metas por Cliente/SKU", "sales_targets", "upsert_targets", "xlsx"),
+        ("SELL_OUT", "Sell Out Distribuidor", "sell_out", "process_sell_out_staging", "xlsx", "active"),
+        ("SELL_IN", "Sell In Indústria", "sell_in", "process_sell_in_staging", "xlsx", "active"),
+        ("CUSTOMERS", "Base de Clientes", "customers", "process_customers_staging", "xlsx", "active"),
+        ("PRODUCTS", "Base de Produtos", "products", "process_products_staging", "xlsx", "active"),
+        ("SELLERS", "Base de Vendedores", "sales_reps", "process_sellers_staging", "xlsx", "active"),
+        ("TARGETS", "Metas por Cliente/SKU", "sales_targets", "process_targets_staging", "xlsx", "active"),
     ]
     ftc_id = {code: uid("ftc", code) for code, *_ in ftc}
-    w("insert into file_type_configs (id, code, name, target_table, processing_routine, file_format) values")
+    w("insert into file_type_configs (id, code, name, target_table, processing_routine, file_format, status) values")
     w(",\n".join(
-        f"  ('{ftc_id[code]}', {sql_str(code)}, {sql_str(name)}, {sql_str(tbl)}, {sql_str(rout)}, {sql_str(fmt)})"
-        for code, name, tbl, rout, fmt in ftc) + ";\n")
+        f"  ('{ftc_id[code]}', {sql_str(code)}, {sql_str(name)}, {sql_str(tbl)}, {sql_str(rout)}, {sql_str(fmt)}, {sql_str(status)})"
+        for code, name, tbl, rout, fmt, status in ftc) + "\n"
+      "on conflict (code) do update set\n"
+      "  name = excluded.name,\n"
+      "  target_table = excluded.target_table,\n"
+      "  processing_routine = excluded.processing_routine,\n"
+      "  file_format = excluded.file_format,\n"
+      "  status = excluded.status,\n"
+      "  updated_at = now();\n")
 
     imports = [
         ("Layout SellOut.xlsx", "SELL_OUT", "completed", 3374, 3057, 0),

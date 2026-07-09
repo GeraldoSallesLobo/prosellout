@@ -17,6 +17,7 @@ Documentação:
 | Arquivo | Conteúdo |
 |---|---|
 | `LOCAL_SETUP.md` | Rodar localmente (modo demo e banco local), criar usuário, roteiro de teste |
+| `docs/IMPORTACAO_ARQUIVOS.md` | Contratos de layout para uploads em Arquivos › Importação |
 | `CUSTOS.md` | Estimativa de custos de nuvem (AWS + Supabase) por fase de crescimento |
 | `CLAUDE.md` | Guia para agentes/devs: convenções, contratos entre camadas, regras de negócio, armadilhas |
 | `*/README.md` | Detalhes de cada camada |

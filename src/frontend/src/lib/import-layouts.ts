@@ -1,0 +1,184 @@
+import type { FileTypeConfig } from "@/types/domain";
+
+export type ImportLayoutStatus = "ready" | "planned";
+
+export interface ImportLayoutSpec {
+  code: string;
+  title: string;
+  screen: string;
+  targetTable: string;
+  status: ImportLayoutStatus;
+  summary: string;
+  requiredColumns: string[];
+  optionalColumns: string[];
+  notes: string[];
+}
+
+const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
+  {
+    code: "CUSTOMERS",
+    title: "Base de Clientes",
+    screen: "Dados › Clientes",
+    targetTable: "customers",
+    status: "ready",
+    summary: "Atualiza os PDVs/clientes do distribuidor, canal e cluster.",
+    requiredColumns: ["CNPJ Distribuidor", "Cód. PDV", "Razão Social"],
+    optionalColumns: [
+      "CNPJ/CPF",
+      "Nome Fantasia",
+      "Endereço",
+      "Bairro",
+      "Cidade",
+      "UF",
+      "CEP",
+      "Canal do PDV",
+      "CLUSTER",
+    ],
+    notes: [
+      "O PDV é identificado por distribuidor + Cód. PDV.",
+      "Canal e cluster são criados/reativados automaticamente quando informados.",
+    ],
+  },
+  {
+    code: "PRODUCTS",
+    title: "Base de Produtos",
+    screen: "Cadastros › Hierarquia de Produtos",
+    targetTable: "products",
+    status: "ready",
+    summary: "Atualiza produtos e a árvore macro categoria › categoria › subcategoria.",
+    requiredColumns: [
+      "CNPJ Distribuidor",
+      "EAN",
+      "Descrição",
+      "SubCategoria",
+      "Categoria",
+      "Macrocategoria",
+    ],
+    optionalColumns: ["Caixa", "Unidades", "CÓD SKU"],
+    notes: [
+      "EAN de 13 e 14 dígitos é normalizado no cruzamento com sell-out/sell-in.",
+      "Se Unidades vier vazio, o sistema assume 1 unidade por embalagem.",
+    ],
+  },
+  {
+    code: "SELLERS",
+    title: "Base de Vendedores",
+    screen: "Dados › Vendedores",
+    targetTable: "sales_reps",
+    status: "ready",
+    summary: "Atualiza vendedores e seus supervisores na hierarquia comercial.",
+    requiredColumns: ["CNPJ Distribuidor", "Cód. Vendedor", "Nome Vendedor", "Cód. Supervisor"],
+    optionalColumns: [
+      "Quantidade clientes (carteira)",
+      "Nome Supervisor",
+      "Cód. Gerente",
+      "Nome Gerente",
+    ],
+    notes: [
+      "Supervisores são criados automaticamente a partir do código informado.",
+      "Gerente é preservado como dado de layout, mas ainda não alimenta uma hierarquia própria.",
+    ],
+  },
+  {
+    code: "TARGETS",
+    title: "Metas por Cliente/SKU",
+    screen: "Dados › Meta",
+    targetTable: "sales_targets",
+    status: "ready",
+    summary: "Grava metas por cliente, produto e mês.",
+    requiredColumns: [
+      "CNPJ Distribuidor",
+      "EAN",
+      "Cód. PDV",
+      "Volume Total de Unidades NF",
+      "Valor Total R$ NF",
+      "Data Faturamento",
+    ],
+    optionalColumns: ["Cód. Vendedor", "Data Entrega", "CNPJ/CPF"],
+    notes: [
+      "Data Faturamento define o mês da meta.",
+      "Linhas repetidas no mesmo cliente + SKU + mês são somadas dentro da importação.",
+    ],
+  },
+  {
+    code: "SELL_OUT",
+    title: "Sell Out Distribuidor",
+    screen: "Dados › Sell Out",
+    targetTable: "sell_out",
+    status: "ready",
+    summary: "Grava vendas do distribuidor para PDV/cliente por produto.",
+    requiredColumns: [
+      "CNPJ Distribuidor",
+      "EAN",
+      "Cód. PDV",
+      "Cód. Vendedor",
+      "Volume Total de Unidades NF",
+      "Valor Total R$ NF",
+      "Data Faturamento",
+    ],
+    optionalColumns: ["Data Entrega", "NF", "Custo Unitário", "CNPJ/CPF"],
+    notes: [
+      "Cliente precisa existir na Base de Clientes e produto precisa existir na Base de Produtos.",
+      "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
+    ],
+  },
+  {
+    code: "SELL_IN",
+    title: "Sell In Indústria",
+    screen: "Dados › Sell In",
+    targetTable: "sell_in",
+    status: "ready",
+    summary: "Grava compras/entrada do distribuidor por produto.",
+    requiredColumns: [
+      "CNPJ Distribuidor",
+      "EAN",
+      "Volume Total de Unidades NF",
+      "Valor Total R$ NF",
+      "Data de Faturamento",
+    ],
+    optionalColumns: ["NF", "Custo Unitário"],
+    notes: [
+      "Produto precisa existir na Base de Produtos.",
+      "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
+    ],
+  },
+  {
+    code: "STOCK",
+    title: "Estoque Distribuidor",
+    screen: "Dados › Estoque",
+    targetTable: "stock_snapshots",
+    status: "planned",
+    summary: "Representará a posição física de estoque por distribuidor e produto.",
+    requiredColumns: ["CNPJ Distribuidor", "EAN", "Data Estoque", "Quantidade"],
+    optionalColumns: ["Valor Estoque"],
+    notes: [
+      "Ainda precisa de amostra real para fechar o contrato e ativar o pipeline AWS.",
+      "Hoje alguns KPIs calculam volume de estoque como Sell In − Sell Out.",
+    ],
+  },
+  {
+    code: "PLANNER",
+    title: "Planificador",
+    screen: "Planificador › Batalha Naval",
+    targetTable: "planner_entries",
+    status: "planned",
+    summary: "Representará entradas ou recomendações da matriz cliente × SKU.",
+    requiredColumns: ["Cód. PDV", "EAN", "Cód. Vendedor", "Prioridade ou Recomendação"],
+    optionalColumns: ["Volume Sugerido", "Valor Sugerido", "Motivo", "Data Referência"],
+    notes: [
+      "Ainda não existe tabela real no banco; a amostra vai definir se será importação própria ou cálculo derivado.",
+      "A tela atual usa uma matriz demo até a regra real ser fechada.",
+    ],
+  },
+];
+
+const SPECS_BY_CODE = new Map(IMPORT_LAYOUT_SPECS.map((spec) => [spec.code, spec]));
+const SPECS_BY_TARGET_TABLE = new Map(
+  IMPORT_LAYOUT_SPECS.map((spec) => [spec.targetTable, spec]),
+);
+
+export function getImportLayoutSpec(config: FileTypeConfig | null | undefined): ImportLayoutSpec | null {
+  if (!config) return null;
+  return SPECS_BY_CODE.get(config.code) ?? SPECS_BY_TARGET_TABLE.get(config.targetTable) ?? null;
+}
+

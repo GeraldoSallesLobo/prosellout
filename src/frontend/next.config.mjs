@@ -1,13 +1,30 @@
 /** @type {import('next').NextConfig} */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const uploadApiUrl = process.env.NEXT_PUBLIC_UPLOAD_API_URL ?? "";
 const supabaseConnectSources = supabaseUrl
   ? `${supabaseUrl} ${supabaseUrl.replace(/^http/, "ws")}`
   : "";
 
-// 'unsafe-inline'/'unsafe-eval' em script-src são exigidos pelo runtime do
-// Next.js (e pelo script inline de tema); os demais diretivos continuam
-// bloqueando embedding, plugins e conexões a origens não confiáveis.
+function getOrigin(url) {
+  if (!url) return "";
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+}
+
+const uploadApiOrigin = getOrigin(uploadApiUrl);
+const uploadConnectSources = [
+  uploadApiOrigin,
+  "https://*.amazonaws.com",
+  "https://*.on.aws",
+].filter(Boolean).join(" ");
+
+// 'unsafe-inline'/'unsafe-eval' in script-src are required by the Next.js
+// runtime and the inline theme script; the remaining directives keep embeds,
+// plugins and untrusted connection origins blocked.
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -16,7 +33,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   // The Supabase origin comes from the env so local dev (http://127.0.0.1:54321)
   // works — the wildcard alone only matches hosted projects.
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.amazonaws.com ${supabaseConnectSources}`.trim(),
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${uploadConnectSources} ${supabaseConnectSources}`.trim(),
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -34,11 +51,9 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
-  // Sem NEXT_PUBLIC_SUPABASE_* definidas, o portal roda em modo demo. O
-  // middleware exige o opt-in explícito NEXT_PUBLIC_DEMO_MODE=true para não
-  // retornar 503 em produção (fail-closed). Este default liga o demo por
-  // padrão no deploy; defina as vars do Supabase no Vercel para usar o backend
-  // real, ou NEXT_PUBLIC_DEMO_MODE=false para exigir autenticação.
+  // Without NEXT_PUBLIC_SUPABASE_* vars the portal runs in demo mode. The
+  // middleware requires explicit NEXT_PUBLIC_DEMO_MODE=true in production to
+  // avoid fail-open access; set Supabase env vars to use the real backend.
   env: {
     NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE ?? "true",
   },

@@ -11,7 +11,9 @@ import { DateField, FieldWrapper, SelectField } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { useToast } from "@/components/ui/toast";
+import { ImportLayoutHelp } from "@/components/imports/import-layout-help";
 import {
+  canUploadFileType,
   fetchFileImports,
   fetchFileTypeConfigs,
   fetchImportLogs,
@@ -67,6 +69,9 @@ function FileImportContent() {
     queryFn: () => fetchImportLogs(logImport!.id),
     enabled: Boolean(logImport),
   });
+  const uploadFileTypes = fileTypes.filter(canUploadFileType);
+  const selectedUploadType =
+    uploadFileTypes.find((fileType) => fileType.id === uploadTypeId) ?? null;
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -86,7 +91,11 @@ function FileImportContent() {
       setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ["file-imports"] });
     },
-    onError: () => showToast("error", "Erro ao registrar importação."),
+    onError: (error) =>
+      showToast(
+        "error",
+        error instanceof Error ? error.message : "Erro ao registrar importação.",
+      ),
   });
 
   const columns: DataTableColumn<FileImport>[] = [
@@ -209,12 +218,11 @@ function FileImportContent() {
           <SelectField
             label="Tipo do Arquivo"
             allLabel="Selecione"
-            options={fileTypes
-              .filter((type) => type.status === "active")
-              .map((type) => ({ value: type.id, label: type.name }))}
+            options={uploadFileTypes.map((type) => ({ value: type.id, label: type.name }))}
             value={uploadTypeId}
             onChange={(event) => setUploadTypeId(event.target.value)}
           />
+          <ImportLayoutHelp config={selectedUploadType} />
           <FieldWrapper label="Arquivo (.xlsx ou .csv)">
             <input
               type="file"
