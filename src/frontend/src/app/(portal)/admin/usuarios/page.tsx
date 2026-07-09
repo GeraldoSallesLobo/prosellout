@@ -18,14 +18,13 @@ import {
   type DistributorUser,
 } from "@/lib/data/admin";
 
-const DEFAULT_PASSWORD = "123321";
 const CNPJ_DIGIT_COUNT = 14;
 const CNPJ_DIGIT_LIMIT = 14;
 const DISTRIBUTOR_CODE_PATTERN = /^[A-Z0-9_-]{3,32}$/;
 
 const EMPTY_FORM = {
   email: "",
-  password: DEFAULT_PASSWORD,
+  password: "",
   distributorCode: "",
   distributorName: "",
   distributorCnpj: "",
