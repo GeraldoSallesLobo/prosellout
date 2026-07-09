@@ -26,6 +26,9 @@ Terraform Cloud.
 
 - AWS CLI autenticado no profile `prosellout`.
 - Terraform instalado (`>= 1.6`; validado com `1.15.8`).
+- AWS CLI disponível no ambiente que roda Terraform. O deploy usa um
+  `terraform_data` idempotente para aplicar a policy `lambda:InvokeFunction`
+  exigida por Function URLs novas.
 - Supabase cloud com migrations aplicadas, incluindo
   `20260709015704_align_real_import_layout`.
 - Connection string Postgres do Supabase em conexão direta ou pooler session
@@ -187,6 +190,7 @@ AWS_PROFILE=prosellout AWS_REGION=sa-east-1 aws s3 ls s3://prosellout-prod-impor
 | Sintoma | Causa provável | Ação |
 |---|---|---|
 | POST para `upload-url` retorna 401/403 | Token do frontend pertence a outro Supabase ou usuário não tem distribuidor | Conferir `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_URL` da Lambda e vínculo em `distributor_users` |
+| POST retorna `Forbidden` com `x-amzn-errortype: AccessDeniedException` | Function URL sem resource policy completa | Garantir que Terraform aplicou a permissão `lambda:InvokeFunction` para a Lambda `upload-url` |
 | Erro de CORS no POST | Origem não está em `portal_origins` | Ajustar `TF_VAR_portal_origins` ou defaults e rodar `terraform apply` |
 | Erro de CORS no PUT S3 | Bucket CORS não tem a origem | Conferir `aws s3api get-bucket-cors` e reaplicar Terraform |
 | Importação fica `pending` | Frontend não chamou `upload-url` ou Vercel não foi redeployada após env var | Redeploy Vercel e verificar Network no browser |
@@ -208,4 +212,3 @@ Supabase cloud da AWS. Para validar banco local limpo sem acionar AWS prod, use:
 cd src/database
 supabase db reset --sql-paths ./seeds/admin-only.sql
 ```
-

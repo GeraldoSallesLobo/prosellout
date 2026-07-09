@@ -60,6 +60,39 @@ resource "aws_lambda_function_url" "upload_url" {
   }
 }
 
+resource "terraform_data" "allow_public_invoke_upload_url_function" {
+  input = {
+    function_name = aws_lambda_function.upload_url.function_name
+    statement_id  = "FunctionURLInvokeAllowPublicAccess"
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      set -euo pipefail
+      if aws lambda get-policy --function-name '${self.input.function_name}' --query Policy --output text 2>/dev/null | grep -q '${self.input.statement_id}'; then
+        exit 0
+      fi
+
+      aws lambda add-permission \
+        --function-name '${self.input.function_name}' \
+        --statement-id '${self.input.statement_id}' \
+        --action lambda:InvokeFunction \
+        --principal '*' >/dev/null
+    EOT
+  }
+
+  provisioner "local-exec" {
+    when        = destroy
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      aws lambda remove-permission \
+        --function-name '${self.input.function_name}' \
+        --statement-id '${self.input.statement_id}' >/dev/null 2>&1 || true
+    EOT
+  }
+}
+
 # ---------------------------------------------------------------------------
 # file-validator: S3 trigger — validates, splits into parts, enqueues
 # ---------------------------------------------------------------------------
