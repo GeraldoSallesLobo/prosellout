@@ -9,6 +9,9 @@ const PART_MAX_ROWS = Number(process.env.PART_MAX_ROWS ?? 50000);
 
 const s3 = new S3Client({});
 const sqs = new SQSClient({});
+const EXCEL_DATE_EPOCH_UTC_MS = Date.UTC(1899, 11, 30);
+const MAX_SUPPORTED_EXCEL_DATE_SERIAL = 60000;
+const MILLISECONDS_PER_DAY = 86_400_000;
 
 /**
  * Canonical column order per target table. Must match the staging tables in
@@ -231,9 +234,26 @@ function normalizeHeader(header) {
     .replace(/^_+|_+$/g, "");
 }
 
-/** "31/12/2026" -> "2026-12-31"; Date -> ISO; ISO passes through. */
+function parseExcelDateSerial(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const serial = typeof value === "number" ? value : Number(String(value).trim());
+  const isExcelSerial =
+    Number.isFinite(serial) &&
+    serial > 0 &&
+    serial <= MAX_SUPPORTED_EXCEL_DATE_SERIAL;
+  if (!isExcelSerial) return null;
+
+  return new Date(EXCEL_DATE_EPOCH_UTC_MS + Math.floor(serial) * MILLISECONDS_PER_DAY)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** "31/12/2026" -> "2026-12-31"; Excel serial -> ISO; Date -> ISO; ISO passes through. */
 function normalizeDate(value) {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const excelSerialDate = parseExcelDateSerial(value);
+  if (excelSerialDate) return excelSerialDate;
+
   const text = String(value ?? "").trim();
   const brazilianDate = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (brazilianDate) return `${brazilianDate[3]}-${brazilianDate[2]}-${brazilianDate[1]}`;
