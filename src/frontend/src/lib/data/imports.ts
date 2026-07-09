@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { UPLOAD_API_URL } from "@/lib/env";
+import { getImportDisplayName } from "@/lib/import-layouts";
 import type { FileImport, FileImportLog, FileTypeConfig, ImportStatus } from "@/types/domain";
 import {
   DEMO_FILE_IMPORTS,
@@ -24,8 +25,39 @@ const UPLOADABLE_TARGET_TABLES = new Set([
   "sales_targets",
 ]);
 
+const READY_IMPORT_STATUSES = new Set<ImportStatus>(["completed", "completed_with_errors"]);
+
 export function canUploadFileType(config: FileTypeConfig): boolean {
   return config.status === "active" && UPLOADABLE_TARGET_TABLES.has(config.targetTable);
+}
+
+export async function fetchCompletedImportCodes(): Promise<string[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    const codeByTypeName = new Map(
+      DEMO_FILE_TYPE_CONFIGS.map((config) => [config.name, config.code]),
+    );
+    const completedCodes = DEMO_FILE_IMPORTS.flatMap((row) => {
+      if (!READY_IMPORT_STATUSES.has(row.status)) return [];
+      const code = codeByTypeName.get(row.typeName);
+      return code ? [code] : [];
+    });
+    return simulateLatency(Array.from(new Set(completedCodes)));
+  }
+
+  const { data, error } = await supabase
+    .from("file_imports")
+    .select("status, file_type_configs(code)")
+    .in("status", Array.from(READY_IMPORT_STATUSES));
+  if (error) throw error;
+
+  const completedCodes = (data ?? []).flatMap((row) => {
+    const record = row as Record<string, unknown>;
+    const typeConfig = record.file_type_configs as { code?: string } | null;
+    return typeConfig?.code ? [typeConfig.code] : [];
+  });
+
+  return Array.from(new Set(completedCodes));
 }
 
 export async function fetchFileImports(filters: ImportFilters): Promise<FileImport[]> {
@@ -47,7 +79,7 @@ export async function fetchFileImports(filters: ImportFilters): Promise<FileImpo
 
   let query = supabase
     .from("file_imports")
-    .select("id, file_name, sheet_name, status, total_records, processed_records, error_count, created_at, imported_by, file_type_configs(name)")
+    .select("id, file_name, sheet_name, status, total_records, processed_records, error_count, created_at, imported_by, file_type_configs(code, name, target_table)")
     .order("created_at", { ascending: false })
     .limit(100);
   if (filters.typeId) query = query.eq("file_type_id", filters.typeId);
@@ -60,11 +92,24 @@ export async function fetchFileImports(filters: ImportFilters): Promise<FileImpo
 
   return (data ?? []).map((row) => {
     const record = row as Record<string, unknown>;
+    const typeConfig = record.file_type_configs as {
+      code?: string;
+      name?: string;
+      target_table?: string;
+    } | null;
+    const typeName = typeConfig?.code && typeConfig.name && typeConfig.target_table
+      ? getImportDisplayName({
+          code: typeConfig.code,
+          name: typeConfig.name,
+          targetTable: typeConfig.target_table,
+        })
+      : "—";
+
     return {
       id: String(record.id),
       fileName: String(record.file_name),
       sheetName: (record.sheet_name as string) ?? null,
-      typeName: (record.file_type_configs as { name: string } | null)?.name ?? "—",
+      typeName,
       status: record.status as ImportStatus,
       totalRecords: Number(record.total_records ?? 0),
       processedRecords: Number(record.processed_records ?? 0),
@@ -113,31 +158,6 @@ export async function fetchFileTypeConfigs(): Promise<FileTypeConfig[]> {
     origin: row.origin,
     status: row.status,
   }));
-}
-
-export async function updateFileTypeConfig(input: FileTypeConfig): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  if (!supabase) {
-    // Modo demo: aplica a edição em memória para refletir na listagem.
-    const index = DEMO_FILE_TYPE_CONFIGS.findIndex((config) => config.id === input.id);
-    if (index >= 0) DEMO_FILE_TYPE_CONFIGS[index] = { ...input };
-    await simulateLatency(null);
-    return;
-  }
-
-  const { error } = await supabase
-    .from("file_type_configs")
-    .update({
-      code: input.code,
-      name: input.name,
-      target_table: input.targetTable,
-      processing_routine: input.processingRoutine,
-      file_format: input.fileFormat,
-      origin: input.origin,
-      status: input.status,
-    })
-    .eq("id", input.id);
-  if (error) throw error;
 }
 
 async function fetchCurrentDistributorId(): Promise<string> {

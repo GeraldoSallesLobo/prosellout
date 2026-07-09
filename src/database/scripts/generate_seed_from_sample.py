@@ -246,12 +246,12 @@ def main() -> None:
 
     # File type configs + a small import history so the Arquivos screens have content.
     ftc = [
-        ("SELL_OUT", "Sell Out Distribuidor", "sell_out", "process_sell_out_staging", "xlsx", "active"),
-        ("SELL_IN", "Sell In Indústria", "sell_in", "process_sell_in_staging", "xlsx", "active"),
-        ("CUSTOMERS", "Base de Clientes", "customers", "process_customers_staging", "xlsx", "active"),
-        ("PRODUCTS", "Base de Produtos", "products", "process_products_staging", "xlsx", "active"),
-        ("SELLERS", "Base de Vendedores", "sales_reps", "process_sellers_staging", "xlsx", "active"),
-        ("TARGETS", "Metas por Cliente/SKU", "sales_targets", "process_targets_staging", "xlsx", "active"),
+        ("SELL_OUT", "Sell Out", "sell_out", "process_sell_out_staging", "xlsx", "active"),
+        ("SELL_IN", "Sell In", "sell_in", "process_sell_in_staging", "xlsx", "active"),
+        ("CUSTOMERS", "Clientes", "customers", "process_customers_staging", "xlsx", "active"),
+        ("PRODUCTS", "Hier. Produtos", "products", "process_products_staging", "xlsx", "active"),
+        ("SELLERS", "Vendedores", "sales_reps", "process_sellers_staging", "xlsx", "active"),
+        ("TARGETS", "Meta", "sales_targets", "process_targets_staging", "xlsx", "active"),
     ]
     ftc_id = {code: uid("ftc", code) for code, *_ in ftc}
     w("insert into file_type_configs (id, code, name, target_table, processing_routine, file_format, status) values")
@@ -269,7 +269,7 @@ def main() -> None:
     imports = [
         ("Layout SellOut.xlsx", "SELL_OUT", "completed", 3374, 3057, 0),
         ("Layout SellIn.xlsx", "SELL_IN", "completed", 30, 30, 0),
-        ("Layout Clientes.xlsx", "CUSTOMERS", "completed_with_errors", 6334, 6095, 6),
+        ("Layout Clientes.xlsx", "CUSTOMERS", "completed", 6334, 6334, 0),
         ("Layout Produtos.xlsx", "PRODUCTS", "completed", 5, 5, 0),
         ("Layout Vendedores.xlsx", "SELLERS", "completed", 13, 13, 0),
         ("Layout SellOut_meta.xlsx", "TARGETS", "completed", 3362, 1469, 0),

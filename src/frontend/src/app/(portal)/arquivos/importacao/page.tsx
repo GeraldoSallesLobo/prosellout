@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Upload } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,13 +14,20 @@ import { useToast } from "@/components/ui/toast";
 import { ImportLayoutHelp } from "@/components/imports/import-layout-help";
 import {
   canUploadFileType,
+  fetchCompletedImportCodes,
   fetchFileImports,
   fetchFileTypeConfigs,
   fetchImportLogs,
   registerAndUploadFileImport,
 } from "@/lib/data/imports";
 import { formatInteger } from "@/lib/format";
-import type { FileImport, ImportStatus } from "@/types/domain";
+import {
+  getImportDisplayName,
+  getImportLayoutSpec,
+  getImportLayoutSpecByCode,
+  getMissingImportPrerequisiteCodes,
+} from "@/lib/import-layouts";
+import type { FileImport, FileTypeConfig, ImportStatus } from "@/types/domain";
 
 const STATUS_LABELS: Record<ImportStatus, { label: string; variant: "green" | "red" | "blue" | "yellow" | "neutral" }> = {
   pending: { label: "Pendente", variant: "neutral" },
@@ -35,6 +42,19 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, meta]) => ({
   value,
   label: meta.label,
 }));
+
+function getMissingPrerequisiteLabels(
+  fileType: FileTypeConfig,
+  completedImportCodes: Set<string>,
+): string[] {
+  const spec = getImportLayoutSpec(fileType);
+  if (!spec) return [];
+
+  return getMissingImportPrerequisiteCodes(spec, completedImportCodes).flatMap((code) => {
+    const prerequisite = getImportLayoutSpecByCode(code);
+    return prerequisite ? [prerequisite.title] : [];
+  });
+}
 
 function FileImportContent() {
   const [statusFilter, setStatusFilter] = useState("");
@@ -53,6 +73,11 @@ function FileImportContent() {
     queryFn: fetchFileTypeConfigs,
   });
 
+  const { data: completedImportCodes = [] } = useQuery({
+    queryKey: ["completed-import-codes"],
+    queryFn: fetchCompletedImportCodes,
+  });
+
   const { data: imports = [], isLoading } = useQuery({
     queryKey: ["file-imports", statusFilter, typeFilter, startDate, endDate],
     queryFn: () =>
@@ -69,13 +94,31 @@ function FileImportContent() {
     queryFn: () => fetchImportLogs(logImport!.id),
     enabled: Boolean(logImport),
   });
+  const completedImportCodeSet = useMemo(
+    () => new Set(completedImportCodes),
+    [completedImportCodes],
+  );
   const uploadFileTypes = fileTypes.filter(canUploadFileType);
   const selectedUploadType =
     uploadFileTypes.find((fileType) => fileType.id === uploadTypeId) ?? null;
+  const selectedMissingPrerequisiteLabels = selectedUploadType
+    ? getMissingPrerequisiteLabels(selectedUploadType, completedImportCodeSet)
+    : [];
+  const isUploadBlocked = selectedMissingPrerequisiteLabels.length > 0;
+  const uploadTypeOptions = uploadFileTypes.map((fileType) => {
+    const missingLabels = getMissingPrerequisiteLabels(fileType, completedImportCodeSet);
+    const suffix =
+      missingLabels.length > 0 ? ` (aguardando ${missingLabels.join(", ")})` : "";
+
+    return {
+      value: fileType.id,
+      label: `${getImportDisplayName(fileType)}${suffix}`,
+    };
+  });
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedFile || !uploadTypeId) return;
+      if (!selectedFile || !uploadTypeId || isUploadBlocked) return;
       await registerAndUploadFileImport({
         file: selectedFile,
         sheetName: null,
@@ -90,6 +133,7 @@ function FileImportContent() {
       setIsUploadOpen(false);
       setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ["file-imports"] });
+      queryClient.invalidateQueries({ queryKey: ["completed-import-codes"] });
     },
     onError: (error) =>
       showToast(
@@ -172,7 +216,7 @@ function FileImportContent() {
       <div className="card mb-5 grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
         <SelectField
           label="Tipo Arquivo"
-          options={fileTypes.map((type) => ({ value: type.id, label: type.name }))}
+          options={fileTypes.map((type) => ({ value: type.id, label: getImportDisplayName(type) }))}
           value={typeFilter}
           onChange={(event) => setTypeFilter(event.target.value)}
         />
@@ -206,7 +250,7 @@ function FileImportContent() {
               Cancelar
             </Button>
             <Button
-              disabled={!selectedFile || !uploadTypeId || uploadMutation.isPending}
+              disabled={!selectedFile || !uploadTypeId || isUploadBlocked || uploadMutation.isPending}
               onClick={() => uploadMutation.mutate()}
             >
               {uploadMutation.isPending ? "Enviando..." : "Enviar"}
@@ -218,11 +262,24 @@ function FileImportContent() {
           <SelectField
             label="Tipo do Arquivo"
             allLabel="Selecione"
-            options={uploadFileTypes.map((type) => ({ value: type.id, label: type.name }))}
+            options={uploadTypeOptions}
             value={uploadTypeId}
             onChange={(event) => setUploadTypeId(event.target.value)}
           />
-          <ImportLayoutHelp config={selectedUploadType} />
+          <ImportLayoutHelp
+            config={selectedUploadType}
+            completedImportCodes={completedImportCodeSet}
+            emptyMessage="Selecione um tipo para ver colunas, pré-requisitos e ordem de importação."
+          />
+          {isUploadBlocked ? (
+            <div className="rounded-md border border-yellow/30 bg-yellow/10 px-3 py-2 text-xs text-text2">
+              Antes de importar este arquivo, conclua:{" "}
+              <span className="font-semibold text-text1">
+                {selectedMissingPrerequisiteLabels.join(", ")}
+              </span>
+              .
+            </div>
+          ) : null}
           <FieldWrapper label="Arquivo (.xlsx ou .csv)">
             <input
               type="file"

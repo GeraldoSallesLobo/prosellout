@@ -27,11 +27,39 @@ Para uma base nova, importe nesta ordem:
 5. `SELL_IN` — compras/entrada por produto.
 6. `SELL_OUT` — vendas para PDV por produto.
 
-`SELL_IN`, `SELL_OUT` e `TARGETS` dependem de produtos existentes. `SELL_OUT` e `TARGETS` também dependem de clientes existentes.
+## Travas no frontend
+
+A tela **Arquivos › Importação** mostra os layouts esperados e bloqueia o botão de envio quando o tipo escolhido depende de bases que ainda não têm importação concluída no histórico (`completed` ou `completed_with_errors` em `file_imports`).
+
+Matriz de dependências:
+
+| Tipo | Pode ser primeiro? | Pré-requisitos para enviar |
+|---|---:|---|
+| `PRODUCTS` | Sim | Nenhum |
+| `SELLERS` | Sim | Nenhum |
+| `CUSTOMERS` | Sim | Nenhum |
+| `TARGETS` | Não | Hier. Produtos + Clientes |
+| `SELL_IN` | Não | Hier. Produtos |
+| `SELL_OUT` | Não | Hier. Produtos + Vendedores + Clientes |
+
+`SELL_OUT` exige `SELLERS` no frontend para evitar vendas sem vínculo de vendedor, o que quebraria análises por vendedor/supervisor mesmo que a linha transacional pudesse ser gravada sem esse vínculo.
+
+## Status atual
+
+Em código, os tipos `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN` e `SELL_OUT` já têm contrato completo entre frontend, AWS Lambdas e Supabase:
+
+- `file_type_configs` ativo;
+- staging table;
+- rotina `process_*_staging`;
+- spec no `file-validator`;
+- spec equivalente no `etl-loader`;
+- layout exibido no frontend.
+
+Para produção, ainda é necessário aplicar a migration no Supabase, fazer deploy do `src/cloud`, configurar `NEXT_PUBLIC_UPLOAD_API_URL` no frontend e executar QA com arquivos reais. `STOCK` e `PLANNER` continuam planejados até existirem amostras reais e contrato fechado.
 
 ## Tipos suportados
 
-### CUSTOMERS — Base de Clientes
+### CUSTOMERS — Clientes
 
 - Tela alimentada: **Dados › Clientes**
 - Tabela final: `customers`
@@ -60,7 +88,7 @@ Notas:
 - O cliente é identificado por distribuidor + `Cód. PDV`.
 - Canal e cluster são criados/reativados automaticamente quando informados.
 
-### PRODUCTS — Base de Produtos
+### PRODUCTS — Hier. Produtos
 
 - Tela alimentada: **Cadastros › Hierarquia de Produtos** e cruzamentos de relatórios
 - Tabelas finais: `products`, `product_hierarchy`
@@ -87,7 +115,7 @@ Notas:
 - EAN de 13 e 14 dígitos é normalizado no cruzamento com sell-out/sell-in.
 - Se `Unidades` vier vazio, o sistema assume 1.
 
-### SELLERS — Base de Vendedores
+### SELLERS — Vendedores
 
 - Tela alimentada: **Dados › Vendedores** e hierarquia comercial
 - Tabela final: `sales_reps`
@@ -112,7 +140,7 @@ Notas:
 - Supervisores são criados automaticamente pelo código informado.
 - Gerente é preservado no layout, mas ainda não alimenta uma hierarquia própria.
 
-### TARGETS — Metas por Cliente/SKU
+### TARGETS — Meta
 
 - Tela alimentada: **Dados › Meta**
 - Tabela final: `sales_targets`
@@ -138,7 +166,7 @@ Notas:
 - `Data Faturamento` define o mês da meta.
 - Linhas repetidas no mesmo cliente + SKU + mês são somadas dentro da importação.
 
-### SELL_OUT — Sell Out Distribuidor
+### SELL_OUT — Sell Out
 
 - Tela alimentada: **Dados › Sell Out**
 - Tabela final: `sell_out`
@@ -163,11 +191,10 @@ Colunas opcionais:
 
 Notas:
 
-- Cliente precisa existir em `CUSTOMERS`.
-- Produto precisa existir em `PRODUCTS`.
+- Produto, vendedor e cliente precisam existir para alimentar os relatórios corretamente.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
 
-### SELL_IN — Sell In Indústria
+### SELL_IN — Sell In
 
 - Tela alimentada: **Dados › Sell In**
 - Tabela final: `sell_in`
@@ -188,12 +215,12 @@ Colunas opcionais:
 
 Notas:
 
-- Produto precisa existir em `PRODUCTS`.
+- Produto precisa existir em **Hier. Produtos**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
 
 ## Tipos planejados
 
-### STOCK — Estoque Distribuidor
+### STOCK — Estoque
 
 - Tela prevista: **Dados › Estoque**
 - Tabela final prevista: `stock_snapshots`
@@ -209,7 +236,7 @@ Contrato sugerido para amostra:
 
 Observação: hoje algumas regras de negócio calculam volume de estoque como `Sell In − Sell Out`. Se uma base física de estoque virar fonte oficial, as regras de cobertura média devem ser revisadas.
 
-### PLANNER — Planificador
+### PLANNER — Batalha Naval
 
 - Tela prevista: **Planificador › Batalha Naval**
 - Tabela final prevista: ainda não definida.
@@ -227,4 +254,3 @@ Contrato sugerido para amostra:
 - `Data Referência` opcional
 
 Observação: a tela atual usa uma matriz demo cliente × SKU. A amostra real vai definir se `PLANNER` vira tabela própria ou uma RPC calculada a partir de clientes, produtos, vendedores, metas e sell-out.
-

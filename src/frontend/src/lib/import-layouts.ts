@@ -1,6 +1,10 @@
-import type { FileTypeConfig } from "@/types/domain";
-
 export type ImportLayoutStatus = "ready" | "planned";
+
+export interface ImportConfigReference {
+  code: string;
+  name: string;
+  targetTable: string;
+}
 
 export interface ImportLayoutSpec {
   code: string;
@@ -9,6 +13,7 @@ export interface ImportLayoutSpec {
   targetTable: string;
   status: ImportLayoutStatus;
   summary: string;
+  prerequisiteCodes: string[];
   requiredColumns: string[];
   optionalColumns: string[];
   notes: string[];
@@ -17,11 +22,12 @@ export interface ImportLayoutSpec {
 const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   {
     code: "CUSTOMERS",
-    title: "Base de Clientes",
+    title: "Clientes",
     screen: "Dados › Clientes",
     targetTable: "customers",
     status: "ready",
     summary: "Atualiza os PDVs/clientes do distribuidor, canal e cluster.",
+    prerequisiteCodes: [],
     requiredColumns: ["CNPJ Distribuidor", "Cód. PDV", "Razão Social"],
     optionalColumns: [
       "CNPJ/CPF",
@@ -41,11 +47,12 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   },
   {
     code: "PRODUCTS",
-    title: "Base de Produtos",
-    screen: "Cadastros › Hierarquia de Produtos",
+    title: "Hier. Produtos",
+    screen: "Cadastros › Hier. Produtos",
     targetTable: "products",
     status: "ready",
     summary: "Atualiza produtos e a árvore macro categoria › categoria › subcategoria.",
+    prerequisiteCodes: [],
     requiredColumns: [
       "CNPJ Distribuidor",
       "EAN",
@@ -62,11 +69,12 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   },
   {
     code: "SELLERS",
-    title: "Base de Vendedores",
+    title: "Vendedores",
     screen: "Dados › Vendedores",
     targetTable: "sales_reps",
     status: "ready",
     summary: "Atualiza vendedores e seus supervisores na hierarquia comercial.",
+    prerequisiteCodes: [],
     requiredColumns: ["CNPJ Distribuidor", "Cód. Vendedor", "Nome Vendedor", "Cód. Supervisor"],
     optionalColumns: [
       "Quantidade clientes (carteira)",
@@ -81,11 +89,12 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   },
   {
     code: "TARGETS",
-    title: "Metas por Cliente/SKU",
+    title: "Meta",
     screen: "Dados › Meta",
     targetTable: "sales_targets",
     status: "ready",
     summary: "Grava metas por cliente, produto e mês.",
+    prerequisiteCodes: ["PRODUCTS", "CUSTOMERS"],
     requiredColumns: [
       "CNPJ Distribuidor",
       "EAN",
@@ -102,11 +111,12 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   },
   {
     code: "SELL_OUT",
-    title: "Sell Out Distribuidor",
+    title: "Sell Out",
     screen: "Dados › Sell Out",
     targetTable: "sell_out",
     status: "ready",
     summary: "Grava vendas do distribuidor para PDV/cliente por produto.",
+    prerequisiteCodes: ["PRODUCTS", "SELLERS", "CUSTOMERS"],
     requiredColumns: [
       "CNPJ Distribuidor",
       "EAN",
@@ -118,17 +128,18 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     ],
     optionalColumns: ["Data Entrega", "NF", "Custo Unitário", "CNPJ/CPF"],
     notes: [
-      "Cliente precisa existir na Base de Clientes e produto precisa existir na Base de Produtos.",
+      "Produto, vendedor e cliente precisam existir para alimentar os relatórios corretamente.",
       "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
     ],
   },
   {
     code: "SELL_IN",
-    title: "Sell In Indústria",
+    title: "Sell In",
     screen: "Dados › Sell In",
     targetTable: "sell_in",
     status: "ready",
     summary: "Grava compras/entrada do distribuidor por produto.",
+    prerequisiteCodes: ["PRODUCTS"],
     requiredColumns: [
       "CNPJ Distribuidor",
       "EAN",
@@ -138,17 +149,18 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     ],
     optionalColumns: ["NF", "Custo Unitário"],
     notes: [
-      "Produto precisa existir na Base de Produtos.",
+      "Produto precisa existir em Hier. Produtos.",
       "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
     ],
   },
   {
     code: "STOCK",
-    title: "Estoque Distribuidor",
+    title: "Estoque",
     screen: "Dados › Estoque",
     targetTable: "stock_snapshots",
     status: "planned",
     summary: "Representará a posição física de estoque por distribuidor e produto.",
+    prerequisiteCodes: ["PRODUCTS"],
     requiredColumns: ["CNPJ Distribuidor", "EAN", "Data Estoque", "Quantidade"],
     optionalColumns: ["Valor Estoque"],
     notes: [
@@ -158,11 +170,12 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   },
   {
     code: "PLANNER",
-    title: "Planificador",
+    title: "Batalha Naval",
     screen: "Planificador › Batalha Naval",
     targetTable: "planner_entries",
     status: "planned",
     summary: "Representará entradas ou recomendações da matriz cliente × SKU.",
+    prerequisiteCodes: ["PRODUCTS", "SELLERS", "CUSTOMERS"],
     requiredColumns: ["Cód. PDV", "EAN", "Cód. Vendedor", "Prioridade ou Recomendação"],
     optionalColumns: ["Volume Sugerido", "Valor Sugerido", "Motivo", "Data Referência"],
     notes: [
@@ -177,8 +190,35 @@ const SPECS_BY_TARGET_TABLE = new Map(
   IMPORT_LAYOUT_SPECS.map((spec) => [spec.targetTable, spec]),
 );
 
-export function getImportLayoutSpec(config: FileTypeConfig | null | undefined): ImportLayoutSpec | null {
+export function getImportLayoutSpec(
+  config: ImportConfigReference | null | undefined,
+): ImportLayoutSpec | null {
   if (!config) return null;
   return SPECS_BY_CODE.get(config.code) ?? SPECS_BY_TARGET_TABLE.get(config.targetTable) ?? null;
 }
 
+export function getImportDisplayName(config: ImportConfigReference): string {
+  return getImportLayoutSpec(config)?.title ?? config.name;
+}
+
+export function getImportScreenLabel(config: ImportConfigReference): string {
+  return getImportLayoutSpec(config)?.screen ?? config.name;
+}
+
+export function getImportLayoutSpecByCode(code: string): ImportLayoutSpec | null {
+  return SPECS_BY_CODE.get(code) ?? null;
+}
+
+export function getImportPrerequisiteSpecs(spec: ImportLayoutSpec): ImportLayoutSpec[] {
+  return spec.prerequisiteCodes.flatMap((code) => {
+    const prerequisite = getImportLayoutSpecByCode(code);
+    return prerequisite ? [prerequisite] : [];
+  });
+}
+
+export function getMissingImportPrerequisiteCodes(
+  spec: ImportLayoutSpec,
+  completedImportCodes: Set<string>,
+): string[] {
+  return spec.prerequisiteCodes.filter((code) => !completedImportCodes.has(code));
+}

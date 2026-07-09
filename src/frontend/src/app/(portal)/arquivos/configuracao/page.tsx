@@ -10,6 +10,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ImportLayoutHelp } from "@/components/imports/import-layout-help";
 import { fetchFileTypeConfigs } from "@/lib/data/imports";
+import { getImportDisplayName, getImportScreenLabel } from "@/lib/import-layouts";
 import type { FileTypeConfig } from "@/types/domain";
 
 function FileConfigContent() {
@@ -21,8 +22,18 @@ function FileConfigContent() {
   });
 
   const columns: DataTableColumn<FileTypeConfig>[] = [
-    { key: "code", header: "Código", render: (row) => row.code, sortValue: (row) => row.code },
-    { key: "name", header: "Nome", render: (row) => row.name, sortValue: (row) => row.name },
+    {
+      key: "screen",
+      header: "Tela",
+      render: (row) => getImportScreenLabel(row),
+      sortValue: (row) => getImportScreenLabel(row),
+    },
+    {
+      key: "name",
+      header: "Importação",
+      render: (row) => getImportDisplayName(row),
+      sortValue: (row) => getImportDisplayName(row),
+    },
     {
       key: "table",
       header: "Tabela",
@@ -80,7 +91,7 @@ function FileConfigContent() {
       <DataTable columns={columns} rows={configs} rowKey={(row) => row.id} isLoading={isLoading} />
 
       <Modal
-        title={`Layout — ${layoutConfig?.name ?? ""}`}
+        title={`Layout — ${layoutConfig ? getImportDisplayName(layoutConfig) : ""}`}
         isOpen={Boolean(layoutConfig)}
         onClose={() => setLayoutConfig(null)}
       >

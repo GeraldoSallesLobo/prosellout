@@ -1,9 +1,14 @@
 import { Badge } from "@/components/ui/badge";
-import { getImportLayoutSpec } from "@/lib/import-layouts";
+import {
+  getImportLayoutSpec,
+  getImportPrerequisiteSpecs,
+  getMissingImportPrerequisiteCodes,
+} from "@/lib/import-layouts";
 import type { FileTypeConfig } from "@/types/domain";
 
 interface ImportLayoutHelpProps {
   config: FileTypeConfig | null;
+  completedImportCodes?: Set<string>;
   emptyMessage?: string;
 }
 
@@ -21,7 +26,11 @@ function ColumnList({ columns }: { columns: string[] }) {
   );
 }
 
-export function ImportLayoutHelp({ config, emptyMessage }: ImportLayoutHelpProps) {
+export function ImportLayoutHelp({
+  config,
+  completedImportCodes,
+  emptyMessage,
+}: ImportLayoutHelpProps) {
   const spec = getImportLayoutSpec(config);
 
   if (!spec) {
@@ -34,6 +43,10 @@ export function ImportLayoutHelp({ config, emptyMessage }: ImportLayoutHelpProps
 
   const statusLabel = spec.status === "ready" ? "Suportado" : "Planejado";
   const statusVariant = spec.status === "ready" ? "green" : "yellow";
+  const prerequisiteSpecs = getImportPrerequisiteSpecs(spec);
+  const missingPrerequisiteCodes = completedImportCodes
+    ? new Set(getMissingImportPrerequisiteCodes(spec, completedImportCodes))
+    : null;
 
   return (
     <div className="rounded-md border border-line bg-bg p-3">
@@ -48,6 +61,29 @@ export function ImportLayoutHelp({ config, emptyMessage }: ImportLayoutHelpProps
       <p className="mb-3 text-xs text-text2">{spec.summary}</p>
 
       <div className="space-y-3">
+        <div>
+          <div className="mb-1 text-xs font-semibold uppercase text-text2">
+            Pré-requisitos
+          </div>
+          {prerequisiteSpecs.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {prerequisiteSpecs.map((prerequisite) => {
+                const isMissing = missingPrerequisiteCodes?.has(prerequisite.code) ?? false;
+                const variant = isMissing ? "yellow" : "neutral";
+                const suffix = missingPrerequisiteCodes ? (isMissing ? " pendente" : " ok") : "";
+
+                return (
+                  <Badge key={prerequisite.code} variant={variant}>
+                    {prerequisite.title}{suffix}
+                  </Badge>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="text-xs text-text2">Nenhum. Pode ser importado primeiro.</span>
+          )}
+        </div>
+
         <div>
           <div className="mb-1 text-xs font-semibold uppercase text-text2">
             Colunas obrigatórias
@@ -73,4 +109,3 @@ export function ImportLayoutHelp({ config, emptyMessage }: ImportLayoutHelpProps
     </div>
   );
 }
-

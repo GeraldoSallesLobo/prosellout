@@ -49,6 +49,7 @@ export function DateField({ label, wrapperClassName, className, ...props }: Date
 export interface SelectOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -72,7 +73,7 @@ export function SelectField({
       <select className={clsx("input-base appearance-none pr-8", className)} {...props}>
         <option value="">{allLabel}</option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} disabled={option.disabled}>
             {option.label}
           </option>
         ))}

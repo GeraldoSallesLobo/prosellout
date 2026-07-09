@@ -101,21 +101,24 @@ export const DEMO_TARGET_ROWS: TargetRow[] = (() => {
 })();
 
 export const DEMO_FILE_TYPE_CONFIGS: FileTypeConfig[] = [
-  { id: "ftc-1", code: "SELL_OUT", name: "Sell Out Distribuidor", targetTable: "sell_out", processingRoutine: "process_sell_out_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-2", code: "SELL_IN", name: "Sell In Indústria", targetTable: "sell_in", processingRoutine: "process_sell_in_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-3", code: "CUSTOMERS", name: "Base de Clientes", targetTable: "customers", processingRoutine: "process_customers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-4", code: "PRODUCTS", name: "Base de Produtos", targetTable: "products", processingRoutine: "process_products_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-5", code: "SELLERS", name: "Base de Vendedores", targetTable: "sales_reps", processingRoutine: "process_sellers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-6", code: "TARGETS", name: "Metas por Cliente/SKU", targetTable: "sales_targets", processingRoutine: "process_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-7", code: "STOCK", name: "Estoque Distribuidor", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
-  { id: "ftc-8", code: "PLANNER", name: "Planificador", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "inactive" },
+  { id: "ftc-1", code: "SELL_OUT", name: "Sell Out", targetTable: "sell_out", processingRoutine: "process_sell_out_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-2", code: "SELL_IN", name: "Sell In", targetTable: "sell_in", processingRoutine: "process_sell_in_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-3", code: "CUSTOMERS", name: "Clientes", targetTable: "customers", processingRoutine: "process_customers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-4", code: "PRODUCTS", name: "Hier. Produtos", targetTable: "products", processingRoutine: "process_products_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-5", code: "SELLERS", name: "Vendedores", targetTable: "sales_reps", processingRoutine: "process_sellers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-6", code: "TARGETS", name: "Meta", targetTable: "sales_targets", processingRoutine: "process_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-7", code: "STOCK", name: "Estoque", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
+  { id: "ftc-8", code: "PLANNER", name: "Batalha Naval", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "inactive" },
 ];
 
 /** Fontes cíclicas do histórico demo, para o filtro "Tipo Arquivo" ter resultados variados. */
 const DEMO_IMPORT_SOURCES = [
-  { filePrefix: "sellout", typeName: "Sell Out Distribuidor", sheetName: "Base" },
-  { filePrefix: "produtos", typeName: "Base de Produtos", sheetName: "Produtos" },
-  { filePrefix: "planificador", typeName: "Planificador", sheetName: "Plano" },
+  { filePrefix: "produtos", typeName: "Hier. Produtos", sheetName: "Produtos" },
+  { filePrefix: "vendedores", typeName: "Vendedores", sheetName: "Planilha1" },
+  { filePrefix: "clientes", typeName: "Clientes", sheetName: "Planilha1" },
+  { filePrefix: "meta", typeName: "Meta", sheetName: "Planilha1" },
+  { filePrefix: "sellin", typeName: "Sell In", sheetName: "Planilha1" },
+  { filePrefix: "sellout", typeName: "Sell Out", sheetName: "Planilha1" },
 ] as const;
 
 export const DEMO_FILE_IMPORTS: FileImport[] = (() => {
@@ -125,26 +128,19 @@ export const DEMO_FILE_IMPORTS: FileImport[] = (() => {
     const source = DEMO_IMPORT_SOURCES[index % DEMO_IMPORT_SOURCES.length];
     const date = new Date(now - index * dayMs);
     const total = 18_000 + index * 977;
-    const hasErrors = index === 0;
     return {
       id: `import-${index + 1}`,
       fileName: `${source.filePrefix}_${date.toISOString().slice(0, 10).replaceAll("-", "")}.xlsx`,
       sheetName: source.sheetName,
       typeName: source.typeName,
-      status: hasErrors ? "completed_with_errors" : "completed",
+      status: "completed",
       totalRecords: total,
-      processedRecords: total - (hasErrors ? 12 : 0),
-      errorCount: hasErrors ? 12 : 0,
+      processedRecords: total,
+      errorCount: 0,
       createdAt: date.toISOString(),
       importedBy: "geraldo@barkreply.com",
     };
   });
 })();
 
-export const DEMO_IMPORT_LOGS: FileImportLog[] = Array.from({ length: 12 }, (_, index) => ({
-  id: index + 1,
-  lineNumber: 40 + index * 3,
-  level: "error",
-  message: `unknown product ean: 78910001999${index}`,
-  createdAt: new Date().toISOString(),
-}));
+export const DEMO_IMPORT_LOGS: FileImportLog[] = [];

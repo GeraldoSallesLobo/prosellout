@@ -101,12 +101,12 @@ on conflict (user_id, distributor_id) do update set
   updated_at = now();
 
 insert into file_type_configs (id, code, name, target_table, processing_routine, file_format, status) values
-  ('6203bef9-2c9a-5429-b370-43506154f057', 'SELL_OUT', 'Sell Out Distribuidor', 'sell_out', 'process_sell_out_staging', 'xlsx', 'active'),
-  ('8dd36250-0d58-5c15-b535-fc16ee81f409', 'SELL_IN', 'Sell In Indústria', 'sell_in', 'process_sell_in_staging', 'xlsx', 'active'),
-  ('4933f10f-670d-59c2-bb17-9339099d6830', 'CUSTOMERS', 'Base de Clientes', 'customers', 'process_customers_staging', 'xlsx', 'active'),
-  ('9d6aab7f-3a48-5497-8d55-04f9afcc503e', 'PRODUCTS', 'Base de Produtos', 'products', 'process_products_staging', 'xlsx', 'active'),
-  ('f2570305-8991-5de9-9e4b-76fc717eb938', 'SELLERS', 'Base de Vendedores', 'sales_reps', 'process_sellers_staging', 'xlsx', 'active'),
-  ('55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'TARGETS', 'Metas por Cliente/SKU', 'sales_targets', 'process_targets_staging', 'xlsx', 'active')
+  ('6203bef9-2c9a-5429-b370-43506154f057', 'SELL_OUT', 'Sell Out', 'sell_out', 'process_sell_out_staging', 'xlsx', 'active'),
+  ('8dd36250-0d58-5c15-b535-fc16ee81f409', 'SELL_IN', 'Sell In', 'sell_in', 'process_sell_in_staging', 'xlsx', 'active'),
+  ('4933f10f-670d-59c2-bb17-9339099d6830', 'CUSTOMERS', 'Clientes', 'customers', 'process_customers_staging', 'xlsx', 'active'),
+  ('9d6aab7f-3a48-5497-8d55-04f9afcc503e', 'PRODUCTS', 'Hier. Produtos', 'products', 'process_products_staging', 'xlsx', 'active'),
+  ('f2570305-8991-5de9-9e4b-76fc717eb938', 'SELLERS', 'Vendedores', 'sales_reps', 'process_sellers_staging', 'xlsx', 'active'),
+  ('55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'TARGETS', 'Meta', 'sales_targets', 'process_targets_staging', 'xlsx', 'active')
 on conflict (code) do update set
   name = excluded.name,
   target_table = excluded.target_table,
@@ -118,7 +118,7 @@ on conflict (code) do update set
 insert into file_imports (file_name, sheet_name, file_type_id, status, total_records, processed_records, error_count, imported_by, distributor_id, finished_at) values
   ('Layout SellOut.xlsx', 'Planilha1', '6203bef9-2c9a-5429-b370-43506154f057', 'completed'::import_status, 3374, 3057, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '1 days'::interval),
   ('Layout SellIn.xlsx', 'Planilha1', '8dd36250-0d58-5c15-b535-fc16ee81f409', 'completed'::import_status, 30, 30, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '2 days'::interval),
-  ('Layout Clientes.xlsx', 'Planilha1', '4933f10f-670d-59c2-bb17-9339099d6830', 'completed_with_errors'::import_status, 6334, 6095, 6, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '3 days'::interval),
+  ('Layout Clientes.xlsx', 'Planilha1', '4933f10f-670d-59c2-bb17-9339099d6830', 'completed'::import_status, 6334, 6334, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '3 days'::interval),
   ('Layout Produtos.xlsx', 'Planilha1', '9d6aab7f-3a48-5497-8d55-04f9afcc503e', 'completed'::import_status, 5, 5, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '4 days'::interval),
   ('Layout Vendedores.xlsx', 'Planilha1', 'f2570305-8991-5de9-9e4b-76fc717eb938', 'completed'::import_status, 13, 13, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '5 days'::interval),
   ('Layout SellOut_meta.xlsx', 'Planilha1', '55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'completed'::import_status, 3362, 1469, 0, '00000000-0000-0000-0000-000000000003', 'ea6289a9-888c-564b-ae58-d2f465b09b86', now() - '6 days'::interval);
