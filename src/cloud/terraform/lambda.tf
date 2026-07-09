@@ -54,7 +54,7 @@ resource "aws_lambda_function_url" "upload_url" {
   authorization_type = "NONE"
 
   cors {
-    allow_origins = [var.portal_origin, "http://localhost:3000"]
+    allow_origins = local.allowed_upload_origins
     allow_methods = ["POST"]
     allow_headers = ["authorization", "content-type"]
   }

@@ -2,6 +2,8 @@
 
 Pipeline AWS de ingestão de arquivos de alto volume (Terraform + Lambda Node 20).
 
+Guia operacional completo: `../../docs/DEPLOY_AWS_IMPORTACAO.md`.
+
 ## Fluxo
 
 ```
@@ -28,6 +30,13 @@ Por que aguenta volume: o portal nunca processa arquivo; cada parte é uma unida
 
 ## Deploy
 
+Pré-requisitos rápidos:
+
+- `AWS_PROFILE=prosellout` e `AWS_REGION=sa-east-1` exportados na sessão.
+- Supabase cloud com migrations aplicadas.
+- `database_url` em conexão direta ou pooler session mode na porta `5432`.
+- `supabase_url` e `supabase_anon_key` do mesmo projeto usado pelo frontend.
+
 ```bash
 ./build.sh                      # npm install nas lambdas
 cd terraform
@@ -36,13 +45,40 @@ terraform apply \
   -var 'database_url=postgresql://postgres:...@db.<ref>.supabase.co:5432/postgres' \
   -var 'supabase_url=https://<ref>.supabase.co' \
   -var 'supabase_anon_key=<anon-key>' \
-  -var 'portal_origin=https://portal.prosellout.com.br' \
+  -var 'portal_origins=["https://prosellout.com.br","https://www.prosellout.com.br","https://prosellout.vercel.app","http://localhost:3000"]' \
   -var 'alarm_email=ops@empresa.com.br'
 ```
 
 Importante: use a conexão **direta ou pooler em session mode (porta 5432)** do Supabase — o pooler em transaction mode (6543) não suporta `COPY` streaming.
 
-Saída `upload_api_url` → configure como `NEXT_PUBLIC_UPLOAD_API_URL` no frontend. O endpoint `/upload-url` exige `Authorization: Bearer <access_token>` e só emite URL para importações `pending` pertencentes ao usuário autenticado e ao distribuidor ativo dele.
+Saída `upload_api_url` → configure como `NEXT_PUBLIC_UPLOAD_API_URL` no frontend/Vercel e faça redeploy. O endpoint `/upload-url` exige `Authorization: Bearer <access_token>` e só emite URL para importações `pending` pertencentes ao usuário autenticado e ao distribuidor ativo dele.
+
+## Vercel
+
+Configure no projeto Vercel:
+
+```env
+NEXT_PUBLIC_UPLOAD_API_URL=<terraform output upload_api_url>
+```
+
+Confirme que `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` apontam
+para o mesmo Supabase cloud configurado nas Lambdas. Após alterar variável
+`NEXT_PUBLIC_*`, faça redeploy.
+
+## QA rápido
+
+Depois do deploy:
+
+1. Confirmar o e-mail de subscription SNS.
+2. Importar pela UI na ordem: `Hier. Produtos`, `Vendedores`, `Clientes`, `Meta`, `Sell In`, `Sell Out`.
+3. Acompanhar status em **Arquivos › Importação**.
+4. Se falhar, checar CloudWatch:
+
+```bash
+AWS_PROFILE=prosellout AWS_REGION=sa-east-1 aws logs tail /aws/lambda/prosellout-prod-upload-url --follow
+AWS_PROFILE=prosellout AWS_REGION=sa-east-1 aws logs tail /aws/lambda/prosellout-prod-file-validator --follow
+AWS_PROFILE=prosellout AWS_REGION=sa-east-1 aws logs tail /aws/lambda/prosellout-prod-etl-loader --follow
+```
 
 ## Estrutura
 

@@ -45,7 +45,7 @@ resource "aws_s3_bucket_cors_configuration" "imports" {
 
   cors_rule {
     allowed_methods = ["PUT"]
-    allowed_origins = [var.portal_origin, "http://localhost:3000"]
+    allowed_origins = local.allowed_upload_origins
     allowed_headers = ["*"]
     max_age_seconds = 3600
   }

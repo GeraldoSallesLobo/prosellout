@@ -16,9 +16,10 @@ Documentação:
 
 | Arquivo | Conteúdo |
 |---|---|
-| `LOCAL_SETUP.md` | Rodar localmente (modo demo e banco local), criar usuário, roteiro de teste |
+| `docs/LOCAL_SETUP.md` | Rodar localmente (modo demo e banco local), criar usuário, roteiro de teste |
 | `docs/IMPORTACAO_ARQUIVOS.md` | Contratos de layout para uploads em Arquivos › Importação |
-| `CUSTOS.md` | Estimativa de custos de nuvem (AWS + Supabase) por fase de crescimento |
+| `docs/DEPLOY_AWS_IMPORTACAO.md` | Deploy, variáveis, Vercel, QA e troubleshooting da importação AWS |
+| `docs/CUSTOS.md` | Estimativa de custos de nuvem (AWS + Supabase) por fase de crescimento |
 | `CLAUDE.md` | Guia para agentes/devs: convenções, contratos entre camadas, regras de negócio, armadilhas |
 | `*/README.md` | Detalhes de cada camada |
 
@@ -60,7 +61,7 @@ Documentação:
 ## Ordem de setup (produção)
 
 1. `src/database/` — criar projeto no Supabase e aplicar migrations (ver `src/database/README.md`)
-2. `src/cloud/` — `terraform apply` com as credenciais do banco (ver `src/cloud/README.md`)
+2. `src/cloud/` — `terraform apply` com as credenciais do banco (ver `src/cloud/README.md` e `docs/DEPLOY_AWS_IMPORTACAO.md`)
 3. `src/frontend/` — `cp .env.example .env.local`, preencher chaves e `npm run dev` (ver `src/frontend/README.md`)
 
 Para desenvolvimento local (Supabase via Docker ou modo demo sem infraestrutura), siga o `LOCAL_SETUP.md`.

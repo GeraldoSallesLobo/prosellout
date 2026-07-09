@@ -37,10 +37,15 @@ variable "supabase_anon_key" {
   sensitive   = true
 }
 
-variable "portal_origin" {
-  description = "Frontend origin allowed to upload via presigned URLs (CORS)"
-  type        = string
-  default     = "https://portal.prosellout.com.br"
+variable "portal_origins" {
+  description = "Frontend origins allowed to upload via presigned URLs (CORS)"
+  type        = list(string)
+  default = [
+    "https://prosellout.com.br",
+    "https://www.prosellout.com.br",
+    "https://prosellout.vercel.app",
+    "http://localhost:3000",
+  ]
 }
 
 variable "part_max_rows" {

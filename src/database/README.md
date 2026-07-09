@@ -18,6 +18,8 @@ supabase/
 │   └── 20260705000900_rls_hardening.sql     # revoga EXECUTE de public/anon, protege MV e partições
 ├── scripts/
 │   └── generate_seed_from_sample.py         # gera o seed a partir de .dev_files/dados-importacao
+├── seeds/
+│   └── admin-only.sql                       # seed mínimo para QA de importação local
 └── seed.sql                                 # AUTO-GERADO da amostra real (ver docs/VALIDACAO_AMOSTRA.md)
 ```
 
@@ -44,6 +46,23 @@ supabase start      # sobe Postgres/Auth/Studio locais e imprime a anon key
 supabase db reset   # aplica migrations + seed (dados de demonstração)
 ```
 
+Para testar importação em uma base limpa, sem carregar a amostra real:
+
+```bash
+cd src/database
+supabase db reset --sql-paths ./seeds/admin-only.sql
+```
+
+Esse comando aplica todas as migrations e roda apenas o seed mínimo. Ele cria
+`admin@email.com` / `123321` em `admin_users`; depois entre no portal como admin
+e crie o usuário distribuidor em **Admin › Usuários** para executar o QA de
+importação.
+
+Importante: o pipeline AWS deployado aponta para o Supabase cloud configurado nas
+Lambdas. O seed mínimo local é útil para validar migrations, auth/admin e fluxos
+locais; para QA end-to-end de upload S3/SQS/Lambda, rode o frontend contra o
+Supabase cloud ou use a Vercel.
+
 Serviços locais: API `http://127.0.0.1:54321` · Studio `http://127.0.0.1:54323` · Postgres `54322`.
 
 Depois, no frontend (`src/frontend/.env.local`):
@@ -53,7 +72,7 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key impressa pelo supabase start — reveja com `supabase status`>
 ```
 
-O seed cria o admin local `admin@email.com` / `123321` em `admin_users` e o usuário distribuidor `distribuidora.83299743000130@email.com` / `123321` vinculado ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
+O seed padrão cria o admin local `admin@email.com` / `123321` em `admin_users` e o usuário distribuidor `distribuidora.83299743000130@email.com` / `123321` vinculado ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
 
 ## Decisões para alto volume
 

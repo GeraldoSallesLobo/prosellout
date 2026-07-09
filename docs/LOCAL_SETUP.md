@@ -65,6 +65,16 @@ Se preferir um banco limpo (reaplica todas as migrations + seed, **apaga os dado
 supabase db reset
 ```
 
+Para QA de importação com banco vazio, sem a amostra real, use o seed mínimo:
+
+```bash
+supabase db reset --sql-paths ./seeds/admin-only.sql
+```
+
+Esse reset cria apenas `admin@email.com` / `123321`. Depois entre no portal como
+admin e crie o usuário distribuidor em **Admin › Usuários** antes de importar os
+arquivos.
+
 Para conferir o que já foi aplicado: `supabase migration list --local`.
 
 ### 3. Configurar o frontend
@@ -78,6 +88,13 @@ NEXT_PUBLIC_UPLOAD_API_URL=
 ```
 
 Perdeu a chave? Rode `supabase status` dentro de `src/database/` que ela é reimpressa.
+
+> Importante: a AWS de produção valida o token e grava usando o Supabase cloud
+> configurado nas Lambdas. Portanto, `NEXT_PUBLIC_UPLOAD_API_URL` apontando para
+> a AWS prod não funciona com `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`.
+> Para QA end-to-end da importação AWS, use o frontend local apontando para o
+> Supabase cloud, ou teste pela Vercel. O Supabase local é indicado para validar
+> migrations, auth/admin e telas sem acionar o pipeline AWS prod.
 
 ### 4. Usuários de login
 

@@ -55,7 +55,14 @@ Em código, os tipos `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN` e 
 - spec equivalente no `etl-loader`;
 - layout exibido no frontend.
 
-Para produção, ainda é necessário aplicar a migration no Supabase, fazer deploy do `src/cloud`, configurar `NEXT_PUBLIC_UPLOAD_API_URL` no frontend e executar QA com arquivos reais. `STOCK` e `PLANNER` continuam planejados até existirem amostras reais e contrato fechado.
+O deploy AWS de produção foi realizado com Terraform na conta `071604987536`
+(`sa-east-1`). Para ativar no portal, configure o output `upload_api_url` em
+`NEXT_PUBLIC_UPLOAD_API_URL` na Vercel e faça redeploy. O roteiro completo de
+deploy/QA está em `docs/DEPLOY_AWS_IMPORTACAO.md`.
+
+`STOCK` e `PLANNER` continuam planejados até existirem amostras reais e contrato
+fechado. O estoque, pelo entendimento atual de negócio, é calculado por
+`Sell In - Sell Out`, não importado por arquivo próprio.
 
 ## Tipos suportados
 

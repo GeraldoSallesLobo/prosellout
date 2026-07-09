@@ -33,5 +33,6 @@ provider "aws" {
 }
 
 locals {
-  prefix = "${var.project_name}-${var.environment}"
+  prefix                 = "${var.project_name}-${var.environment}"
+  allowed_upload_origins = distinct(var.portal_origins)
 }
