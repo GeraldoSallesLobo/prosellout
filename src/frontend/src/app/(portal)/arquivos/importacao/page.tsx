@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Upload } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -42,6 +42,9 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, meta]) => ({
   value,
   label: meta.label,
 }));
+
+const ACTIVE_IMPORT_STATUSES = new Set<ImportStatus>(["pending", "validating", "processing"]);
+const ACTIVE_IMPORT_REFETCH_INTERVAL_MS = 2_000;
 
 function getMissingPrerequisiteLabels(
   fileType: FileTypeConfig,
@@ -87,13 +90,31 @@ function FileImportContent() {
         start: startDate || undefined,
         end: endDate || undefined,
       }),
+    refetchInterval: (query) => {
+      const rows = (query.state.data ?? []) as FileImport[];
+      const hasActiveImport = rows.some((row) => ACTIVE_IMPORT_STATUSES.has(row.status));
+      return hasActiveImport ? ACTIVE_IMPORT_REFETCH_INTERVAL_MS : false;
+    },
   });
+
+  const hasActiveImports = imports.some((row) => ACTIVE_IMPORT_STATUSES.has(row.status));
+  const selectedLogImport = imports.find((row) => row.id === logImport?.id) ?? logImport;
 
   const { data: logs = [], isLoading: isLogsLoading } = useQuery({
     queryKey: ["import-logs", logImport?.id],
     queryFn: () => fetchImportLogs(logImport!.id),
     enabled: Boolean(logImport),
+    refetchInterval: selectedLogImport && ACTIVE_IMPORT_STATUSES.has(selectedLogImport.status)
+      ? ACTIVE_IMPORT_REFETCH_INTERVAL_MS
+      : false,
   });
+
+  useEffect(() => {
+    if (!hasActiveImports) {
+      queryClient.invalidateQueries({ queryKey: ["completed-import-codes"] });
+    }
+  }, [hasActiveImports, queryClient]);
+
   const completedImportCodeSet = useMemo(
     () => new Set(completedImportCodes),
     [completedImportCodes],

@@ -16,6 +16,25 @@ O arquivo pode ser `.xlsx` ou `.csv`. A primeira linha deve conter os cabeçalho
 6. A Lambda `etl-loader` faz `COPY` para staging e chama `process_*_staging`.
 7. A rotina cruza dados por distribuidor, PDV, EAN e vendedor, grava a tabela final e registra rejeições por linha.
 
+## Logs de erro
+
+A tela **Arquivos › Importação** mostra logs por linha quando uma importação falha
+ou conclui com erros. Esses logs são texto para usuário final e devem indicar:
+
+- o campo ou cadastro que falhou;
+- o valor recebido no arquivo;
+- a correção provável ou a base que precisa ser importada antes.
+
+Exemplos de causas esperadas:
+
+| Causa | Mensagem esperada no log |
+|---|---|
+| CNPJ/código do distribuidor não bate com a conta | Informa o valor recebido na planilha e o código/CNPJ esperado para o distribuidor da conta. |
+| Colunas obrigatórias ausentes | Lista as colunas que faltaram e orienta conferir **Arquivos › Configuração**. |
+| Cliente não encontrado | Informa o PDV/CNPJ recebido e orienta importar ou ajustar **Clientes** antes de Sell Out/Meta. |
+| Produto não encontrado | Informa o EAN recebido e orienta importar ou ajustar **Hier. Produtos** antes de Sell In/Sell Out/Meta. |
+| Data ou número inválido | Mostra o valor inválido e o formato esperado. |
+
 ## Ordem recomendada
 
 Para uma base nova, importe nesta ordem:
