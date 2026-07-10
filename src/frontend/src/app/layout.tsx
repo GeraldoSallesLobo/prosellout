@@ -6,6 +6,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "ProSellOut",
   description: "Portal de gestão de Sell Out",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png", sizes: "64x64" }],
+  },
 };
 
 export default function RootLayout({
