@@ -19,7 +19,8 @@ supabase/
 ├── scripts/
 │   └── generate_seed_from_sample.py         # gera o seed a partir de .dev_files/dados-importacao
 ├── seeds/
-│   └── admin-only.sql                       # seed mínimo para QA de importação local
+│   ├── admin-only.sql                       # seed mínimo para QA de importação local
+│   └── mtd-many-channels.sql                # complemento local para estressar gráfico de canais no MTD
 └── seed.sql                                 # AUTO-GERADO da amostra real (ver docs/VALIDACAO_AMOSTRA.md)
 ```
 
@@ -78,6 +79,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key impressa pelo supabase start — reveja 
 ```
 
 O seed padrão cria o admin local `admin@email.com` / `123321` em `admin_users` e o usuário distribuidor `distribuidora.83299743000130@email.com` / `123321` vinculado ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
+
+Para validar o gráfico de **Canais** em `/relatorio/status/mtd` com volume parecido com produção, rode o seed padrão junto do complemento de stress:
+
+```bash
+cd src/database
+supabase db reset --sql-paths ./seed.sql --sql-paths ./seeds/mtd-many-channels.sql
+```
+
+Esse complemento adiciona 65 canais `Stress Channel XX`, cada um com cliente, Sell Out atual/anterior e meta em julho de 2026, e atualiza a materialized view de relatórios no final.
 
 ## Decisões para alto volume
 

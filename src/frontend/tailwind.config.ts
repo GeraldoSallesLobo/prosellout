@@ -34,6 +34,9 @@ const config: Config = {
         yellow: fromCssVariable("--yellow"),
         red: fromCssVariable("--red"),
         orange: fromCssVariable("--orange"),
+        chartCurrent: fromCssVariable("--chart-current"),
+        chartTarget: fromCssVariable("--chart-target"),
+        chartPrevious: fromCssVariable("--chart-previous"),
         field: fromCssVariable("--field"),
       },
       borderRadius: {

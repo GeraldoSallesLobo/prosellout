@@ -65,6 +65,17 @@ Se preferir um banco limpo (reaplica todas as migrations + seed, **apaga os dado
 supabase db reset
 ```
 
+Para validar o gráfico de **Canais** em `/relatorio/status/mtd` com mais de 60 canais:
+
+```bash
+supabase db reset --sql-paths ./seed.sql --sql-paths ./seeds/mtd-many-channels.sql
+```
+
+Esse reset mantém a amostra real e adiciona 65 canais `Stress Channel XX` com
+Sell Out atual/anterior e meta no período de julho de 2026. Se a tela ainda
+mostrar outro período, limpe os filtros salvos da sessão ou ajuste os filtros
+para julho de 2026.
+
 Para QA de importação com banco vazio, sem a amostra real, use o seed mínimo:
 
 ```bash
