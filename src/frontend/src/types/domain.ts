@@ -123,7 +123,7 @@ export interface SellInRow {
 }
 
 export interface StockRow {
-  id: number;
+  id: string;
   distributorName: string;
   ean: string;
   productName: string;

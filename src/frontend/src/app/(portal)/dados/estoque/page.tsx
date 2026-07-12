@@ -50,16 +50,30 @@ export default function StockPage() {
     },
     { key: "ean", header: "EAN", render: (row) => row.ean, searchable: true },
     { key: "product", header: "Produto", render: (row) => row.productName, searchable: true },
-    { key: "date", header: "Data", render: (row) => formatIsoDate(row.snapshotDate) },
-    { key: "quantity", header: "Quantidade", align: "right", render: (row) => formatInteger(row.quantity) },
-    { key: "value", header: "Valor", align: "right", render: (row) => formatCurrency(row.grossValue) },
+    { key: "date", header: "Posição em", render: (row) => formatIsoDate(row.snapshotDate) },
+    {
+      key: "quantity",
+      header: "Quantidade",
+      align: "right",
+      render: (row) => (
+        <span className={row.quantity < 0 ? "font-semibold text-red" : undefined}>
+          {formatInteger(row.quantity)}
+        </span>
+      ),
+    },
+    {
+      key: "value",
+      header: "Valor Sell In",
+      align: "right",
+      render: (row) => formatCurrency(row.grossValue),
+    },
   ];
 
   return (
     <div>
       <PageHeader
         title="Estoque Consolidado"
-        description="Posição de estoque por distribuidora e produto"
+        description="Posição calculada por Sell In acumulado menos Sell Out acumulado"
         actions={
           <ExportButton
             fileName="estoque"
@@ -68,9 +82,9 @@ export default function StockPage() {
                 distribuidora: row.distributorName,
                 ean: row.ean,
                 produto: row.productName,
-                data: row.snapshotDate,
+                posicao_em: row.snapshotDate,
                 quantidade: row.quantity,
-                valor: row.grossValue,
+                valor_sell_in: row.grossValue,
               }))
             }
           />
@@ -83,7 +97,14 @@ export default function StockPage() {
           setFilters((current) => ({ ...current, ...patch }));
           setPage(1);
         }}
+        showStartDate={false}
+        endDateLabel="Posição até"
       />
+
+      <p className="mb-3 text-xs text-text2">
+        Quantidades negativas indicam Sell Out maior que o Sell In acumulado até a data de
+        referência e devem ser tratadas como alerta de inconsistência nos dados.
+      </p>
 
       <DataTable
         columns={columns}

@@ -79,9 +79,28 @@ O deploy AWS de produção foi realizado com Terraform na conta `071604987536`
 `NEXT_PUBLIC_UPLOAD_API_URL` na Vercel e faça redeploy. O roteiro completo de
 deploy/QA está em `docs/DEPLOY_AWS_IMPORTACAO.md`.
 
-`STOCK` e `PLANNER` continuam planejados até existirem amostras reais e contrato
-fechado. O estoque, pelo entendimento atual de negócio, é calculado por
-`Sell In - Sell Out`, não importado por arquivo próprio.
+`STOCK` não é importado por arquivo próprio. A tela **Dados › Estoque** calcula
+a posição por produto usando `Sell In` acumulado menos `Sell Out` acumulado até
+a data de referência. `PLANNER` continua planejado até existir amostra real e
+contrato fechado.
+
+## Pendência estrutural: Indústria/Marca
+
+A validação recebida em 12/07/2026 definiu que o usuário deverá escolher uma
+**indústria/marca** ao acessar o ProSellOut e que os layouts passarão a trazer
+uma coluna `Marca` à esquerda de `CNPJ Distribuidor`.
+
+Isso ainda não é um contrato implementado. Hoje o validador ignora colunas
+extras não mapeadas, então um arquivo com `Marca` adicional pode continuar
+sendo processado, mas o valor não segmenta dados nem aparece nos filtros.
+
+Antes de implementar a dimensão, ainda falta definir:
+
+- cadastro/fonte das marcas válidas por distribuidor;
+- se `Marca` é equivalente a indústria, marca comercial ou fabricante;
+- se produto/EAN pertence sempre a uma única marca;
+- como migrar dados já importados para uma marca inicial;
+- como será a opção "todas as indústrias" nos relatórios e permissões.
 
 ## Tipos suportados
 
@@ -244,23 +263,24 @@ Notas:
 - Produto precisa existir em **Hier. Produtos**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
 
-## Tipos planejados
+## Tipos calculados
 
 ### STOCK — Estoque
 
-- Tela prevista: **Dados › Estoque**
-- Tabela final prevista: `stock_snapshots`
-- Status: aguardando amostra real para fechar contrato e ativar pipeline.
+- Tela alimentada: **Dados › Estoque**
+- Fonte: `sell_in` e `sell_out`
+- Rotina: `fetch_stock_position`
 
-Contrato sugerido para amostra:
+Regras:
 
-- `CNPJ Distribuidor`
-- `EAN`
-- `Data Estoque`
-- `Quantidade`
-- `Valor Estoque` opcional
+- Quantidade = `Sell In` acumulado − `Sell Out` acumulado até a data de referência.
+- Saldo negativo é exibido em vermelho como alerta de inconsistência de dados.
+- Valor Sell In = soma acumulada do valor informado nos arquivos de Sell In.
 
-Observação: hoje algumas regras de negócio calculam volume de estoque como `Sell In − Sell Out`. Se uma base física de estoque virar fonte oficial, as regras de cobertura média devem ser revisadas.
+Se no futuro uma base física de estoque virar fonte oficial, será necessário
+reabrir o contrato e revisar a Cobertura Média antes de trocar a fonte.
+
+## Tipos planejados
 
 ### PLANNER — Batalha Naval
 

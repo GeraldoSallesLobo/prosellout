@@ -1,4 +1,4 @@
-export type ImportLayoutStatus = "ready" | "planned";
+export type ImportLayoutStatus = "ready" | "planned" | "calculated";
 
 export interface ImportConfigReference {
   code: string;
@@ -158,14 +158,15 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     title: "Estoque",
     screen: "Dados › Estoque",
     targetTable: "stock_snapshots",
-    status: "planned",
-    summary: "Representará a posição física de estoque por distribuidor e produto.",
-    prerequisiteCodes: ["PRODUCTS"],
-    requiredColumns: ["CNPJ Distribuidor", "EAN", "Data Estoque", "Quantidade"],
-    optionalColumns: ["Valor Estoque"],
+    status: "calculated",
+    summary: "Não é importado por arquivo; a tela calcula estoque por produto.",
+    prerequisiteCodes: [],
+    requiredColumns: [],
+    optionalColumns: [],
     notes: [
-      "Ainda precisa de amostra real para fechar o contrato e ativar o pipeline AWS.",
-      "Hoje alguns KPIs calculam volume de estoque como Sell In − Sell Out.",
+      "Quantidade = Sell In acumulado − Sell Out acumulado até a data de referência.",
+      "Saldo negativo é exibido como alerta de inconsistência nos dados.",
+      "Valor Sell In é a soma acumulada do valor informado nos arquivos de Sell In.",
     ],
   },
   {

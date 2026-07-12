@@ -45,7 +45,12 @@ Ao cruzar a amostra com o schema, encontramos e corrigimos:
 5. **Produtos têm caixa/unidades e escopo por distribuidor** — adicionados `box_count` e `distributor_id`.
 6. **EAN aparece em 13 e 14 dígitos** (DUN-14 com "1" na frente) — função `fn_ean_core` normaliza para o núcleo de 13 dígitos ao cruzar Sell In × Produtos.
 
+## Decisões posteriores
+
+- **Estoque**: não existe planilha de estoque. A tela **Dados › Estoque** calcula a posição como `Sell In volume acumulado - Sell Out volume acumulado` até a data de referência. Saldo negativo deve ser exibido como alerta de inconsistência.
+- **Meta com PDV ausente em Clientes**: a regra validada é rejeitar a linha e registrar alerta no log. O usuário deve adicionar o PDV em **Clientes** ou ajustar a Meta antes de importar novamente.
+
 ## Follow-ups (não feitos ainda)
 
-- **Base de Estoque**: a regra de negócio define estoque como consequência de `Sell In volume - Sell Out volume`; se futuramente houver uma base física de estoque, revisar a Cobertura Média antes de trocar a fonte.
+- **Indústria/Marca**: a próxima versão precisa criar a dimensão de indústria/marca, adicionar seletor ao acesso/portal e consumir a nova coluna `Marca` nos layouts. Ainda falta contrato de dados para definir cadastro, migração e relação marca × EAN.
 - **Multi-distribuidor**: a amostra tem 1 distribuidor; produto/EAN globalmente único ainda vale. Para vários distribuidores, revisar unicidade de EAN por distribuidor.

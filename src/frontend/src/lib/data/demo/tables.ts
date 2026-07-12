@@ -61,23 +61,44 @@ export const DEMO_SELL_IN_ROWS: SellInRow[] = (() => {
 })();
 
 export const DEMO_STOCK_ROWS: StockRow[] = (() => {
-  const random = createSeededRandom(303);
-  let id = 0;
-  return DEMO_DISTRIBUTORS.flatMap((distributor) =>
-    DEMO_PRODUCTS.map((product) => {
-      id += 1;
-      const quantity = 50 + Math.floor(random() * 800);
-      return {
-        id,
-        distributorName: distributor.name,
-        ean: product.ean,
-        productName: product.name,
-        snapshotDate: new Date().toISOString().slice(0, 10),
-        quantity,
-        grossValue: Math.round(quantity * AVG_UNIT_PRICE * 0.78 * 100) / 100,
-      };
-    }),
-  );
+  const snapshotDate = new Date().toISOString().slice(0, 10);
+  const rowsByKey = new Map<string, StockRow>();
+
+  for (const row of DEMO_SELL_IN_ROWS) {
+    const key = `${row.distributorName}:${row.ean}`;
+    const current = rowsByKey.get(key) ?? {
+      id: key,
+      distributorName: row.distributorName,
+      ean: row.ean,
+      productName: row.productName,
+      snapshotDate,
+      quantity: 0,
+      grossValue: 0,
+    };
+    current.quantity += row.quantity;
+    current.grossValue += row.grossValue;
+    rowsByKey.set(key, current);
+  }
+
+  for (const row of DEMO_SELL_OUT_ROWS) {
+    const key = `${row.distributorName}:${row.ean}`;
+    const current = rowsByKey.get(key) ?? {
+      id: key,
+      distributorName: row.distributorName,
+      ean: row.ean,
+      productName: row.productName,
+      snapshotDate,
+      quantity: 0,
+      grossValue: 0,
+    };
+    current.quantity -= row.quantity;
+    rowsByKey.set(key, current);
+  }
+
+  return Array.from(rowsByKey.values()).map((row) => ({
+    ...row,
+    grossValue: Math.round(row.grossValue * 100) / 100,
+  }));
 })();
 
 export const DEMO_TARGET_ROWS: TargetRow[] = (() => {

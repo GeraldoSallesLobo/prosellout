@@ -39,7 +39,7 @@ export function DateField({ label, wrapperClassName, className, ...props }: Date
     <FieldWrapper label={label} className={wrapperClassName}>
       <input
         type="date"
-        className={clsx("input-base [color-scheme:dark]", className)}
+        className={clsx("input-base [color-scheme:light] dark:[color-scheme:dark]", className)}
         {...props}
       />
     </FieldWrapper>

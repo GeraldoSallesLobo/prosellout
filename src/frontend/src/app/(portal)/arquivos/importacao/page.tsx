@@ -234,6 +234,29 @@ function FileImportContent() {
         }
       />
 
+      <div className="mb-5 grid gap-3 md:grid-cols-2">
+        <div className="rounded-md border border-line bg-bg px-3 py-2">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-sm font-semibold text-text1">Estoque</span>
+            <Badge variant="blue">Calculado</Badge>
+          </div>
+          <p className="text-xs text-text2">
+            Não há arquivo de estoque. A tela Dados › Estoque usa Sell In acumulado
+            menos Sell Out acumulado até a data de referência.
+          </p>
+        </div>
+        <div className="rounded-md border border-line bg-bg px-3 py-2">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-sm font-semibold text-text1">Batalha Naval</span>
+            <Badge variant="yellow">Planejado</Badge>
+          </div>
+          <p className="text-xs text-text2">
+            Ainda depende de amostra e contrato de layout antes de entrar no
+            pipeline de importação.
+          </p>
+        </div>
+      </div>
+
       <div className="card mb-5 grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
         <SelectField
           label="Tipo Arquivo"

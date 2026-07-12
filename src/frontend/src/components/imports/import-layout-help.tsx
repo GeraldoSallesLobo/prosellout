@@ -41,8 +41,12 @@ export function ImportLayoutHelp({
     );
   }
 
-  const statusLabel = spec.status === "ready" ? "Suportado" : "Planejado";
-  const statusVariant = spec.status === "ready" ? "green" : "yellow";
+  const statusMeta = {
+    ready: { label: "Suportado", variant: "green" },
+    planned: { label: "Planejado", variant: "yellow" },
+    calculated: { label: "Calculado", variant: "blue" },
+  } as const;
+  const status = statusMeta[spec.status];
   const prerequisiteSpecs = getImportPrerequisiteSpecs(spec);
   const missingPrerequisiteCodes = completedImportCodes
     ? new Set(getMissingImportPrerequisiteCodes(spec, completedImportCodes))
@@ -55,7 +59,7 @@ export function ImportLayoutHelp({
           <div className="text-sm font-semibold text-text1">{spec.title}</div>
           <div className="text-xs text-text2">{spec.screen}</div>
         </div>
-        <Badge variant={statusVariant}>{statusLabel}</Badge>
+        <Badge variant={status.variant}>{status.label}</Badge>
       </div>
 
       <p className="mb-3 text-xs text-text2">{spec.summary}</p>

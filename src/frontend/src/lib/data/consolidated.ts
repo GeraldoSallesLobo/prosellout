@@ -11,7 +11,13 @@ import type {
   StockRow,
   TargetRow,
 } from "@/types/domain";
-import { DEMO_CHANNELS, DEMO_CLUSTERS, DEMO_CUSTOMERS, DEMO_SELLERS } from "./demo/catalog";
+import {
+  DEMO_CHANNELS,
+  DEMO_CLUSTERS,
+  DEMO_CUSTOMERS,
+  DEMO_DISTRIBUTORS,
+  DEMO_SELLERS,
+} from "./demo/catalog";
 import {
   DEMO_SELL_IN_ROWS,
   DEMO_SELL_OUT_ROWS,
@@ -378,15 +384,6 @@ export async function fetchSellInRows(
   };
 }
 
-const STOCK_SORT_COLUMNS: Record<string, string> = {
-  distributor: "distributors(name)",
-  ean: "products(ean)",
-  product: "products(name)",
-  date: "snapshot_date",
-  quantity: "quantity",
-  value: "gross_value",
-};
-
 const STOCK_DEMO_SORTS: DemoSortMap<StockRow> = {
   distributor: (row) => row.distributorName,
   ean: (row) => row.ean,
@@ -396,66 +393,55 @@ const STOCK_DEMO_SORTS: DemoSortMap<StockRow> = {
   value: (row) => row.grossValue,
 };
 
-const STOCK_SEARCH_COLUMNS: SearchColumnMap = {
-  distributor: { column: "name", relation: "distributors" },
-  ean: { column: "ean", relation: "products" },
-  product: { column: "name", relation: "products" },
-};
-
-const STOCK_SELECT =
-  "id, snapshot_date, quantity, gross_value, distributors(name), products(ean, name)";
-
 export async function fetchStockRows(
   tableQuery: TableQuery,
   filters: PeriodFilters,
 ): Promise<Paginated<StockRow>> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
+    const distributorName = filters.distributorId
+      ? DEMO_DISTRIBUTORS.find((distributor) => distributor.id === filters.distributorId)?.name
+      : null;
+    const stockRows = DEMO_STOCK_ROWS
+      .filter((row) => !distributorName || row.distributorName === distributorName)
+      .map((row) => ({
+        ...row,
+        snapshotDate: filters.end ?? row.snapshotDate,
+      }));
     const demoRows = sortDemoRows(
-      searchDemoRows(DEMO_STOCK_ROWS, tableQuery.search, STOCK_DEMO_SORTS),
+      searchDemoRows(stockRows, tableQuery.search, STOCK_DEMO_SORTS),
       tableQuery.sort,
       STOCK_DEMO_SORTS,
     );
     return simulateLatency(paginate(demoRows, tableQuery));
   }
 
-  const { from, to } = pageRange(tableQuery);
-  const sortColumn = tableQuery.sort ? STOCK_SORT_COLUMNS[tableQuery.sort.key] : undefined;
-  const search = resolveSearch(tableQuery, STOCK_SEARCH_COLUMNS);
-  let query = supabase
-    .from("stock_snapshots")
-    .select(withInnerJoin(STOCK_SELECT, search?.target.relation), { count: "exact" });
-  if (search) {
-    const { column, relation } = search.target;
-    query = query.ilike(relation ? `${relation}.${column}` : column, search.pattern);
-  }
-  query =
-    sortColumn && tableQuery.sort
-      ? query.order(sortColumn, { ascending: tableQuery.sort.direction === "asc" })
-      : query.order("snapshot_date", { ascending: false });
-  query = query.range(from, to);
-  if (filters.start) query = query.gte("snapshot_date", filters.start);
-  if (filters.end) query = query.lte("snapshot_date", filters.end);
-  if (filters.distributorId) query = query.eq("distributor_id", filters.distributorId);
-
-  const { data, error, count } = await query;
+  const { from } = pageRange(tableQuery);
+  const { data, error } = await supabase.rpc("fetch_stock_position", {
+    p_snapshot_date: filters.end ?? new Date().toISOString().slice(0, 10),
+    p_distributor_id: filters.distributorId ?? null,
+    p_search_key: tableQuery.search?.key ?? null,
+    p_search_text: tableQuery.search?.text ?? null,
+    p_sort_key: tableQuery.sort?.key ?? null,
+    p_sort_direction: tableQuery.sort?.direction ?? "asc",
+    p_limit: tableQuery.pageSize,
+    p_offset: from,
+  });
   if (error) throw error;
 
+  const rows = (data ?? []) as Record<string, unknown>[];
+
   return {
-    total: count ?? 0,
-    rows: (data ?? []).map((row) => {
-      const record = row as unknown as Record<string, unknown>;
-      const product = record.products as { ean: string; name: string } | null;
-      return {
-        id: Number(record.id),
-        distributorName: (record.distributors as { name: string } | null)?.name ?? "—",
-        ean: product?.ean ?? "—",
-        productName: product?.name ?? "—",
-        snapshotDate: String(record.snapshot_date),
-        quantity: Number(record.quantity),
-        grossValue: Number(record.gross_value),
-      };
-    }),
+    total: Number(rows[0]?.total_count ?? 0),
+    rows: rows.map((record) => ({
+      id: String(record.row_id),
+      distributorName: String(record.distributor_name ?? "—"),
+      ean: String(record.ean ?? "—"),
+      productName: String(record.product_name ?? "—"),
+      snapshotDate: String(record.snapshot_date),
+      quantity: Number(record.quantity ?? 0),
+      grossValue: Number(record.gross_value ?? 0),
+    })),
   };
 }
 
