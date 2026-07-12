@@ -45,7 +45,7 @@ export const CHART_COLORS: Record<Theme, ChartColorTokens> = {
     lineAccent: "#58a6ff",
     seriesCurrent: "#1f6feb",
     seriesTarget: "#58a6ff",
-    seriesPrevious: "#3fb950",
+    seriesPrevious: "#f85149",
   },
   light: {
     grid: "#d0d7de",
@@ -58,6 +58,6 @@ export const CHART_COLORS: Record<Theme, ChartColorTokens> = {
     lineAccent: "#54aeff",
     seriesCurrent: "#0a3069",
     seriesTarget: "#54aeff",
-    seriesPrevious: "#1a7f37",
+    seriesPrevious: "#cf222e",
   },
 };

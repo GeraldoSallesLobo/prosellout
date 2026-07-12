@@ -30,7 +30,7 @@
   --orange: 240 136 62; /* #f0883e */
   --chart-current: 31 111 235; /* #1f6feb */
   --chart-target: 88 166 255; /* #58a6ff */
-  --chart-previous: 63 185 80; /* #3fb950 */
+  --chart-previous: 248 81 73; /* #f85149 */
   --field: 13 17 23; /* #0d1117 — form control background */
   --login-glow: #1a2d4a;
 }
@@ -56,7 +56,7 @@ html.light {
   --orange: 188 76 0; /* #bc4c00 */
   --chart-current: 10 48 105; /* #0a3069 */
   --chart-target: 84 174 255; /* #54aeff */
-  --chart-previous: 26 127 55; /* #1a7f37 */
+  --chart-previous: 207 34 46; /* #cf222e */
   --field: 255 255 255; /* #ffffff — white inputs, light-theme convention */
   --login-glow: #dbe9fb;
 }

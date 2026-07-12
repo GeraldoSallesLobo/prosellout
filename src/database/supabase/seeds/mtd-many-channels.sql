@@ -157,7 +157,7 @@ select
   product_seed.id,
   customer_seed.sales_rep_id,
   'MANY-CHANNELS-202607-' || lpad(customer_seed.row_number::text, 2, '0'),
-  '2026-07-01'::date + ((customer_seed.row_number - 1) % 12),
+  '2026-07-01'::date + (((customer_seed.row_number - 1) % 12)::integer),
   (120 + customer_seed.row_number)::numeric(14, 3),
   (52000 - (customer_seed.row_number * 520))::numeric(14, 2),
   ((52000 - (customer_seed.row_number * 520)) / (120 + customer_seed.row_number) * 0.62)::numeric(14, 4)
@@ -204,7 +204,7 @@ select
   product_seed.id,
   customer_seed.sales_rep_id,
   'MANY-CHANNELS-202606-' || lpad(customer_seed.row_number::text, 2, '0'),
-  '2026-06-01'::date + ((customer_seed.row_number - 1) % 12),
+  '2026-06-01'::date + (((customer_seed.row_number - 1) % 12)::integer),
   (110 + customer_seed.row_number)::numeric(14, 3),
   ((52000 - (customer_seed.row_number * 520)) * 0.82)::numeric(14, 2),
   (((52000 - (customer_seed.row_number * 520)) * 0.82) / (110 + customer_seed.row_number) * 0.64)::numeric(14, 4)
