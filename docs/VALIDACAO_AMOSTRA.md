@@ -30,7 +30,7 @@ python3 src/database/scripts/generate_seed_from_sample.py
 | Clientes (PDVs) | ~6.122 | Layout Clientes (+ stubs de PDVs só vistos no Sell Out) |
 | Sell Out | 3.057 | Layout SellOut + SellOut_aa (linhas sem volume/valor são ignoradas) |
 | Sell In | 30 | Layout SellIn + SellIn_aa |
-| Metas | 1.469 | Layout SellOut_meta (agregadas por cliente/produto/mês) |
+| Metas | 1.436 | Layout SellOut_meta (agregadas por cliente/produto/mês) |
 
 Números-âncora para conferir no Status MTD (Junho/2026): Sell Out R$ ≈ 1.000.563, Un ≈ 14.188, Cobertura ≈ 327 PDVs, Ticket Médio ≈ R$ 3.059, Preço Médio ≈ R$ 70,52.
 
@@ -48,9 +48,10 @@ Ao cruzar a amostra com o schema, encontramos e corrigimos:
 ## Decisões posteriores
 
 - **Estoque**: não existe planilha de estoque. A tela **Dados › Estoque** calcula a posição como `Sell In volume acumulado - Sell Out volume acumulado` até a data de referência. Saldo negativo deve ser exibido como alerta de inconsistência.
-- **Meta com PDV ausente em Clientes**: a regra validada é rejeitar a linha e registrar alerta no log. O usuário deve adicionar o PDV em **Clientes** ou ajustar a Meta antes de importar novamente.
+- **Meta com PDV ausente em Clientes**: a regra validada é rejeitar a linha e registrar alerta no log. O usuário deve adicionar o PDV em **Clientes** ou ajustar a Meta antes de importar novamente. Em 13/07/2026, `Layout SellOut_meta.xlsx` foi substituído por uma versão corrigida com 1.436 linhas e sem PDVs ausentes na base de Clientes. Reenvios de Meta substituem as metas anteriores dos meses presentes no arquivo.
+- **Indústria/Marca**: foi confirmado que a próxima estrutura terá `Marca` obrigatória em todos os layouts, vínculo por marca e visão "todas as marcas" somada por distribuidor. Para o QA atual, a estrutura permanece sem `Marca`, assumindo uma indústria padrão.
 
 ## Follow-ups (não feitos ainda)
 
-- **Indústria/Marca**: a próxima versão precisa criar a dimensão de indústria/marca, adicionar seletor ao acesso/portal e consumir a nova coluna `Marca` nos layouts. Ainda falta contrato de dados para definir cadastro, migração e relação marca × EAN.
+- **Indústria/Marca**: a próxima versão precisa criar a dimensão de indústria/marca, adicionar seletor ao acesso/portal e consumir a nova coluna `Marca` nos layouts. Ainda faltam a lista de marcas, o nome/código exato, exemplos atualizados dos layouts e a confirmação sobre repetição de Clientes/Vendedores entre marcas.
 - **Multi-distribuidor**: a amostra tem 1 distribuidor; produto/EAN globalmente único ainda vale. Para vários distribuidores, revisar unicidade de EAN por distribuidor.

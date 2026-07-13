@@ -43,6 +43,14 @@ def rows(fname: str) -> list[tuple]:
     return data
 
 
+def count_data_rows(data: list[tuple]) -> int:
+    return sum(
+        1
+        for row in data
+        if any(value is not None and str(value).strip() != "" for value in row)
+    )
+
+
 def sql_str(value) -> str:
     if value is None or value == "":
         return "null"
@@ -254,6 +262,7 @@ def main() -> None:
         ("TARGETS", "Meta", "sales_targets", "process_targets_staging", "xlsx", "active"),
     ]
     ftc_id = {code: uid("ftc", code) for code, *_ in ftc}
+    meta_data_rows = count_data_rows(meta)
     w("insert into file_type_configs (id, code, name, target_table, processing_routine, file_format, status) values")
     w(",\n".join(
         f"  ('{ftc_id[code]}', {sql_str(code)}, {sql_str(name)}, {sql_str(tbl)}, {sql_str(rout)}, {sql_str(fmt)}, {sql_str(status)})"
@@ -272,7 +281,7 @@ def main() -> None:
         ("Layout Clientes.xlsx", "CUSTOMERS", "completed", 6334, 6334, 0),
         ("Layout Produtos.xlsx", "PRODUCTS", "completed", 5, 5, 0),
         ("Layout Vendedores.xlsx", "SELLERS", "completed", 13, 13, 0),
-        ("Layout SellOut_meta.xlsx", "TARGETS", "completed", 3362, 1469, 0),
+        ("Layout SellOut_meta.xlsx", "TARGETS", "completed", meta_data_rows, meta_data_rows, 0),
     ]
     w("insert into file_imports (file_name, sheet_name, file_type_id, status, total_records, processed_records, error_count, imported_by, distributor_id, finished_at) values")
     w(",\n".join(

@@ -90,17 +90,26 @@ A validação recebida em 12/07/2026 definiu que o usuário deverá escolher uma
 **indústria/marca** ao acessar o ProSellOut e que os layouts passarão a trazer
 uma coluna `Marca` à esquerda de `CNPJ Distribuidor`.
 
-Isso ainda não é um contrato implementado. Hoje o validador ignora colunas
-extras não mapeadas, então um arquivo com `Marca` adicional pode continuar
-sendo processado, mas o valor não segmenta dados nem aparece nos filtros.
+Em 13/07/2026 foi confirmado que a regra futura será:
 
-Antes de implementar a dimensão, ainda falta definir:
+- `Marca` obrigatória em Clientes, Hier. Produtos, Vendedores, Meta, Sell In e Sell Out;
+- o mesmo nome/código de marca deve aparecer de forma consistente em todos os arquivos;
+- clientes, produtos, vendedores, metas, Sell In e Sell Out serão vinculados a uma marca;
+- a visão "todas as marcas" deverá somar os dados de todas as marcas do distribuidor.
 
-- cadastro/fonte das marcas válidas por distribuidor;
-- se `Marca` é equivalente a indústria, marca comercial ou fabricante;
-- se produto/EAN pertence sempre a uma única marca;
-- como migrar dados já importados para uma marca inicial;
-- como será a opção "todas as indústrias" nos relatórios e permissões.
+Isso ainda não é um contrato implementado. Para o QA atual, a orientação validada
+é manter a estrutura sem `Marca`, assumindo uma indústria padrão. Hoje o validador
+ignora colunas extras não mapeadas, então um arquivo com `Marca` adicional pode
+continuar sendo processado, mas o valor não segmenta dados nem aparece nos filtros.
+
+Antes de implementar a dimensão, ainda falta receber:
+
+- lista de marcas/indústrias válidas para os arquivos de teste;
+- nome/código exato que virá na coluna `Marca`;
+- exemplo atualizado de cada layout com a nova coluna;
+- confirmação se Clientes e Vendedores podem se repetir em marcas diferentes;
+- definição de cadastro/fonte das marcas válidas por distribuidor;
+- regra de migração dos dados já importados para uma marca inicial.
 
 ## Tipos suportados
 
@@ -210,6 +219,7 @@ Notas:
 
 - `Data Faturamento` define o mês da meta.
 - Linhas repetidas no mesmo cliente + SKU + mês são somadas dentro da importação.
+- Uma nova importação de Meta substitui as metas anteriores dos meses presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas que foram removidas da planilha.
 
 ### SELL_OUT — Sell Out
 
