@@ -118,9 +118,9 @@ export function ComboChart({
               yAxisId="line"
               dataKey="lineValue"
               name={lineLabel}
-              stroke={colors.lineAccent}
+              stroke={colors.seriesPrevious}
               strokeWidth={2}
-              dot={{ fill: colors.lineAccent, r: 3 }}
+              dot={{ fill: colors.seriesPrevious, r: 3 }}
             />
           </ComposedChart>
         </ResponsiveContainer>

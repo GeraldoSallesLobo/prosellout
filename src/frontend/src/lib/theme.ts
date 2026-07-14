@@ -22,7 +22,6 @@ interface ChartColorTokens {
   tooltipText: string;
   cursor: string;
   barPrimary: string;
-  lineAccent: string;
   seriesCurrent: string;
   seriesTarget: string;
   seriesPrevious: string;
@@ -42,7 +41,6 @@ export const CHART_COLORS: Record<Theme, ChartColorTokens> = {
     tooltipText: "#e6edf3",
     cursor: "rgba(255, 255, 255, 0.04)",
     barPrimary: "#1f6feb",
-    lineAccent: "#58a6ff",
     seriesCurrent: "#1f6feb",
     seriesTarget: "#58a6ff",
     seriesPrevious: "#f85149",
@@ -55,7 +53,6 @@ export const CHART_COLORS: Record<Theme, ChartColorTokens> = {
     tooltipText: "#1f2328",
     cursor: "rgba(31, 35, 40, 0.06)",
     barPrimary: "#0a3069",
-    lineAccent: "#54aeff",
     seriesCurrent: "#0a3069",
     seriesTarget: "#54aeff",
     seriesPrevious: "#cf222e",

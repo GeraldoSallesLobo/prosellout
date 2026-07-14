@@ -113,7 +113,10 @@ function MetricHistoryCard({
                 {spec.format(value)}
               </span>
               <div
-                className={clsx("w-full max-w-12 rounded-t", isCurrent ? "bg-blue" : "bg-bg3")}
+                className={clsx(
+                  "w-full max-w-12 rounded-t",
+                  isCurrent ? "bg-chartCurrent" : "bg-chartPrevious",
+                )}
                 style={{ height: `${barHeight}px` }}
               />
               <span className="text-[10px] uppercase tracking-wide text-text2">
