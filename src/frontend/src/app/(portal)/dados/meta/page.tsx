@@ -36,11 +36,18 @@ export default function TargetsPage() {
         {
           start: filters.start || undefined,
           end: filters.end || undefined,
+          distributorId: filters.distributorId || undefined,
         },
       ),
   });
 
   const columns: DataTableColumn<TargetRow>[] = [
+    {
+      key: "distributor",
+      header: "Distribuidora",
+      render: (row) => row.distributorName,
+      searchable: true,
+    },
     { key: "customer", header: "Cliente", render: (row) => row.customerName, searchable: true },
     { key: "ean", header: "EAN", render: (row) => row.ean, searchable: true },
     { key: "product", header: "Produto", render: (row) => row.productName, searchable: true },
@@ -59,6 +66,7 @@ export default function TargetsPage() {
             fileName="metas"
             getRows={() =>
               (data?.rows ?? []).map((row) => ({
+                distribuidora: row.distributorName,
                 cliente: row.customerName,
                 ean: row.ean,
                 produto: row.productName,
@@ -77,7 +85,6 @@ export default function TargetsPage() {
           setFilters((current) => ({ ...current, ...patch }));
           setPage(1);
         }}
-        showDistributor={false}
       />
 
       <DataTable

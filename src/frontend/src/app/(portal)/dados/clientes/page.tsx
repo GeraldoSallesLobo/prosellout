@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import clsx from "clsx";
 import { PageHeader } from "@/components/ui/page-header";
 import { SelectField } from "@/components/ui/field";
 import { MultiSelectField } from "@/components/ui/multi-select-field";
 import { StatusBadge } from "@/components/ui/badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ExportButton } from "@/components/ui/export-button";
+import {
+  CURRENT_USER_ACCESS_QUERY_KEY,
+  fetchCurrentUserAccess,
+} from "@/lib/data/access";
 import { DATA_PAGE_SIZE, fetchCustomers } from "@/lib/data/consolidated";
 import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCnpj } from "@/lib/format";
@@ -22,20 +27,34 @@ export default function CustomersPage() {
   const [search, setSearch] = useState<SearchState | null>(null);
   const [channelIds, setChannelIds] = useState<string[]>([]);
   const [clusterId, setClusterId] = useState("");
+  const [distributorId, setDistributorId] = useState("");
 
   const { data: options } = useQuery({
     queryKey: ["filter-options"],
     queryFn: fetchFilterOptions,
   });
+  const { data: access } = useQuery({
+    queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
+    queryFn: fetchCurrentUserAccess,
+  });
+  const canFilterByDistributor = access?.isAdmin === true;
+
+  useEffect(() => {
+    if (access && !access.isAdmin && distributorId) {
+      setDistributorId("");
+      setPage(1);
+    }
+  }, [access, distributorId]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["customers", page, pageSize, sort, search, channelIds, clusterId],
+    queryKey: ["customers", page, pageSize, sort, search, channelIds, clusterId, distributorId],
     queryFn: () =>
       fetchCustomers(
         { page, pageSize, sort, search },
         {
           channelIds: channelIds.length > 0 ? channelIds : undefined,
           clusterId: clusterId || undefined,
+          distributorId: distributorId || undefined,
         },
       ),
   });
@@ -81,7 +100,26 @@ export default function CustomersPage() {
         }
       />
 
-      <div className="card mb-5 grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
+      <div
+        className={clsx(
+          "card mb-5 grid grid-cols-2 gap-3 p-4",
+          canFilterByDistributor ? "md:grid-cols-4" : "md:grid-cols-2",
+        )}
+      >
+        {canFilterByDistributor ? (
+          <SelectField
+            label="Distribuidora"
+            options={(options?.distributors ?? []).map((option) => ({
+              value: option.id,
+              label: option.name,
+            }))}
+            value={distributorId}
+            onChange={(event) => {
+              setDistributorId(event.target.value);
+              setPage(1);
+            }}
+          />
+        ) : null}
         <MultiSelectField
           label="Canal"
           options={(options?.channels ?? []).map((option) => ({

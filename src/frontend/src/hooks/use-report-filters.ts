@@ -1,11 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   getCurrentMonthToDate,
   getFullMonth,
   getPreviousMonth,
 } from "@/lib/periods";
+import {
+  CURRENT_USER_ACCESS_QUERY_KEY,
+  fetchCurrentUserAccess,
+} from "@/lib/data/access";
 import type { ReportFilters } from "@/types/reports";
 
 export interface ReportFilterState {
@@ -65,12 +70,16 @@ function readStoredState(): ReportFilterState | null {
  */
 export function useReportFilters() {
   const [filters, setFiltersState] = useState<ReportFilterState>(buildDefaultState);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isStorageHydrated, setIsStorageHydrated] = useState(false);
+  const { data: access, isLoading: isAccessLoading } = useQuery({
+    queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
+    queryFn: fetchCurrentUserAccess,
+  });
 
   useEffect(() => {
     const stored = readStoredState();
     if (stored) setFiltersState(stored);
-    setIsHydrated(true);
+    setIsStorageHydrated(true);
   }, []);
 
   const setFilters = useCallback((patch: Partial<ReportFilterState>) => {
@@ -84,6 +93,15 @@ export function useReportFilters() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (access && !access.isAdmin && filters.distributorId) {
+      setFilters({ distributorId: "" });
+    }
+  }, [access, filters.distributorId, setFilters]);
+
+  const hasResolvedDistributorScope = access?.isAdmin === true || !filters.distributorId;
+  const isHydrated = isStorageHydrated && !isAccessLoading && hasResolvedDistributorScope;
 
   return { filters, setFilters, isHydrated };
 }

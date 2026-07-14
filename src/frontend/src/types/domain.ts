@@ -134,6 +134,7 @@ export interface StockRow {
 
 export interface TargetRow {
   id: number;
+  distributorName: string;
   customerName: string;
   ean: string;
   productName: string;

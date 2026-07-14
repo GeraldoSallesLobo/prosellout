@@ -94,6 +94,7 @@ function pageRange({ page, pageSize }: TableQuery): { from: number; to: number }
 export interface CustomerFilters {
   channelIds?: string[];
   clusterId?: string;
+  distributorId?: string;
 }
 
 /** Resolves entity ids to their names, or null when no id is selected. */
@@ -103,6 +104,26 @@ function namesForIds(entities: NamedEntity[], ids: string[]): string[] | null {
   return entities.filter((entity) => idSet.has(entity.id)).map((entity) => entity.name);
 }
 
+function getDemoDistributorName(distributorId: string | undefined): string | null {
+  if (!distributorId) return null;
+  return DEMO_DISTRIBUTORS.find((distributor) => distributor.id === distributorId)?.name ?? null;
+}
+
+function filterRowsByDistributorName<T extends { distributorName: string }>(
+  rows: T[],
+  distributorId: string | undefined,
+): T[] {
+  const distributorName = getDemoDistributorName(distributorId);
+  if (!distributorName) return rows;
+  return rows.filter((row) => row.distributorName === distributorName);
+}
+
+function getDemoCustomerDistributorId(customer: Customer): string | null {
+  const numericId = Number(customer.id.replace(/\D/g, ""));
+  if (!Number.isFinite(numericId) || DEMO_DISTRIBUTORS.length === 0) return null;
+  return DEMO_DISTRIBUTORS[(numericId - 1) % DEMO_DISTRIBUTORS.length].id;
+}
+
 /** Applies the same filters as the Supabase query to the in-memory demo rows. */
 function filterDemoCustomers(filters: CustomerFilters): Customer[] {
   const channelNames = namesForIds(DEMO_CHANNELS, filters.channelIds ?? []);
@@ -110,7 +131,9 @@ function filterDemoCustomers(filters: CustomerFilters): Customer[] {
   return DEMO_CUSTOMERS.filter((customer) => {
     const isChannelMatch = !channelNames || channelNames.includes(customer.channelName ?? "");
     const isClusterMatch = !clusterNames || clusterNames.includes(customer.clusterName ?? "");
-    return isChannelMatch && isClusterMatch;
+    const isDistributorMatch =
+      !filters.distributorId || getDemoCustomerDistributorId(customer) === filters.distributorId;
+    return isChannelMatch && isClusterMatch && isDistributorMatch;
   });
 }
 
@@ -187,6 +210,7 @@ export async function fetchCustomers(
   query = query.range(from, to);
   if (filters.channelIds?.length) query = query.in("channel_id", filters.channelIds);
   if (filters.clusterId) query = query.eq("cluster_id", filters.clusterId);
+  if (filters.distributorId) query = query.eq("distributor_id", filters.distributorId);
 
   const { data, error, count } = await query;
   if (error) throw error;
@@ -255,7 +279,11 @@ export async function fetchSellOutRows(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
     const demoRows = sortDemoRows(
-      searchDemoRows(DEMO_SELL_OUT_ROWS, tableQuery.search, SELL_OUT_DEMO_SORTS),
+      searchDemoRows(
+        filterRowsByDistributorName(DEMO_SELL_OUT_ROWS, filters.distributorId),
+        tableQuery.search,
+        SELL_OUT_DEMO_SORTS,
+      ),
       tableQuery.sort,
       SELL_OUT_DEMO_SORTS,
     );
@@ -337,7 +365,11 @@ export async function fetchSellInRows(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
     const demoRows = sortDemoRows(
-      searchDemoRows(DEMO_SELL_IN_ROWS, tableQuery.search, SELL_IN_DEMO_SORTS),
+      searchDemoRows(
+        filterRowsByDistributorName(DEMO_SELL_IN_ROWS, filters.distributorId),
+        tableQuery.search,
+        SELL_IN_DEMO_SORTS,
+      ),
       tableQuery.sort,
       SELL_IN_DEMO_SORTS,
     );
@@ -399,15 +431,12 @@ export async function fetchStockRows(
 ): Promise<Paginated<StockRow>> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    const distributorName = filters.distributorId
-      ? DEMO_DISTRIBUTORS.find((distributor) => distributor.id === filters.distributorId)?.name
-      : null;
-    const stockRows = DEMO_STOCK_ROWS
-      .filter((row) => !distributorName || row.distributorName === distributorName)
-      .map((row) => ({
+    const stockRows = filterRowsByDistributorName(DEMO_STOCK_ROWS, filters.distributorId).map(
+      (row) => ({
         ...row,
         snapshotDate: filters.end ?? row.snapshotDate,
-      }));
+      }),
+    );
     const demoRows = sortDemoRows(
       searchDemoRows(stockRows, tableQuery.search, STOCK_DEMO_SORTS),
       tableQuery.sort,
@@ -470,7 +499,7 @@ const TARGET_SEARCH_COLUMNS: SearchColumnMap = {
 };
 
 const TARGET_SELECT =
-  "id, target_date, quantity, gross_value, customers(legal_name), products(ean, name)";
+  "id, target_date, quantity, gross_value, distributors(name), customers(legal_name), products(ean, name)";
 
 export async function fetchTargetRows(
   tableQuery: TableQuery,
@@ -479,7 +508,11 @@ export async function fetchTargetRows(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
     const demoRows = sortDemoRows(
-      searchDemoRows(DEMO_TARGET_ROWS, tableQuery.search, TARGET_DEMO_SORTS),
+      searchDemoRows(
+        filterRowsByDistributorName(DEMO_TARGET_ROWS, filters.distributorId),
+        tableQuery.search,
+        TARGET_DEMO_SORTS,
+      ),
       tableQuery.sort,
       TARGET_DEMO_SORTS,
     );
@@ -503,6 +536,7 @@ export async function fetchTargetRows(
   query = query.range(from, to);
   if (filters.start) query = query.gte("target_date", filters.start);
   if (filters.end) query = query.lte("target_date", filters.end);
+  if (filters.distributorId) query = query.eq("distributor_id", filters.distributorId);
 
   const { data, error, count } = await query;
   if (error) throw error;
@@ -514,6 +548,7 @@ export async function fetchTargetRows(
       const product = record.products as { ean: string; name: string } | null;
       return {
         id: Number(record.id),
+        distributorName: (record.distributors as { name: string } | null)?.name ?? "—",
         customerName: (record.customers as { legal_name: string } | null)?.legal_name ?? "—",
         ean: product?.ean ?? "—",
         productName: product?.name ?? "—",

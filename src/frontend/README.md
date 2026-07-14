@@ -49,6 +49,7 @@ src/
 - **Camada de dados com fallback demo**: toda função de `lib/data/*` tem caminho Supabase e caminho demo com o mesmo contrato — as telas não sabem qual está ativo.
 - **Cache por sessão**: o `AppProviders` escuta mudanças do Supabase Auth e limpa o TanStack Query quando o usuário muda ou desloga, evitando dados de uma sessão anterior após novo login.
 - **Filtros persistentes**: seleção de período/dimensões fica em `sessionStorage` ao navegar entre relatórios.
+- **Filtro por distribuidora**: aparece apenas para administradores em relatórios e telas consolidadas aplicáveis. Usuários distribuidores ficam restritos ao próprio escopo pelo RLS/RPCs e não veem esse seletor.
 - **Tabelas (`DataTable`)**: paginação no servidor (`range()`), tamanho de página configurável, ordenação e busca por coluna — server-side via PostgREST (`order`/`ilike`) no modo conectado, em memória no demo. Clientes suporta multi-seleção de canais.
 - **Badge-toggle**: telas consolidadas (Análise Status e Análise Evolução) trocam o agrupamento sem recarregar.
 - **Temas claro/escuro**: tokens CSS em `globals.css` + classe no `<html>` aplicada antes da hidratação (`THEME_INIT_SCRIPT`, sem flash); gráficos usam a paleta por tema de `lib/theme.ts` — mantenha os três em sincronia ao alterar cores.

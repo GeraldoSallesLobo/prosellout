@@ -1,7 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import clsx from "clsx";
 import { DateField, SelectField } from "@/components/ui/field";
+import {
+  CURRENT_USER_ACCESS_QUERY_KEY,
+  fetchCurrentUserAccess,
+} from "@/lib/data/access";
 import { fetchFilterOptions } from "@/lib/data/reports";
 import type { FilterOptions } from "@/types/reports";
 import type { ReportFilterState } from "@/hooks/use-report-filters";
@@ -45,6 +51,17 @@ export function ReportFilterBar({
     queryKey: ["filter-options"],
     queryFn: fetchFilterOptions,
   });
+  const { data: access } = useQuery({
+    queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
+    queryFn: fetchCurrentUserAccess,
+  });
+  const canFilterByDistributor = access?.isAdmin === true;
+
+  useEffect(() => {
+    if (access && !access.isAdmin && filters.distributorId) {
+      onChange({ distributorId: "" });
+    }
+  }, [access, filters.distributorId, onChange]);
 
   return (
     <div className="card mb-5 space-y-4 p-4">
@@ -89,47 +106,69 @@ export function ReportFilterBar({
         ) : null}
       </div>
 
-      {showDimensionFilters ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          <SelectField
-            label="Categoria"
-            options={toSelectOptions(options.categories)}
-            value={filters.categoryId}
-            onChange={(event) => onChange({ categoryId: event.target.value })}
-          />
-          <SelectField
-            label="SubCategoria"
-            options={toSelectOptions(options.subcategories)}
-            value={filters.subcategoryId}
-            onChange={(event) => onChange({ subcategoryId: event.target.value })}
-          />
-          <SelectField
-            label="SKU"
-            options={toSelectOptions(options.products)}
-            value={filters.productId}
-            onChange={(event) => onChange({ productId: event.target.value })}
-          />
-          <SelectField
-            label="Unidade Medida"
-            allLabel="R$"
-            options={[{ value: "units", label: "Caixa" }]}
-            value={filters.unit === "currency" ? "" : filters.unit}
-            onChange={(event) =>
-              onChange({ unit: event.target.value === "units" ? "units" : "currency" })
-            }
-          />
-          <SelectField
-            label="Canal"
-            options={toSelectOptions(options.channels)}
-            value={filters.channelId}
-            onChange={(event) => onChange({ channelId: event.target.value })}
-          />
-          <SelectField
-            label="Cluster"
-            options={toSelectOptions(options.clusters)}
-            value={filters.clusterId}
-            onChange={(event) => onChange({ clusterId: event.target.value })}
-          />
+      {showDimensionFilters || canFilterByDistributor ? (
+        <div
+          className={clsx(
+            "grid grid-cols-2 gap-3",
+            showDimensionFilters ? "md:grid-cols-3" : "md:grid-cols-2",
+            showDimensionFilters
+              ? canFilterByDistributor
+                ? "lg:grid-cols-4 xl:grid-cols-7"
+                : "lg:grid-cols-6"
+              : "lg:grid-cols-2",
+          )}
+        >
+          {canFilterByDistributor ? (
+            <SelectField
+              label="Distribuidora"
+              options={toSelectOptions(options.distributors)}
+              value={filters.distributorId}
+              onChange={(event) => onChange({ distributorId: event.target.value })}
+            />
+          ) : null}
+          {showDimensionFilters ? (
+            <>
+              <SelectField
+                label="Categoria"
+                options={toSelectOptions(options.categories)}
+                value={filters.categoryId}
+                onChange={(event) => onChange({ categoryId: event.target.value })}
+              />
+              <SelectField
+                label="SubCategoria"
+                options={toSelectOptions(options.subcategories)}
+                value={filters.subcategoryId}
+                onChange={(event) => onChange({ subcategoryId: event.target.value })}
+              />
+              <SelectField
+                label="SKU"
+                options={toSelectOptions(options.products)}
+                value={filters.productId}
+                onChange={(event) => onChange({ productId: event.target.value })}
+              />
+              <SelectField
+                label="Unidade Medida"
+                allLabel="R$"
+                options={[{ value: "units", label: "Caixa" }]}
+                value={filters.unit === "currency" ? "" : filters.unit}
+                onChange={(event) =>
+                  onChange({ unit: event.target.value === "units" ? "units" : "currency" })
+                }
+              />
+              <SelectField
+                label="Canal"
+                options={toSelectOptions(options.channels)}
+                value={filters.channelId}
+                onChange={(event) => onChange({ channelId: event.target.value })}
+              />
+              <SelectField
+                label="Cluster"
+                options={toSelectOptions(options.clusters)}
+                value={filters.clusterId}
+                onChange={(event) => onChange({ clusterId: event.target.value })}
+              />
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>

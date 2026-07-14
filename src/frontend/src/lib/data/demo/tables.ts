@@ -110,6 +110,7 @@ export const DEMO_TARGET_ROWS: TargetRow[] = (() => {
       const quantity = 40 + Math.floor(random() * 60);
       return {
         id,
+        distributorName: DEMO_DISTRIBUTORS[(id - 1) % DEMO_DISTRIBUTORS.length].name,
         customerName: customer.legalName,
         ean: product.ean,
         productName: product.name,

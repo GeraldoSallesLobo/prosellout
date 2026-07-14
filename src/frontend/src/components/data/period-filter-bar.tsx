@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { DateField, SelectField } from "@/components/ui/field";
+import {
+  CURRENT_USER_ACCESS_QUERY_KEY,
+  fetchCurrentUserAccess,
+} from "@/lib/data/access";
 import { fetchFilterOptions } from "@/lib/data/reports";
 
 export interface PeriodFilterState {
@@ -31,15 +36,26 @@ export function PeriodFilterBar({
     queryKey: ["filter-options"],
     queryFn: fetchFilterOptions,
   });
+  const { data: access } = useQuery({
+    queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
+    queryFn: fetchCurrentUserAccess,
+  });
+  const canFilterByDistributor = showDistributor && access?.isAdmin === true;
+
+  useEffect(() => {
+    if (showDistributor && access && !access.isAdmin && filters.distributorId) {
+      onChange({ distributorId: "" });
+    }
+  }, [access, filters.distributorId, onChange, showDistributor]);
 
   return (
     <div
       className={clsx(
         "card mb-5 grid grid-cols-2 gap-3 p-4",
-        showDistributor && showStartDate ? "md:grid-cols-4" : "md:grid-cols-2",
+        canFilterByDistributor && showStartDate ? "md:grid-cols-4" : "md:grid-cols-2",
       )}
     >
-      {showDistributor ? (
+      {canFilterByDistributor ? (
         <SelectField
           label="Distribuidora"
           options={(options?.distributors ?? []).map((option) => ({
