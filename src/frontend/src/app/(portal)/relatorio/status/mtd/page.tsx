@@ -19,7 +19,7 @@ import {
   formatInteger,
   formatPercent,
 } from "@/lib/format";
-import type { StatusGroupBy } from "@/types/reports";
+import type { AnalysisRow, StatusGroupBy } from "@/types/reports";
 
 const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
   { value: "seller", label: "Vendedores" },
@@ -60,6 +60,28 @@ export default function StatusMtdPage() {
       })),
     [analysisRows],
   );
+
+  const totalRow = useMemo<AnalysisRow | undefined>(() => {
+    if (!report) return undefined;
+
+    return {
+      groupId: "__total__",
+      groupName: "TOTAL",
+      currentValue: report.sellOutValue.current ?? 0,
+      targetValue: report.sellOutValue.target,
+      currentVsTarget: report.sellOutValue.currentVsTarget,
+      previousValue: report.sellOutValue.previous ?? 0,
+      previousVsTarget: report.sellOutValue.previousVsTarget,
+      coverage: report.coverage.current ?? 0,
+      avgTicket: report.avgTicket.current,
+      dropSize: report.dropSize.current,
+      avgPrice: report.avgPrice.current,
+      markupPct: report.markupPct.current,
+      marginPct: report.marginPct.current,
+      avgTurnover: report.avgTurnover.current,
+      avgCoverage: report.avgCoverage.current,
+    };
+  }, [report]);
 
   return (
     <div>
@@ -149,7 +171,7 @@ export default function StatusMtdPage() {
             <KpiBlockCard
               label="Cobertura Média"
               block={report.avgCoverage}
-              formatValue={formatPercent}
+              formatValue={formatDecimal}
             />
             <KpiCard
               label="Tendência Sell Out R$"
@@ -187,6 +209,7 @@ export default function StatusMtdPage() {
           groupBy={groupBy}
           rows={analysisRows}
           isLoading={isAnalysisLoading}
+          totalRow={totalRow}
           isCompact
         />
       </div>

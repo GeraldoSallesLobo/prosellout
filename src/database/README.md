@@ -93,7 +93,7 @@ Esse complemento adiciona 65 canais `Stress Channel XX`, cada um com cliente, Se
 
 - `sell_out`/`sell_in` **particionadas por mês** (`ensure_month_partition`); pg_cron cria partições futuras todo dia 25.
 - Carga em lote: ETL faz `COPY` para `staging_*` (UNLOGGED) e chama `process_*_staging(import_id)` — validação set-based, rejeições em `file_import_logs`, insert em massa.
-- Relatórios usam `mv_sell_out_daily` para somas; cobertura (distinct clientes) calculada na partição do período com índices dedicados.
+- Relatórios usam `mv_sell_out_daily` para somas; cobertura (distinct clientes) é calculada na partição com índices dedicados. No **Status MTD**, a cobertura segue a planilha mensal de referência: valor/volume somam o intervalo filtrado, mas cobertura/ticket usam os PDVs do mês inicial do período.
 - `refresh_report_views()` roda após cada carga (chamada pelo ETL) e às 4h via pg_cron.
 
 

@@ -219,6 +219,7 @@ with constants as (
 customer_seed as (
   select
     customers.id as customer_id,
+    customers.sales_rep_id,
     row_number() over (order by customers.pdv_code) as row_number
   from customers
   where customers.distributor_id = (select distributor_id from constants)
@@ -237,6 +238,7 @@ insert into sales_targets (
   distributor_id,
   customer_id,
   product_id,
+  sales_rep_id,
   target_date,
   quantity,
   gross_value
@@ -245,6 +247,7 @@ select
   constants.distributor_id,
   customer_seed.customer_id,
   product_seed.id,
+  customer_seed.sales_rep_id,
   '2026-07-01'::date,
   (150 + customer_seed.row_number)::numeric(14, 3),
   ((52000 - (customer_seed.row_number * 520)) * 1.18)::numeric(14, 2)
@@ -252,7 +255,7 @@ from customer_seed
 cross join constants
 join product_seed
   on product_seed.row_number = ((customer_seed.row_number - 1) % product_seed.row_count) + 1
-on conflict (customer_id, product_id, target_date) do update set
+on conflict (customer_id, product_id, sales_rep_id, target_date) do update set
   distributor_id = excluded.distributor_id,
   quantity = excluded.quantity,
   gross_value = excluded.gross_value,

@@ -57,6 +57,7 @@ interface StatusAnalysisTableProps {
   groupBy: StatusGroupBy;
   rows: AnalysisRow[];
   isLoading: boolean;
+  totalRow?: AnalysisRow;
   /** Compact mode (MTD footer): fewer columns, like the mockup. */
   isCompact?: boolean;
 }
@@ -65,6 +66,7 @@ export function StatusAnalysisTable({
   groupBy,
   rows,
   isLoading,
+  totalRow,
   isCompact = false,
 }: StatusAnalysisTableProps) {
   const compactColumns: DataTableColumn<AnalysisRow>[] = [
@@ -207,12 +209,12 @@ export function StatusAnalysisTable({
       key: "avgCoverage",
       header: "Cobertura Média",
       align: "right",
-      render: (row) => formatPercent(row.avgCoverage),
+      render: (row) => formatDecimal(row.avgCoverage),
       sortValue: (row) => row.avgCoverage,
     },
   ];
 
-  const rowsWithTotal = rows.length > 0 ? [...rows, buildTotalRow(rows)] : rows;
+  const rowsWithTotal = rows.length > 0 ? [...rows, totalRow ?? buildTotalRow(rows)] : rows;
 
   return (
     <DataTable

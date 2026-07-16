@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import uuid
 from datetime import datetime
+from glob import glob
 
 import openpyxl
 
@@ -35,8 +36,21 @@ def uid(*parts: str) -> str:
     return str(uuid.uuid5(NS, "|".join(str(p) for p in parts)))
 
 
+def sample_path(fname: str) -> str:
+    exact_path = os.path.join(SAMPLE_DIR, fname)
+    if os.path.exists(exact_path):
+        return exact_path
+
+    matches = sorted(glob(os.path.join(SAMPLE_DIR, f"*{fname}")))
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        raise FileNotFoundError(f"Sample file not found: {fname}")
+    raise RuntimeError(f"Ambiguous sample file for {fname}: {matches}")
+
+
 def rows(fname: str) -> list[tuple]:
-    wb = openpyxl.load_workbook(os.path.join(SAMPLE_DIR, fname), read_only=True, data_only=True)
+    wb = openpyxl.load_workbook(sample_path(fname), read_only=True, data_only=True)
     ws = wb.active
     data = list(ws.iter_rows(min_row=2, values_only=True))
     wb.close()
@@ -395,15 +409,16 @@ def main() -> None:
         si_vals,
     )
 
-    # targets: aggregate target by (customer, product, month)
+    # targets: aggregate target by (customer, product, seller, month)
     agg: dict[tuple, list[float]] = {}
     for r in meta:
-        pdv, ean, vol, val, dt = str(r[2]), r[1], r[4], r[5], iso(r[6])
+        pdv, ean, vcode, vol, val, dt = str(r[2]), r[1], str(r[3]), r[4], r[5], iso(r[6])
         p = products.get(ean_core(ean))
         c = customers.get(pdv)
-        if not (p and c and dt):
+        s = sellers.get(vcode)
+        if not (p and c and s and dt):
             continue
-        key = (c["id"], p["id"], dt[:7] + "-01")
+        key = (c["id"], p["id"], s["id"], dt[:7] + "-01")
         acc = agg.setdefault(key, [0.0, 0.0])
         try:
             acc[0] += float(str(vol).replace(",", ".")) if vol is not None else 0
@@ -411,11 +426,11 @@ def main() -> None:
         except ValueError:
             pass
     tgt_vals = [
-        f"  ('{dist_id}', '{cid}', '{pid}', '{month}', {qty!r}, {round(gv, 2)!r})"
-        for (cid, pid, month), (qty, gv) in agg.items()
+        f"  ('{dist_id}', '{cid}', '{pid}', '{sid}', '{month}', {qty!r}, {round(gv, 2)!r})"
+        for (cid, pid, sid, month), (qty, gv) in agg.items()
     ]
     batch(
-        "insert into sales_targets (distributor_id, customer_id, product_id, target_date, quantity, gross_value) values",
+        "insert into sales_targets (distributor_id, customer_id, product_id, sales_rep_id, target_date, quantity, gross_value) values",
         tgt_vals,
     )
 

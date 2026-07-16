@@ -192,7 +192,7 @@ const TABLE_SPECS = {
       "distributor_code", "customer_pdv_code", "customer_cnpj", "sales_rep_code",
       "product_ean", "target_date", "delivery_date", "quantity", "gross_value",
     ],
-    optionalColumns: ["customer_cnpj", "sales_rep_code", "delivery_date"],
+    optionalColumns: ["customer_cnpj", "delivery_date"],
     aliases: {
       distribuidor: "distributor_code",
       cnpj_distribuidor: "distributor_code",

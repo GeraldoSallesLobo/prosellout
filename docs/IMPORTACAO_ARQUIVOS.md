@@ -31,8 +31,9 @@ Exemplos de causas esperadas:
 |---|---|
 | CNPJ/código do distribuidor não bate com a conta | Informa o valor recebido na planilha e o código/CNPJ esperado para o distribuidor da conta. |
 | Colunas obrigatórias ausentes | Lista as colunas que faltaram e orienta conferir **Arquivos › Configuração**. |
-| Cliente não encontrado | Informa o PDV/CNPJ recebido e orienta importar ou ajustar **Clientes** antes de Sell Out/Meta. |
+| Cliente não encontrado | Em **Meta**, informa o PDV/CNPJ recebido e orienta importar ou ajustar **Clientes**. Em **Sell Out**, quando `Cód. PDV` existe no arquivo, o sistema cria um PDV mínimo automaticamente para preservar as vendas. |
 | Produto não encontrado | Informa o EAN recebido e orienta importar ou ajustar **Hier. Produtos** antes de Sell In/Sell Out/Meta. |
+| Vendedor não encontrado | Informa o código recebido e orienta importar ou ajustar **Vendedores** antes de Sell Out/Meta. |
 | Data ou número inválido | Mostra o valor inválido e o formato esperado. |
 
 ## Ordem recomendada
@@ -42,7 +43,7 @@ Para uma base nova, importe nesta ordem:
 1. `PRODUCTS` — produtos e hierarquia de produtos.
 2. `SELLERS` — vendedores e supervisores.
 3. `CUSTOMERS` — clientes/PDVs.
-4. `TARGETS` — metas por cliente/SKU/mês.
+4. `TARGETS` — metas por cliente/SKU/vendedor/mês.
 5. `SELL_IN` — compras/entrada por produto.
 6. `SELL_OUT` — vendas para PDV por produto.
 
@@ -57,7 +58,7 @@ Matriz de dependências:
 | `PRODUCTS` | Sim | Nenhum |
 | `SELLERS` | Sim | Nenhum |
 | `CUSTOMERS` | Sim | Nenhum |
-| `TARGETS` | Não | Hier. Produtos + Clientes |
+| `TARGETS` | Não | Hier. Produtos + Vendedores + Clientes |
 | `SELL_IN` | Não | Hier. Produtos |
 | `SELL_OUT` | Não | Hier. Produtos + Vendedores + Clientes |
 
@@ -205,20 +206,21 @@ Colunas obrigatórias:
 - `CNPJ Distribuidor`
 - `EAN`
 - `Cód. PDV`
+- `Cód. Vendedor`
 - `Volume Total de Unidades NF`
 - `Valor Total R$ NF`
 - `Data Faturamento`
 
 Colunas opcionais:
 
-- `Cód. Vendedor`
 - `Data Entrega`
 - `CNPJ/CPF`
 
 Notas:
 
 - `Data Faturamento` define o mês da meta.
-- Linhas repetidas no mesmo cliente + SKU + mês são somadas dentro da importação.
+- A meta é vinculada ao cliente, produto, vendedor e mês.
+- Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.
 - Uma nova importação de Meta substitui as metas anteriores dos meses presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas que foram removidas da planilha.
 
 ### SELL_OUT — Sell Out
@@ -246,7 +248,8 @@ Colunas opcionais:
 
 Notas:
 
-- Produto, vendedor e cliente precisam existir para alimentar os relatórios corretamente.
+- Produto e vendedor precisam existir para alimentar os relatórios corretamente.
+- Quando o `Cód. PDV` não existe em **Clientes**, o Sell Out cria um cadastro mínimo `PDV <código>` para que a venda entre nos totais; depois o usuário pode completar canal, cluster e demais dados cadastrais em **Clientes**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
 
 ### SELL_IN — Sell In
