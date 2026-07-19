@@ -93,12 +93,12 @@ export function ReportFilterBar({
         {showPreviousPeriod ? (
           <>
             <DateField
-              label="Anterior Início"
+              label="Ano Anterior Início"
               value={filters.previousStart}
               onChange={(event) => onChange({ previousStart: event.target.value })}
             />
             <DateField
-              label="Anterior Fim"
+              label="Ano Anterior Fim"
               value={filters.previousEnd}
               onChange={(event) => onChange({ previousEnd: event.target.value })}
             />

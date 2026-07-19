@@ -29,6 +29,27 @@ export function getSameMonthLastYear(reference = new Date()): DateRange {
   return getFullMonth(new Date(reference.getFullYear() - 1, reference.getMonth(), 1));
 }
 
+function getLastDayOfMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+export function shiftIsoDateByYears(isoDate: string, yearOffset: number): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) return isoDate;
+
+  const targetYear = year + yearOffset;
+  const monthIndex = month - 1;
+  const clampedDay = Math.min(day, getLastDayOfMonth(targetYear, monthIndex));
+  return toIsoDate(new Date(targetYear, monthIndex, clampedDay));
+}
+
+export function shiftDateRangeByYears(range: DateRange, yearOffset: number): DateRange {
+  return {
+    start: shiftIsoDateByYears(range.start, yearOffset),
+    end: shiftIsoDateByYears(range.end, yearOffset),
+  };
+}
+
 export function getMonthStart(reference = new Date()): string {
   return toIsoDate(new Date(reference.getFullYear(), reference.getMonth(), 1));
 }

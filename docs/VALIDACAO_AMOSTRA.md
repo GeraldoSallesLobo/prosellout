@@ -38,7 +38,7 @@ Números-âncora para conferir no Status MTD (Junho/2026): Sell Out R$ ≈ 1.000
 
 Ao cruzar a amostra com o schema, encontramos e corrigimos:
 
-1. **Sell Out/Sell In sem número de NF** → `invoice_number` agora é opcional. Cada linha de Sell Out equivale a uma NF para Drop Size; quando o upload não traz NF, o ETL sintetiza uma identificação por importação/linha.
+1. **Sell Out/Sell In sem número de NF** → `invoice_number` agora é opcional. Quando o upload não traz NF, o ETL sintetiza uma identificação por importação/linha para manter rastreabilidade.
 2. **Identidade do cliente é (distribuidor, Cód. PDV)** — o CNPJ vem mascarado e não é único. Adicionadas colunas `pdv_code`, `distributor_id`, `trade_name`, `address`; `cnpj` virou opcional; nova unicidade `(distributor_id, pdv_code)`.
 3. **Vendedor é transacional** (vem em cada linha de Sell Out), não é atributo fixo do cliente — o `sell_out.sales_rep_id` já cobre isso.
    A mesma regra vale para Meta: `Layout SellOut_meta.xlsx` traz `Cód. Vendedor` e o sistema grava `sales_targets.sales_rep_id` para calcular metas por vendedor.
@@ -51,7 +51,10 @@ Ao cruzar a amostra com o schema, encontramos e corrigimos:
 - **Estoque**: não existe planilha de estoque. A tela **Dados › Estoque** calcula a posição como `Sell In volume acumulado - Sell Out volume acumulado` até a data de referência. Saldo negativo deve ser exibido como alerta de inconsistência.
 - **Meta com PDV ausente em Clientes**: a regra validada é rejeitar a linha e registrar alerta no log. O usuário deve adicionar o PDV em **Clientes** ou ajustar a Meta antes de importar novamente. Em 13/07/2026, `Layout SellOut_meta.xlsx` foi substituído por uma versão corrigida com 1.436 linhas e sem PDVs ausentes na base de Clientes. Reenvios de Meta substituem as metas anteriores dos meses presentes no arquivo.
 - **Sell Out com PDV ausente em Clientes**: o sistema cria um cliente mínimo `PDV <código>` quando o arquivo informa `Cód. PDV`, produto e vendedor válidos. Isso preserva o faturamento/volume real do Sell Out e deixa o cadastro disponível para enriquecimento posterior em **Dados › Clientes**.
-- **Status MTD e Cobertura**: a planilha Excel de referência é mensal. Para bater com essa memória, o Status MTD soma valor/volume no intervalo selecionado, mas calcula `Cobertura`, `Ticket Médio` e `Probabilidade Cobertura` usando os PDVs do mês inicial de cada período.
+- **Status MTD e Cobertura**: a planilha Excel de referência é mensal. Sem SKU específico, o Status MTD soma valor/volume no intervalo selecionado, mas calcula `Cobertura` e `Ticket Médio` usando os PDVs do mês inicial de cada período. Com SKU específico, a cobertura usa os PDVs únicos do intervalo selecionado.
+- **Drop Size**: a regra validada em 19/07/2026 é `Volume Sell Out / Cobertura`, não volume por nota. Isso vale para atual, meta e ano anterior.
+- **Probabilidade Cobertura**: usa `Cobertura Atual / Cobertura Meta`, capada em 100%. As probabilidades de Sell Out R$ e Ticket Médio também são capadas em 100%.
+- **Ano anterior nos relatórios**: o filtro padrão usa o mesmo intervalo de dia/mês no ano anterior. Estados antigos salvos no navegador em que "Ano Anterior" era igual ao período atual são normalizados para o ano anterior.
 - **Indústria/Marca**: foi confirmado que a próxima estrutura terá `Marca` obrigatória em todos os layouts, vínculo por marca e visão "todas as marcas" somada por distribuidor. Para o QA atual, a estrutura permanece sem `Marca`, assumindo uma indústria padrão.
 
 ## Follow-ups (não feitos ainda)

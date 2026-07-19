@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getCurrentMonthToDate,
   getFullMonth,
-  getPreviousMonth,
+  shiftDateRangeByYears,
 } from "@/lib/periods";
+import type { DateRange } from "@/lib/periods";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
@@ -31,11 +32,12 @@ export interface ReportFilterState {
 }
 
 const STORAGE_KEY = "prosellout-report-filters";
+const PREVIOUS_YEAR_OFFSET = -1;
 
 function buildDefaultState(): ReportFilterState {
   const currentPeriod = getCurrentMonthToDate();
   const targetPeriod = getFullMonth(new Date());
-  const previousPeriod = getPreviousMonth();
+  const previousPeriod = shiftDateRangeByYears(currentPeriod, PREVIOUS_YEAR_OFFSET);
   return {
     currentStart: currentPeriod.start,
     currentEnd: currentPeriod.end,
@@ -54,11 +56,40 @@ function buildDefaultState(): ReportFilterState {
   };
 }
 
+function getPreviousYearRangeForCurrentPeriod(state: ReportFilterState): DateRange {
+  return shiftDateRangeByYears(
+    { start: state.currentStart, end: state.currentEnd },
+    PREVIOUS_YEAR_OFFSET,
+  );
+}
+
+function normalizePreviousPeriod(state: ReportFilterState): ReportFilterState {
+  if (state.previousStart !== state.currentStart || state.previousEnd !== state.currentEnd) {
+    return state;
+  }
+
+  const previousPeriod = getPreviousYearRangeForCurrentPeriod(state);
+  return {
+    ...state,
+    previousStart: previousPeriod.start,
+    previousEnd: previousPeriod.end,
+  };
+}
+
+function shouldSyncPreviousPeriod(patch: Partial<ReportFilterState>): boolean {
+  const hasCurrentPeriodChange = "currentStart" in patch || "currentEnd" in patch;
+  const hasExplicitPreviousPeriodChange = "previousStart" in patch || "previousEnd" in patch;
+  return hasCurrentPeriodChange && !hasExplicitPreviousPeriodChange;
+}
+
 function readStoredState(): ReportFilterState | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return { ...buildDefaultState(), ...(JSON.parse(raw) as Partial<ReportFilterState>) };
+    return normalizePreviousPeriod({
+      ...buildDefaultState(),
+      ...(JSON.parse(raw) as Partial<ReportFilterState>),
+    });
   } catch {
     return null;
   }
@@ -84,7 +115,16 @@ export function useReportFilters() {
 
   const setFilters = useCallback((patch: Partial<ReportFilterState>) => {
     setFiltersState((current) => {
-      const next = { ...current, ...patch };
+      let next = { ...current, ...patch };
+      if (shouldSyncPreviousPeriod(patch)) {
+        const previousPeriod = getPreviousYearRangeForCurrentPeriod(next);
+        next = {
+          ...next,
+          previousStart: previousPeriod.start,
+          previousEnd: previousPeriod.end,
+        };
+      }
+      next = normalizePreviousPeriod(next);
       try {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
@@ -108,19 +148,20 @@ export function useReportFilters() {
 
 /** Converts UI state to the repository/RPC filter contract. */
 export function toReportFilters(state: ReportFilterState): ReportFilters {
+  const normalizedState = normalizePreviousPeriod(state);
   return {
-    currentStart: state.currentStart,
-    currentEnd: state.currentEnd,
-    previousStart: state.previousStart,
-    previousEnd: state.previousEnd,
-    targetStart: state.targetStart || undefined,
-    targetEnd: state.targetEnd || undefined,
-    distributorId: state.distributorId || undefined,
-    categoryId: state.categoryId || undefined,
-    subcategoryId: state.subcategoryId || undefined,
-    productId: state.productId || undefined,
-    channelId: state.channelId || undefined,
-    clusterId: state.clusterId || undefined,
-    salesRepId: state.salesRepId || undefined,
+    currentStart: normalizedState.currentStart,
+    currentEnd: normalizedState.currentEnd,
+    previousStart: normalizedState.previousStart,
+    previousEnd: normalizedState.previousEnd,
+    targetStart: normalizedState.targetStart || undefined,
+    targetEnd: normalizedState.targetEnd || undefined,
+    distributorId: normalizedState.distributorId || undefined,
+    categoryId: normalizedState.categoryId || undefined,
+    subcategoryId: normalizedState.subcategoryId || undefined,
+    productId: normalizedState.productId || undefined,
+    channelId: normalizedState.channelId || undefined,
+    clusterId: normalizedState.clusterId || undefined,
+    salesRepId: normalizedState.salesRepId || undefined,
   };
 }

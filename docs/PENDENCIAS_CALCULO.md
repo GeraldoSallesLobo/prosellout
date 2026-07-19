@@ -27,8 +27,10 @@ alerta de inconsistência nos dados de Sell In/Sell Out.
 
 ## 5. Denominador da Probabilidade Cobertura
 
-Quando a hierarquia de vendas estiver em **Todos**, o denominador é a base total de clientes cadastrados. Quando houver recorte por vendedor ou supervisor, o denominador é a quantidade de clientes da respectiva carteira na planilha "Layout Vendedores".
+Regra atual validada em 19/07/2026: `Cobertura Atual / Cobertura Meta`, com resultado capado em 100%.
 
 ## 6. O que conta como "nota" (Drop Size)
 
-Cada linha das planilhas `SellOut...` equivale a uma NF. Para prazo/lead time, o conceito é a quantidade de dias entre faturamento e entrega (colunas G e H das planilhas de Sell Out).
+Regra atual validada em 19/07/2026: `Volume Sell Out / Cobertura`.
+
+Para prazo/lead time, o conceito segue sendo a quantidade de dias entre faturamento e entrega (colunas G e H das planilhas de Sell Out).
