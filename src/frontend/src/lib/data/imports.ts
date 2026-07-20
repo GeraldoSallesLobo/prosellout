@@ -23,6 +23,7 @@ const UPLOADABLE_TARGET_TABLES = new Set([
   "products",
   "sales_reps",
   "sales_targets",
+  "sell_in_targets",
 ]);
 
 const READY_IMPORT_STATUSES = new Set<ImportStatus>(["completed", "completed_with_errors"]);

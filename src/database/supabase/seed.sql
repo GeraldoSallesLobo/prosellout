@@ -106,7 +106,8 @@ insert into file_type_configs (id, code, name, target_table, processing_routine,
   ('4933f10f-670d-59c2-bb17-9339099d6830', 'CUSTOMERS', 'Clientes', 'customers', 'process_customers_staging', 'xlsx', 'active'),
   ('9d6aab7f-3a48-5497-8d55-04f9afcc503e', 'PRODUCTS', 'Hier. Produtos', 'products', 'process_products_staging', 'xlsx', 'active'),
   ('f2570305-8991-5de9-9e4b-76fc717eb938', 'SELLERS', 'Vendedores', 'sales_reps', 'process_sellers_staging', 'xlsx', 'active'),
-  ('55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'TARGETS', 'Meta', 'sales_targets', 'process_targets_staging', 'xlsx', 'active')
+  ('55d6c9af-cb2b-5d8b-a801-3be9b7cb3fd8', 'TARGETS', 'Meta Sell Out', 'sales_targets', 'process_targets_staging', 'xlsx', 'active'),
+  ('75dedc9f-f5b7-522a-9f43-4688ff657728', 'SELL_IN_TARGETS', 'Meta Sell In', 'sell_in_targets', 'process_sell_in_targets_staging', 'xlsx', 'active')
 on conflict (code) do update set
   name = excluded.name,
   target_table = excluded.target_table,

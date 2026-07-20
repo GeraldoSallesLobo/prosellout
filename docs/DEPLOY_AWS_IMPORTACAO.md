@@ -129,19 +129,23 @@ Antes do teste:
 1. Confirmar o e-mail de subscription SNS enviado para `TF_VAR_alarm_email`.
 2. Garantir que o usuário distribuidor existe e está vinculado em
    `distributor_users`.
-3. Garantir que `file_type_configs` tem os seis tipos ativos.
+3. Garantir que `file_type_configs` tem os sete tipos ativos.
 
 Ordem de importação recomendada em **Arquivos > Importação**:
 
 1. `Hier. Produtos` (`PRODUCTS`)
 2. `Vendedores` (`SELLERS`)
 3. `Clientes` (`CUSTOMERS`)
-4. `Meta` (`TARGETS`)
-5. `Sell In` (`SELL_IN`)
-6. `Sell Out` (`SELL_OUT`)
+4. `Meta Sell Out` (`TARGETS`) — use `Layout SellOut_meta.xlsx`
+5. `Meta Sell In` (`SELL_IN_TARGETS`) — use `Layout SellIn_meta.xlsx`
+6. `Sell In` (`SELL_IN`)
+7. `Sell Out` (`SELL_OUT`)
 
 Para a amostra completa em `.dev_files/dados-importacao`, importe também os
 arquivos sufixados com `_aa` quando existirem (`SellIn_aa`, `SellOut_aa`).
+`Layout SellOut_meta.xlsx` deve ser importado como `Meta Sell Out`.
+`Layout SellIn_meta.xlsx` deve ser importado como `Meta Sell In`, nunca como
+`Sell In` ou `Meta Sell Out`.
 
 Durante o teste, a tela deve evoluir por status como `pending`, `validating`,
 `processing` e `completed` ou `completed_with_errors`. Se houver erros de linha,

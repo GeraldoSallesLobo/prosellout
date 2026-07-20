@@ -21,7 +21,7 @@ export const DEMO_STATUS_MTD: StatusMtdReport = {
   avgPrice: buildBlock(500, 400, 350),
   markupPct: buildBlock(0.25, 0.24, 0.23),
   marginPct: buildBlock(0.15, 0.14, 0.135),
-  avgTurnover: buildBlock(2.8, null, 2.4),
+  avgTurnover: buildBlock(2.8, 2.6, 2.4),
   avgCoverage: buildBlock(0.42, null, 0.38),
   trendValue: { projected: 1_620_000, projectedVsTarget: 1_620_000 / 1_450_000 - 1 },
   probabilityValue: 0.73,

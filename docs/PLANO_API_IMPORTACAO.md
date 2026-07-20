@@ -9,7 +9,8 @@ A API deve suportar tudo que hoje entra pelo fluxo manual:
 - `PRODUCTS` — hierarquia de produtos;
 - `SELLERS` — vendedores e supervisores;
 - `CUSTOMERS` — clientes/PDVs;
-- `TARGETS` — metas;
+- `TARGETS` — Meta Sell Out;
+- `SELL_IN_TARGETS` — Meta Sell In;
 - `SELL_IN` — compras/entrada;
 - `SELL_OUT` — vendas para PDV.
 
@@ -122,7 +123,7 @@ Mudancas recomendadas:
 
 Pontos de atencao:
 
-- `TARGETS` tem comportamento de substituicao mensal: uma nova carga remove metas antigas dos meses importados. A API precisa documentar isso com destaque.
+- `TARGETS` e `SELL_IN_TARGETS` substituem metas mensalmente: uma nova carga remove metas antigas dos meses importados. A API precisa documentar isso com destaque.
 - `SELL_OUT` e `SELL_IN` dependem de particoes mensais. As funcoes atuais ja chamam `ensure_month_partition`.
 - a dimensao futura **Marca/Industria** ainda nao esta implementada. Nao deve ser prometida na documentacao externa ate o contrato estar fechado.
 
@@ -155,7 +156,7 @@ Impactos:
 - depois da criacao, mostrar apenas prefixo/sufixo mascarado, nome, escopos, criador, data de criacao, ultimo uso e status;
 - permitir revogar token imediatamente;
 - permitir rotacionar token criando uma nova chave e desativando a antiga apos janela de transicao;
-- permitir limitar escopos por tipo: `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN`, `SELL_OUT`;
+- permitir limitar escopos por tipo: `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_IN`, `SELL_OUT`;
 - permitir definir limites por token, como registros por lote, requests por minuto e data de expiracao opcional;
 - tela **Arquivos > Importacao** deve exibir importacoes `source = api`;
 - logs e status devem funcionar do mesmo modo;
@@ -709,12 +710,12 @@ Adicionar rastreabilidade fim a fim:
 - criar `docs/api/openapi.yaml`;
 - criar exemplos JSON por tipo;
 - criar colecao Postman/Insomnia se fizer sentido;
-- criar guia de homologacao com ordem recomendada: `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN`, `SELL_OUT`;
+- criar guia de homologacao com ordem recomendada: `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_IN`, `SELL_OUT`;
 - documentar erros comuns e como corrigir.
 
 ### Fase 6 — QA e rollout
 
-- testar importacao API para os seis tipos;
+- testar importacao API para os sete tipos;
 - comparar resultados com importacao manual da mesma amostra;
 - testar duplicidade/idempotencia;
 - testar lote com erros parciais;
@@ -729,7 +730,7 @@ Adicionar rastreabilidade fim a fim:
 | Tema | Risco | Decisao recomendada |
 |---|---|---|
 | Duplicidade de vendas | Retry externo pode duplicar `SELL_OUT`/`SELL_IN` | Exigir idempotencia e estudar chave natural por origem |
-| Metas | Reenvio substitui meses inteiros | Documentar com destaque e exigir confirmacao no contrato |
+| Meta Sell Out / Meta Sell In | Reenvio substitui meses inteiros | Documentar com destaque e exigir confirmacao no contrato |
 | Marca/Industria | Requisito futuro ainda nao implementado | Nao incluir no MVP da API ate fechar contrato |
 | Payload grande | Worker/API pode estourar limites ou timeout | Usar lotes e processamento assincrono |
 | Divergencia de specs | `TABLE_SPECS` duplicado pode quebrar COPY posicional | Extrair modulo compartilhado e testar |
@@ -739,7 +740,7 @@ Adicionar rastreabilidade fim a fim:
 ## Entregaveis finais
 
 - API publica versionada `/v1`;
-- importacao via API para `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN` e `SELL_OUT`;
+- importacao via API para `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_IN` e `SELL_OUT`;
 - status e logs por importacao;
 - tela no portal para gestao self-service de tokens por empresa/distribuidor;
 - credenciais por empresa/distribuidor com escopos, expiracao opcional, revogacao e auditoria;

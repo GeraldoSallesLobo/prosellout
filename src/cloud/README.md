@@ -70,7 +70,7 @@ para o mesmo Supabase cloud configurado nas Lambdas. Após alterar variável
 Depois do deploy:
 
 1. Confirmar o e-mail de subscription SNS.
-2. Importar pela UI na ordem: `Hier. Produtos`, `Vendedores`, `Clientes`, `Meta`, `Sell In`, `Sell Out`.
+2. Importar pela UI na ordem: `Hier. Produtos`, `Vendedores`, `Clientes`, `Meta Sell Out`, `Meta Sell In`, `Sell In`, `Sell Out`.
 3. Acompanhar status em **Arquivos › Importação**.
 4. Se falhar, checar CloudWatch:
 

@@ -27,6 +27,14 @@ const TABLE_SPECS = {
       "invoice_number", "invoice_date", "quantity", "gross_value", "unit_cost",
     ],
   },
+  sell_in_targets: {
+    stagingTable: "staging_sell_in_targets",
+    processFunction: "process_sell_in_targets_staging",
+    columns: [
+      "import_id", "line_number", "distributor_code", "product_ean",
+      "target_date", "quantity", "gross_value",
+    ],
+  },
   customers: {
     stagingTable: "staging_customers",
     processFunction: "process_customers_staging",

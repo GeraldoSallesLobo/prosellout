@@ -89,11 +89,11 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   },
   {
     code: "TARGETS",
-    title: "Meta",
+    title: "Meta Sell Out",
     screen: "Dados › Meta",
     targetTable: "sales_targets",
     status: "ready",
-    summary: "Grava metas por cliente, produto, vendedor e mês.",
+    summary: "Grava metas de Sell Out por cliente, produto, vendedor e mês.",
     prerequisiteCodes: ["PRODUCTS", "SELLERS", "CUSTOMERS"],
     requiredColumns: [
       "CNPJ Distribuidor",
@@ -106,8 +106,31 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     ],
     optionalColumns: ["Data Entrega", "CNPJ/CPF"],
     notes: [
-      "Data Faturamento define o mês da meta.",
+      "Data Faturamento define o mês da meta de Sell Out.",
       "Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.",
+    ],
+  },
+  {
+    code: "SELL_IN_TARGETS",
+    title: "Meta Sell In",
+    screen: "Relatório › Status MTD",
+    targetTable: "sell_in_targets",
+    status: "ready",
+    summary: "Grava metas de Sell In por produto e mês para Markup, Margem e Giro Médio.",
+    prerequisiteCodes: ["PRODUCTS"],
+    requiredColumns: [
+      "CNPJ Distribuidor",
+      "EAN",
+      "Volume Total de Unidades NF",
+      "Valor Total R$ NF",
+      "Data de Faturamento",
+    ],
+    optionalColumns: [],
+    notes: [
+      "Data de Faturamento define o mês da meta de Sell In.",
+      "A meta é vinculada ao distribuidor, produto e mês; não possui PDV nem vendedor.",
+      "Linhas repetidas no mesmo SKU + mês são somadas dentro da importação.",
+      "Uma nova importação de Meta Sell In substitui as metas anteriores dos meses presentes no arquivo.",
     ],
   },
   {

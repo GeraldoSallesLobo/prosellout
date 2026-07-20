@@ -128,9 +128,10 @@ export const DEMO_FILE_TYPE_CONFIGS: FileTypeConfig[] = [
   { id: "ftc-3", code: "CUSTOMERS", name: "Clientes", targetTable: "customers", processingRoutine: "process_customers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
   { id: "ftc-4", code: "PRODUCTS", name: "Hier. Produtos", targetTable: "products", processingRoutine: "process_products_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
   { id: "ftc-5", code: "SELLERS", name: "Vendedores", targetTable: "sales_reps", processingRoutine: "process_sellers_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-6", code: "TARGETS", name: "Meta", targetTable: "sales_targets", processingRoutine: "process_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
-  { id: "ftc-7", code: "STOCK", name: "Estoque", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
-  { id: "ftc-8", code: "PLANNER", name: "Batalha Naval", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "inactive" },
+  { id: "ftc-6", code: "TARGETS", name: "Meta Sell Out", targetTable: "sales_targets", processingRoutine: "process_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-7", code: "SELL_IN_TARGETS", name: "Meta Sell In", targetTable: "sell_in_targets", processingRoutine: "process_sell_in_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
+  { id: "ftc-8", code: "STOCK", name: "Estoque", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
+  { id: "ftc-9", code: "PLANNER", name: "Batalha Naval", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "inactive" },
 ];
 
 /** Fontes cíclicas do histórico demo, para o filtro "Tipo Arquivo" ter resultados variados. */
@@ -138,7 +139,8 @@ const DEMO_IMPORT_SOURCES = [
   { filePrefix: "produtos", typeName: "Hier. Produtos", sheetName: "Produtos" },
   { filePrefix: "vendedores", typeName: "Vendedores", sheetName: "Planilha1" },
   { filePrefix: "clientes", typeName: "Clientes", sheetName: "Planilha1" },
-  { filePrefix: "meta", typeName: "Meta", sheetName: "Planilha1" },
+  { filePrefix: "meta-sell-out", typeName: "Meta Sell Out", sheetName: "Planilha1" },
+  { filePrefix: "meta-sell-in", typeName: "Meta Sell In", sheetName: "Planilha1" },
   { filePrefix: "sellin", typeName: "Sell In", sheetName: "Planilha1" },
   { filePrefix: "sellout", typeName: "Sell Out", sheetName: "Planilha1" },
 ] as const;

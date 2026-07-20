@@ -31,9 +31,9 @@ Exemplos de causas esperadas:
 |---|---|
 | CNPJ/código do distribuidor não bate com a conta | Informa o valor recebido na planilha e o código/CNPJ esperado para o distribuidor da conta. |
 | Colunas obrigatórias ausentes | Lista as colunas que faltaram e orienta conferir **Arquivos › Configuração**. |
-| Cliente não encontrado | Em **Meta**, informa o PDV/CNPJ recebido e orienta importar ou ajustar **Clientes**. Em **Sell Out**, quando `Cód. PDV` existe no arquivo, o sistema cria um PDV mínimo automaticamente para preservar as vendas. |
-| Produto não encontrado | Informa o EAN recebido e orienta importar ou ajustar **Hier. Produtos** antes de Sell In/Sell Out/Meta. |
-| Vendedor não encontrado | Informa o código recebido e orienta importar ou ajustar **Vendedores** antes de Sell Out/Meta. |
+| Cliente não encontrado | Em **Meta Sell Out**, informa o PDV/CNPJ recebido e orienta importar ou ajustar **Clientes**. Em **Sell Out**, quando `Cód. PDV` existe no arquivo, o sistema cria um PDV mínimo automaticamente para preservar as vendas. |
+| Produto não encontrado | Informa o EAN recebido e orienta importar ou ajustar **Hier. Produtos** antes de Sell In/Sell Out/Meta Sell Out/Meta Sell In. |
+| Vendedor não encontrado | Informa o código recebido e orienta importar ou ajustar **Vendedores** antes de Sell Out/Meta Sell Out. |
 | Data ou número inválido | Mostra o valor inválido e o formato esperado. |
 
 ## Ordem recomendada
@@ -43,9 +43,10 @@ Para uma base nova, importe nesta ordem:
 1. `PRODUCTS` — produtos e hierarquia de produtos.
 2. `SELLERS` — vendedores e supervisores.
 3. `CUSTOMERS` — clientes/PDVs.
-4. `TARGETS` — metas por cliente/SKU/vendedor/mês.
-5. `SELL_IN` — compras/entrada por produto.
-6. `SELL_OUT` — vendas para PDV por produto.
+4. `TARGETS` — Meta Sell Out por cliente/SKU/vendedor/mês.
+5. `SELL_IN_TARGETS` — metas de Sell In por SKU/mês.
+6. `SELL_IN` — compras/entrada por produto.
+7. `SELL_OUT` — vendas para PDV por produto.
 
 ## Travas no frontend
 
@@ -59,6 +60,7 @@ Matriz de dependências:
 | `SELLERS` | Sim | Nenhum |
 | `CUSTOMERS` | Sim | Nenhum |
 | `TARGETS` | Não | Hier. Produtos + Vendedores + Clientes |
+| `SELL_IN_TARGETS` | Não | Hier. Produtos |
 | `SELL_IN` | Não | Hier. Produtos |
 | `SELL_OUT` | Não | Hier. Produtos + Vendedores + Clientes |
 
@@ -66,7 +68,7 @@ Matriz de dependências:
 
 ## Status atual
 
-Em código, os tipos `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN` e `SELL_OUT` já têm contrato completo entre frontend, AWS Lambdas e Supabase:
+Em código, os tipos `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_IN` e `SELL_OUT` já têm contrato completo entre frontend, AWS Lambdas e Supabase:
 
 - `file_type_configs` ativo;
 - staging table;
@@ -93,7 +95,7 @@ uma coluna `Marca` à esquerda de `CNPJ Distribuidor`.
 
 Em 13/07/2026 foi confirmado que a regra futura será:
 
-- `Marca` obrigatória em Clientes, Hier. Produtos, Vendedores, Meta, Sell In e Sell Out;
+- `Marca` obrigatória em Clientes, Hier. Produtos, Vendedores, Meta Sell Out, Meta Sell In, Sell In e Sell Out;
 - o mesmo nome/código de marca deve aparecer de forma consistente em todos os arquivos;
 - clientes, produtos, vendedores, metas, Sell In e Sell Out serão vinculados a uma marca;
 - a visão "todas as marcas" deverá somar os dados de todas as marcas do distribuidor.
@@ -195,7 +197,7 @@ Notas:
 - Supervisores são criados automaticamente pelo código informado.
 - Gerente é preservado no layout, mas ainda não alimenta uma hierarquia própria.
 
-### TARGETS — Meta
+### TARGETS — Meta Sell Out
 
 - Tela alimentada: **Dados › Meta**
 - Tabela final: `sales_targets`
@@ -218,10 +220,32 @@ Colunas opcionais:
 
 Notas:
 
-- `Data Faturamento` define o mês da meta.
-- A meta é vinculada ao cliente, produto, vendedor e mês.
+- `Data Faturamento` define o mês da meta de Sell Out.
+- A meta de Sell Out é vinculada ao cliente, produto, vendedor e mês.
 - Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.
-- Uma nova importação de Meta substitui as metas anteriores dos meses presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas que foram removidas da planilha.
+- Uma nova importação de Meta Sell Out substitui as metas anteriores dos meses presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas que foram removidas da planilha.
+
+### SELL_IN_TARGETS — Meta Sell In
+
+- Tela alimentada: **Relatório › Status MTD**
+- Tabela final: `sell_in_targets`
+- Rotina: `process_sell_in_targets_staging`
+
+Colunas obrigatórias:
+
+- `CNPJ Distribuidor`
+- `EAN`
+- `Volume Total de Unidades NF`
+- `Valor Total R$ NF`
+- `Data de Faturamento`
+
+Notas:
+
+- `Data de Faturamento` define o mês da meta de Sell In.
+- A meta é vinculada ao distribuidor, produto e mês; não possui PDV nem vendedor.
+- Linhas repetidas no mesmo SKU + mês são somadas dentro da importação.
+- Uma nova importação de Meta Sell In substitui as metas anteriores dos meses presentes no arquivo.
+- No **Status MTD**, a Meta Sell In compõe a coluna **Meta** de `Mark Up %`, `Margem %` e `Giro Médio`, comparando Meta Sell Out contra Meta Sell In.
 
 ### SELL_OUT — Sell Out
 

@@ -273,7 +273,8 @@ def main() -> None:
         ("CUSTOMERS", "Clientes", "customers", "process_customers_staging", "xlsx", "active"),
         ("PRODUCTS", "Hier. Produtos", "products", "process_products_staging", "xlsx", "active"),
         ("SELLERS", "Vendedores", "sales_reps", "process_sellers_staging", "xlsx", "active"),
-        ("TARGETS", "Meta", "sales_targets", "process_targets_staging", "xlsx", "active"),
+        ("TARGETS", "Meta Sell Out", "sales_targets", "process_targets_staging", "xlsx", "active"),
+        ("SELL_IN_TARGETS", "Meta Sell In", "sell_in_targets", "process_sell_in_targets_staging", "xlsx", "active"),
     ]
     ftc_id = {code: uid("ftc", code) for code, *_ in ftc}
     meta_data_rows = count_data_rows(meta)
