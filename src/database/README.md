@@ -114,7 +114,7 @@ O Supabase CLI envia o `seed.sql` como lote de prepared statements: **todos os s
 | ------------------------------------------ | --------------------------------------------------------------- | ------------------- |
 | `report_status_mtd(...)`                   | jsonb com 12 KPIs (atual/meta/anterior + variações)             | Status MTD          |
 | `report_status_analysis(group_by, ...)`    | tabela por vendedor/categoria/canal                             | Status › Análise    |
-| `report_fast_facts(...)`                   | jsonb por dimensão (atingiram meta, melhor/pior, probabilidade) | Fast Facts          |
+| `report_fast_facts(...)`                   | jsonb por dimensão (atingiram/não atingiram meta, melhor/pior, Sell Out R$, vs meta e vs AA) | Fast Facts          |
 | `report_evolution_weekly(...)`             | buckets semanais                                                | Evoluções › Mensal  |
 | `report_three_month_history(...)`          | 3 linhas mensais                                                | Evoluções › 3M      |
 | `report_evolution_analysis(group_by, ...)` | atual × anterior por grupo                                      | Evoluções › Análise |

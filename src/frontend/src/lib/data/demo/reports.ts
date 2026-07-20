@@ -137,14 +137,38 @@ function dimension(
   worstName: string,
   worstAchievement: number,
 ) {
+  const bestCurrentValue = 180_000 * bestAchievement;
+  const bestTargetValue = 180_000;
+  const bestPreviousValue = 165_000;
+  const worstCurrentValue = 95_000 * worstAchievement;
+  const worstTargetValue = 95_000;
+  const worstPreviousValue = 110_000;
+
   return {
     dimension: name,
     eligibleCount: eligible,
     achievedCount: achieved,
+    notAchievedCount: eligible - achieved,
     achievedPct: achieved / eligible,
     avgProbability: probability,
-    best: { name: bestName, achievement: bestAchievement },
-    worst: { name: worstName, achievement: worstAchievement },
+    best: {
+      name: bestName,
+      achievement: bestAchievement,
+      currentValue: bestCurrentValue,
+      targetValue: bestTargetValue,
+      previousValue: bestPreviousValue,
+      currentVsTarget: bestAchievement - 1,
+      currentVsPrevious: bestCurrentValue / bestPreviousValue - 1,
+    },
+    worst: {
+      name: worstName,
+      achievement: worstAchievement,
+      currentValue: worstCurrentValue,
+      targetValue: worstTargetValue,
+      previousValue: worstPreviousValue,
+      currentVsTarget: worstAchievement - 1,
+      currentVsPrevious: worstCurrentValue / worstPreviousValue - 1,
+    },
   };
 }
 

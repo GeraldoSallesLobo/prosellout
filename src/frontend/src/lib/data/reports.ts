@@ -56,6 +56,27 @@ function mapKpiBlock(raw: Record<string, number | null>): KpiBlock {
   };
 }
 
+function nullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const numericValue = Number(value);
+  return Number.isNaN(numericValue) ? null : numericValue;
+}
+
+function mapFastFactsHighlight(value: unknown): FastFactsReport[string]["best"] {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+
+  return {
+    name: String(raw.name ?? "—"),
+    achievement: nullableNumber(raw.achievement),
+    currentValue: nullableNumber(raw.current_value),
+    targetValue: nullableNumber(raw.target_value),
+    previousValue: nullableNumber(raw.previous_value),
+    currentVsTarget: nullableNumber(raw.current_vs_target),
+    currentVsPrevious: nullableNumber(raw.current_vs_previous),
+  };
+}
+
 export async function fetchStatusMtd(filters: ReportFilters): Promise<StatusMtdReport> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return simulateLatency(DEMO_STATUS_MTD);
@@ -126,6 +147,8 @@ export async function fetchFastFacts(filters: ReportFilters): Promise<FastFactsR
   const { data, error } = await supabase.rpc("report_fast_facts", {
     p_current_start: filters.currentStart,
     p_current_end: filters.currentEnd,
+    p_previous_start: filters.previousStart,
+    p_previous_end: filters.previousEnd,
     p_target_start: filters.targetStart ?? null,
     p_target_end: filters.targetEnd ?? null,
     p_distributor_id: filters.distributorId ?? null,
@@ -139,10 +162,11 @@ export async function fetchFastFacts(filters: ReportFilters): Promise<FastFactsR
       dimension,
       eligibleCount: Number(value.eligible_count ?? 0),
       achievedCount: Number(value.achieved_count ?? 0),
+      notAchievedCount: Number(value.not_achieved_count ?? 0),
       achievedPct: value.achieved_pct === null || value.achieved_pct === undefined ? null : Number(value.achieved_pct),
       avgProbability: value.avg_probability === null || value.avg_probability === undefined ? null : Number(value.avg_probability),
-      best: (value.best as FastFactsReport[string]["best"]) ?? null,
-      worst: (value.worst as FastFactsReport[string]["worst"]) ?? null,
+      best: mapFastFactsHighlight(value.best),
+      worst: mapFastFactsHighlight(value.worst),
     };
   }
   return report;

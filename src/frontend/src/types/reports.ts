@@ -79,12 +79,18 @@ export interface EvolutionAnalysisRow {
 export interface FastFactsHighlight {
   name: string;
   achievement: number | null;
+  currentValue: number | null;
+  targetValue: number | null;
+  previousValue: number | null;
+  currentVsTarget: number | null;
+  currentVsPrevious: number | null;
 }
 
 export interface FastFactsDimension {
   dimension: string;
   eligibleCount: number;
   achievedCount: number;
+  notAchievedCount: number;
   achievedPct: number | null;
   avgProbability: number | null;
   best: FastFactsHighlight | null;
