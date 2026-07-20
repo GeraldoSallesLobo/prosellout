@@ -134,7 +134,7 @@ Abra `http://localhost:3000` → você será redirecionado para `/login` → ent
 
 1. **Status MTD** (`/relatorio/status/mtd`) — tela principal: filtros de período/meta/anterior, 12 KPIs com variação vs. meta e vs. anterior, gauges de probabilidade, tabela com toggle Vendedores/Categorias/Canais e gráfico comparativo.
 2. **Badge-toggle** — em Status › Análise e Evoluções › Análise, alterne o agrupamento sem recarregar a página (consolidação de 5 telas do sistema antigo em 2).
-3. **Filtros persistentes** — configure um período no MTD, navegue para Fast Facts ou Evoluções: os filtros são mantidos na sessão.
+3. **Filtros persistentes e múltiplos** — configure um período no MTD, selecione mais de uma Categoria/SKU/Canal/Cluster e navegue para Evoluções: os filtros são mantidos na sessão.
 4. **Tabelas** — nas telas de Dados (Sell Out, Clientes etc.): paginação no servidor, ordenação e busca por coluna.
 5. **Export com feedback** — botão Exportar em qualquer relatório: gera CSV respeitando os filtros ativos e mostra toast de sucesso.
 6. **Cadastros** — inclua um distribuidor ou um nó de hierarquia: modal + toast + atualização imediata (grava no banco local de verdade).

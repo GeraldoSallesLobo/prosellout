@@ -93,7 +93,8 @@ Esse complemento adiciona 65 canais `Stress Channel XX`, cada um com cliente, Se
 
 - `sell_out`/`sell_in` **particionadas por mês** (`ensure_month_partition`); pg_cron cria partições futuras todo dia 25.
 - Carga em lote: ETL faz `COPY` para `staging_*` (UNLOGGED) e chama `process_*_staging(import_id)` — validação set-based, rejeições em `file_import_logs`, insert em massa.
-- Relatórios usam `mv_sell_out_daily` para somas; cobertura (distinct clientes) é calculada na partição com índices dedicados. No **Status MTD**, valor/volume somam o intervalo filtrado. Sem SKU específico, cobertura/ticket usam os PDVs do mês inicial do período; com SKU específico, usam os PDVs únicos do intervalo. Drop Size usa `volume / cobertura`, conforme validação de 19/07/2026.
+- Relatórios usam `mv_sell_out_daily` para somas; cobertura (distinct clientes) é calculada na partição com índices dedicados. No **Status MTD**, valor/volume somam o intervalo filtrado. Sem SKU específico, cobertura/ticket usam os PDVs do mês inicial do período; com um ou mais SKUs selecionados, usam os PDVs únicos do intervalo. Drop Size usa `volume / cobertura`, conforme validação de 19/07/2026. Mark Up usa `preço médio Sell Out / preço médio Sell In - 1`.
+- Filtros de Categoria, Subcategoria, SKU, Canal e Cluster aceitam múltiplos valores nas RPCs novas por arrays `p_*_ids`; seleção vazia significa "todos".
 - `refresh_report_views()` roda após cada carga (chamada pelo ETL) e às 4h via pg_cron.
 
 

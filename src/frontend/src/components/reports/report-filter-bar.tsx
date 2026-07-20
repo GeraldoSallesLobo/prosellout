@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { DateField, SelectField } from "@/components/ui/field";
+import { MultiSelectField } from "@/components/ui/multi-select-field";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
@@ -128,23 +129,23 @@ export function ReportFilterBar({
           ) : null}
           {showDimensionFilters ? (
             <>
-              <SelectField
+              <MultiSelectField
                 label="Categoria"
                 options={toSelectOptions(options.categories)}
-                value={filters.categoryId}
-                onChange={(event) => onChange({ categoryId: event.target.value })}
+                values={filters.categoryIds}
+                onChange={(categoryIds) => onChange({ categoryIds })}
               />
-              <SelectField
+              <MultiSelectField
                 label="SubCategoria"
                 options={toSelectOptions(options.subcategories)}
-                value={filters.subcategoryId}
-                onChange={(event) => onChange({ subcategoryId: event.target.value })}
+                values={filters.subcategoryIds}
+                onChange={(subcategoryIds) => onChange({ subcategoryIds })}
               />
-              <SelectField
+              <MultiSelectField
                 label="SKU"
                 options={toSelectOptions(options.products)}
-                value={filters.productId}
-                onChange={(event) => onChange({ productId: event.target.value })}
+                values={filters.productIds}
+                onChange={(productIds) => onChange({ productIds })}
               />
               <SelectField
                 label="Unidade Medida"
@@ -155,17 +156,17 @@ export function ReportFilterBar({
                   onChange({ unit: event.target.value === "units" ? "units" : "currency" })
                 }
               />
-              <SelectField
+              <MultiSelectField
                 label="Canal"
                 options={toSelectOptions(options.channels)}
-                value={filters.channelId}
-                onChange={(event) => onChange({ channelId: event.target.value })}
+                values={filters.channelIds}
+                onChange={(channelIds) => onChange({ channelIds })}
               />
-              <SelectField
+              <MultiSelectField
                 label="Cluster"
                 options={toSelectOptions(options.clusters)}
-                value={filters.clusterId}
-                onChange={(event) => onChange({ clusterId: event.target.value })}
+                values={filters.clusterIds}
+                onChange={(clusterIds) => onChange({ clusterIds })}
               />
             </>
           ) : null}

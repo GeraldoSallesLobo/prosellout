@@ -23,7 +23,11 @@ import {
 } from "./demo/reports";
 import { simulateLatency } from "./demo/random";
 
-type RpcParams = Record<string, string | null>;
+type RpcParams = Record<string, string | string[] | null>;
+
+function nullableArray(values?: string[]): string[] | null {
+  return values && values.length > 0 ? values : null;
+}
 
 function buildFilterParams(filters: ReportFilters): RpcParams {
   return {
@@ -34,11 +38,11 @@ function buildFilterParams(filters: ReportFilters): RpcParams {
     p_target_start: filters.targetStart ?? null,
     p_target_end: filters.targetEnd ?? null,
     p_distributor_id: filters.distributorId ?? null,
-    p_category_id: filters.categoryId ?? null,
-    p_subcategory_id: filters.subcategoryId ?? null,
-    p_product_id: filters.productId ?? null,
-    p_channel_id: filters.channelId ?? null,
-    p_cluster_id: filters.clusterId ?? null,
+    p_category_ids: nullableArray(filters.categoryIds),
+    p_subcategory_ids: nullableArray(filters.subcategoryIds),
+    p_product_ids: nullableArray(filters.productIds),
+    p_channel_ids: nullableArray(filters.channelIds),
+    p_cluster_ids: nullableArray(filters.clusterIds),
   };
 }
 
@@ -152,11 +156,11 @@ export async function fetchEvolutionWeekly(filters: ReportFilters): Promise<Week
     p_start: filters.currentStart,
     p_end: filters.currentEnd,
     p_distributor_id: filters.distributorId ?? null,
-    p_category_id: filters.categoryId ?? null,
-    p_subcategory_id: filters.subcategoryId ?? null,
-    p_product_id: filters.productId ?? null,
-    p_channel_id: filters.channelId ?? null,
-    p_cluster_id: filters.clusterId ?? null,
+    p_category_ids: nullableArray(filters.categoryIds),
+    p_subcategory_ids: nullableArray(filters.subcategoryIds),
+    p_product_ids: nullableArray(filters.productIds),
+    p_channel_ids: nullableArray(filters.channelIds),
+    p_cluster_ids: nullableArray(filters.clusterIds),
     p_sales_rep_id: filters.salesRepId ?? null,
   });
   if (error) throw error;
@@ -180,11 +184,11 @@ export async function fetchThreeMonthHistory(
   const { data, error } = await supabase.rpc("report_three_month_history", {
     p_reference_month: referenceMonth,
     p_distributor_id: filters.distributorId ?? null,
-    p_category_id: filters.categoryId ?? null,
-    p_subcategory_id: filters.subcategoryId ?? null,
-    p_product_id: filters.productId ?? null,
-    p_channel_id: filters.channelId ?? null,
-    p_cluster_id: filters.clusterId ?? null,
+    p_category_ids: nullableArray(filters.categoryIds),
+    p_subcategory_ids: nullableArray(filters.subcategoryIds),
+    p_product_ids: nullableArray(filters.productIds),
+    p_channel_ids: nullableArray(filters.channelIds),
+    p_cluster_ids: nullableArray(filters.clusterIds),
   });
   if (error) throw error;
 
@@ -212,11 +216,11 @@ export async function fetchEvolutionAnalysis(
     p_previous_start: filters.previousStart,
     p_previous_end: filters.previousEnd,
     p_distributor_id: filters.distributorId ?? null,
-    p_category_id: filters.categoryId ?? null,
-    p_subcategory_id: filters.subcategoryId ?? null,
-    p_product_id: filters.productId ?? null,
-    p_channel_id: filters.channelId ?? null,
-    p_cluster_id: filters.clusterId ?? null,
+    p_category_ids: nullableArray(filters.categoryIds),
+    p_subcategory_ids: nullableArray(filters.subcategoryIds),
+    p_product_ids: nullableArray(filters.productIds),
+    p_channel_ids: nullableArray(filters.channelIds),
+    p_cluster_ids: nullableArray(filters.clusterIds),
     p_sales_rep_id: filters.salesRepId ?? null,
   });
   if (error) throw error;

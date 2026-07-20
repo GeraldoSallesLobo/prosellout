@@ -102,11 +102,11 @@ export interface ReportFilters {
   targetStart?: string;
   targetEnd?: string;
   distributorId?: string;
-  categoryId?: string;
-  subcategoryId?: string;
-  productId?: string;
-  channelId?: string;
-  clusterId?: string;
+  categoryIds?: string[];
+  subcategoryIds?: string[];
+  productIds?: string[];
+  channelIds?: string[];
+  clusterIds?: string[];
   salesRepId?: string;
 }
 

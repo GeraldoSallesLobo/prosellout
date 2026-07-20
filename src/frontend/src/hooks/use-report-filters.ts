@@ -21,15 +21,33 @@ export interface ReportFilterState {
   targetEnd: string;
   previousStart: string;
   previousEnd: string;
-  categoryId: string;
-  subcategoryId: string;
-  productId: string;
-  channelId: string;
-  clusterId: string;
+  categoryIds: string[];
+  subcategoryIds: string[];
+  productIds: string[];
+  channelIds: string[];
+  clusterIds: string[];
   distributorId: string;
   salesRepId: string;
   unit: "currency" | "units";
 }
+
+type LegacyStoredReportFilterState = Partial<
+  Omit<
+    ReportFilterState,
+    "categoryIds" | "subcategoryIds" | "productIds" | "channelIds" | "clusterIds"
+  >
+> & {
+  categoryId?: unknown;
+  subcategoryId?: unknown;
+  productId?: unknown;
+  channelId?: unknown;
+  clusterId?: unknown;
+  categoryIds?: unknown;
+  subcategoryIds?: unknown;
+  productIds?: unknown;
+  channelIds?: unknown;
+  clusterIds?: unknown;
+};
 
 const STORAGE_KEY = "prosellout-report-filters";
 const PREVIOUS_YEAR_OFFSET = -1;
@@ -45,15 +63,23 @@ function buildDefaultState(): ReportFilterState {
     targetEnd: targetPeriod.end,
     previousStart: previousPeriod.start,
     previousEnd: previousPeriod.end,
-    categoryId: "",
-    subcategoryId: "",
-    productId: "",
-    channelId: "",
-    clusterId: "",
+    categoryIds: [],
+    subcategoryIds: [],
+    productIds: [],
+    channelIds: [],
+    clusterIds: [],
     distributorId: "",
     salesRepId: "",
     unit: "currency",
   };
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  }
+  if (typeof value === "string" && value.length > 0) return [value];
+  return [];
 }
 
 function getPreviousYearRangeForCurrentPeriod(state: ReportFilterState): DateRange {
@@ -86,9 +112,15 @@ function readStoredState(): ReportFilterState | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
+    const stored = JSON.parse(raw) as LegacyStoredReportFilterState;
     return normalizePreviousPeriod({
       ...buildDefaultState(),
-      ...(JSON.parse(raw) as Partial<ReportFilterState>),
+      ...stored,
+      categoryIds: normalizeStringArray(stored.categoryIds ?? stored.categoryId),
+      subcategoryIds: normalizeStringArray(stored.subcategoryIds ?? stored.subcategoryId),
+      productIds: normalizeStringArray(stored.productIds ?? stored.productId),
+      channelIds: normalizeStringArray(stored.channelIds ?? stored.channelId),
+      clusterIds: normalizeStringArray(stored.clusterIds ?? stored.clusterId),
     });
   } catch {
     return null;
@@ -157,11 +189,11 @@ export function toReportFilters(state: ReportFilterState): ReportFilters {
     targetStart: normalizedState.targetStart || undefined,
     targetEnd: normalizedState.targetEnd || undefined,
     distributorId: normalizedState.distributorId || undefined,
-    categoryId: normalizedState.categoryId || undefined,
-    subcategoryId: normalizedState.subcategoryId || undefined,
-    productId: normalizedState.productId || undefined,
-    channelId: normalizedState.channelId || undefined,
-    clusterId: normalizedState.clusterId || undefined,
+    categoryIds: normalizedState.categoryIds.length > 0 ? normalizedState.categoryIds : undefined,
+    subcategoryIds: normalizedState.subcategoryIds.length > 0 ? normalizedState.subcategoryIds : undefined,
+    productIds: normalizedState.productIds.length > 0 ? normalizedState.productIds : undefined,
+    channelIds: normalizedState.channelIds.length > 0 ? normalizedState.channelIds : undefined,
+    clusterIds: normalizedState.clusterIds.length > 0 ? normalizedState.clusterIds : undefined,
     salesRepId: normalizedState.salesRepId || undefined,
   };
 }
