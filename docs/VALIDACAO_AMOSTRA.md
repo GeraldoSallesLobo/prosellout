@@ -58,6 +58,7 @@ Ao cruzar a amostra com o schema, encontramos e corrigimos:
 - **Filtros múltiplos**: Categoria, Subcategoria, SKU, Canal e Cluster aceitam múltipla seleção nos relatórios. Seleção vazia equivale a "todos".
 - **Drop Size**: a regra validada em 19/07/2026 é `Volume Sell Out / Cobertura`, não volume por nota. Isso vale para atual, meta e ano anterior.
 - **Probabilidade Cobertura**: usa `Cobertura Atual / Cobertura Meta`, capada em 100%. As probabilidades de Sell Out R$ e Ticket Médio também são capadas em 100%.
+- **Fast Facts sem meta**: quando uma dimensão tem Sell Out realizado no período, mas não tem Meta Sell Out, ela entra no donut como **na meta**. O comparativo **vs Meta** permanece vazio porque não há denominador para percentual.
 - **Ano anterior nos relatórios**: o filtro padrão usa o mesmo intervalo de dia/mês no ano anterior. Estados antigos salvos no navegador em que "Ano Anterior" era igual ao período atual são normalizados para o ano anterior.
 - **Indústria/Marca**: foi confirmado que a próxima estrutura terá `Marca` obrigatória em todos os layouts, vínculo por marca e visão "todas as marcas" somada por distribuidor. Para o QA atual, a estrutura permanece sem `Marca`, assumindo uma indústria padrão.
 
