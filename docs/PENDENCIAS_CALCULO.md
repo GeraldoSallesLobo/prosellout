@@ -13,7 +13,7 @@ Markup, Margem, Giro Médio e os desdobramentos Canal, Vendedor e Cluster são c
 ## 3. Fórmulas de Giro Médio e Cobertura Média
 
 - **Giro Médio** = Fat R$ Sell Out ÷ (Fat R$ Sell Out − Fat R$ Sell In)
-- **Cobertura Média** = Volume Estoque ÷ Volume Sell Out
+- **Cobertura Média** = Volume Estoque ÷ Volume Sell Out. Para a meta, usa o mesmo racional com Meta Sell In e Meta Sell Out: `(Meta Sell In Un − Meta Sell Out Un) ÷ Meta Sell Out Un`.
 - **Volume Estoque** = Volume Sell In acumulado desde o D0 − Volume Sell Out acumulado desde o D0 até a data de referência.
 
 ## 4. Estoque
