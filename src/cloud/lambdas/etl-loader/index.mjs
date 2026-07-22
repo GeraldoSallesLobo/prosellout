@@ -17,6 +17,7 @@ const TABLE_SPECS = {
       "import_id", "line_number", "distributor_code", "customer_pdv_code",
       "customer_cnpj", "sales_rep_code", "product_ean", "invoice_number",
       "invoice_date", "delivery_date", "quantity", "gross_value", "unit_cost",
+      "channel_name", "cluster_name",
     ],
   },
   sell_in: {
@@ -68,7 +69,7 @@ const TABLE_SPECS = {
     columns: [
       "import_id", "line_number", "distributor_code", "customer_pdv_code",
       "customer_cnpj", "sales_rep_code", "product_ean", "target_date",
-      "delivery_date", "quantity", "gross_value",
+      "delivery_date", "quantity", "gross_value", "channel_name", "cluster_name",
     ],
   },
 };

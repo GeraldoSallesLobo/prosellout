@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Upload } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -13,6 +13,8 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { useToast } from "@/components/ui/toast";
 import { ImportLayoutHelp } from "@/components/imports/import-layout-help";
 import {
+  ACTIVE_IMPORT_COUNT_QUERY_KEY,
+  ACTIVE_IMPORT_STATUSES,
   canUploadFileType,
   fetchCompletedImportCodes,
   fetchFileImports,
@@ -43,7 +45,6 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, meta]) => ({
   label: meta.label,
 }));
 
-const ACTIVE_IMPORT_STATUSES = new Set<ImportStatus>(["pending", "validating", "processing"]);
 const ACTIVE_IMPORT_REFETCH_INTERVAL_MS = 2_000;
 
 function getMissingPrerequisiteLabels(
@@ -97,7 +98,6 @@ function FileImportContent() {
     },
   });
 
-  const hasActiveImports = imports.some((row) => ACTIVE_IMPORT_STATUSES.has(row.status));
   const selectedLogImport = imports.find((row) => row.id === logImport?.id) ?? logImport;
 
   const { data: logs = [], isLoading: isLogsLoading } = useQuery({
@@ -108,12 +108,6 @@ function FileImportContent() {
       ? ACTIVE_IMPORT_REFETCH_INTERVAL_MS
       : false,
   });
-
-  useEffect(() => {
-    if (!hasActiveImports) {
-      queryClient.invalidateQueries({ queryKey: ["completed-import-codes"] });
-    }
-  }, [hasActiveImports, queryClient]);
 
   const completedImportCodeSet = useMemo(
     () => new Set(completedImportCodes),
@@ -155,6 +149,7 @@ function FileImportContent() {
       setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ["file-imports"] });
       queryClient.invalidateQueries({ queryKey: ["completed-import-codes"] });
+      queryClient.invalidateQueries({ queryKey: ACTIVE_IMPORT_COUNT_QUERY_KEY });
     },
     onError: (error) =>
       showToast(

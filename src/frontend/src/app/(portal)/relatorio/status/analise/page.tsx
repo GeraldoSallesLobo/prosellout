@@ -7,7 +7,11 @@ import { ToggleBadges } from "@/components/ui/toggle-badges";
 import { ExportButton } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { StatusAnalysisTable } from "@/components/reports/status-analysis-table";
-import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
+import {
+  REPORT_QUERY_FRESHNESS,
+  toReportFilters,
+  useReportFilters,
+} from "@/hooks/use-report-filters";
 import { fetchStatusAnalysis } from "@/lib/data/reports";
 import type { StatusGroupBy } from "@/types/reports";
 
@@ -27,6 +31,7 @@ export default function StatusAnalysisPage() {
     queryKey: ["status-analysis-full", groupBy, reportFilters],
     queryFn: () => fetchStatusAnalysis(groupBy, reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   return (

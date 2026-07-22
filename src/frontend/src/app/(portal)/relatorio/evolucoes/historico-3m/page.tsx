@@ -6,7 +6,11 @@ import clsx from "clsx";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
-import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
+import {
+  REPORT_QUERY_FRESHNESS,
+  toReportFilters,
+  useReportFilters,
+} from "@/hooks/use-report-filters";
 import { fetchThreeMonthHistory } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
@@ -139,6 +143,7 @@ export default function ThreeMonthHistoryPage() {
     queryKey: ["three-month-history", referenceMonth, reportFilters],
     queryFn: () => fetchThreeMonthHistory(referenceMonth, reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   return (

@@ -8,7 +8,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExportButton } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
-import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
+import {
+  REPORT_QUERY_FRESHNESS,
+  toReportFilters,
+  useReportFilters,
+} from "@/hooks/use-report-filters";
 import { fetchFastFacts } from "@/lib/data/reports";
 import {
   formatCurrency,
@@ -184,6 +188,7 @@ export default function FastFactsPage() {
     queryKey: ["fast-facts", reportFilters],
     queryFn: () => fetchFastFacts(reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   const dimensions = DIMENSION_ORDER.map((key) => report?.[key]).filter(

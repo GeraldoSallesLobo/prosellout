@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
 import { StatusBadge } from "@/components/ui/badge";
@@ -16,16 +16,19 @@ export interface TreeNode {
 interface TreeViewProps {
   nodes: TreeNode[];
   onEdit?: (node: TreeNode) => void;
+  onDelete?: (node: TreeNode) => void;
 }
 
 function TreeRow({
   node,
   depth,
   onEdit,
+  onDelete,
 }: {
   node: TreeNode;
   depth: number;
   onEdit?: (node: TreeNode) => void;
+  onDelete?: (node: TreeNode) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
@@ -65,22 +68,38 @@ function TreeRow({
               <Pencil size={13} />
             </button>
           ) : null}
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete(node)}
+              className="rounded p-1 text-text2 opacity-0 transition-opacity hover:text-red group-hover:opacity-100"
+              aria-label={`Excluir ${node.name}`}
+            >
+              <Trash2 size={13} />
+            </button>
+          ) : null}
         </span>
       </div>
       {isExpanded
         ? node.children.map((child) => (
-            <TreeRow key={child.id} node={child} depth={depth + 1} onEdit={onEdit} />
+            <TreeRow
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           ))
         : null}
     </>
   );
 }
 
-export function TreeView({ nodes, onEdit }: TreeViewProps) {
+export function TreeView({ nodes, onEdit, onDelete }: TreeViewProps) {
   return (
     <div className="card overflow-hidden">
       {nodes.map((node) => (
-        <TreeRow key={node.id} node={node} depth={0} onEdit={onEdit} />
+        <TreeRow key={node.id} node={node} depth={0} onEdit={onEdit} onDelete={onDelete} />
       ))}
       {nodes.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-text2">

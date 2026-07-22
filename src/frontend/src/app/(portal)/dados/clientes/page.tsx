@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { PageHeader } from "@/components/ui/page-header";
+import { AdminDeleteFilteredDataButton } from "@/components/data/admin-delete-filtered-data-button";
 import { SelectField } from "@/components/ui/field";
 import { MultiSelectField } from "@/components/ui/multi-select-field";
 import { StatusBadge } from "@/components/ui/badge";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableColumn,
+  type DataTableRowKey,
+} from "@/components/ui/data-table";
 import { ExportButton } from "@/components/ui/export-button";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
@@ -28,6 +33,7 @@ export default function CustomersPage() {
   const [channelIds, setChannelIds] = useState<string[]>([]);
   const [clusterId, setClusterId] = useState("");
   const [distributorId, setDistributorId] = useState("");
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Set<DataTableRowKey>>(new Set());
 
   const { data: options } = useQuery({
     queryKey: ["filter-options"],
@@ -37,11 +43,13 @@ export default function CustomersPage() {
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
   });
-  const canFilterByDistributor = access?.isAdmin === true;
+  const isAdmin = access?.isAdmin === true;
+  const canFilterByDistributor = isAdmin;
 
   useEffect(() => {
     if (access && !access.isAdmin && distributorId) {
       setDistributorId("");
+      setSelectedRowKeys(new Set());
       setPage(1);
     }
   }, [access, distributorId]);
@@ -82,21 +90,39 @@ export default function CustomersPage() {
         title="Clientes Consolidado"
         description="Base de clientes com canal e cluster"
         actions={
-          <ExportButton
-            fileName="clientes"
-            getRows={() =>
-              (data?.rows ?? []).map((row) => ({
-                cnpj: row.cnpj,
-                razao_social: row.legalName,
-                bairro: row.district,
-                cidade: row.city,
-                uf: row.state,
-                cep: row.zipCode,
-                canal: row.channelName,
-                cluster: row.clusterName,
-              }))
-            }
-          />
+          <>
+            <ExportButton
+              fileName="clientes"
+              getRows={() =>
+                (data?.rows ?? []).map((row) => ({
+                  cnpj: row.cnpj,
+                  razao_social: row.legalName,
+                  bairro: row.district,
+                  cidade: row.city,
+                  uf: row.state,
+                  cep: row.zipCode,
+                  canal: row.channelName,
+                  cluster: row.clusterName,
+                }))
+              }
+            />
+            <AdminDeleteFilteredDataButton
+              dataset="customers"
+              label="clientes"
+              scopeDescription="Clientes excluídos removem também o Sell Out e as metas vinculadas a esses clientes."
+              filters={{
+                distributorId: distributorId || undefined,
+                channelIds: channelIds.length > 0 ? channelIds : undefined,
+                clusterId: clusterId || undefined,
+              }}
+              selectedRowIds={Array.from(selectedRowKeys)}
+              search={search}
+              onDeleted={() => {
+                setSelectedRowKeys(new Set());
+                setPage(1);
+              }}
+            />
+          </>
         }
       />
 
@@ -116,6 +142,7 @@ export default function CustomersPage() {
             value={distributorId}
             onChange={(event) => {
               setDistributorId(event.target.value);
+              setSelectedRowKeys(new Set());
               setPage(1);
             }}
           />
@@ -129,6 +156,7 @@ export default function CustomersPage() {
           values={channelIds}
           onChange={(next) => {
             setChannelIds(next);
+            setSelectedRowKeys(new Set());
             setPage(1);
           }}
         />
@@ -141,6 +169,7 @@ export default function CustomersPage() {
           value={clusterId}
           onChange={(event) => {
             setClusterId(event.target.value);
+            setSelectedRowKeys(new Set());
             setPage(1);
           }}
         />
@@ -159,8 +188,17 @@ export default function CustomersPage() {
         search={search}
         onSearchChange={(next) => {
           setSearch(next);
+          setSelectedRowKeys(new Set());
           setPage(1);
         }}
+        rowSelection={
+          isAdmin
+            ? {
+                selectedKeys: selectedRowKeys,
+                onSelectedKeysChange: setSelectedRowKeys,
+              }
+            : undefined
+        }
         pagination={{
           page,
           pageSize,

@@ -11,7 +11,11 @@ import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { StatusAnalysisTable } from "@/components/reports/status-analysis-table";
 import { ComparisonBarChart } from "@/components/charts/comparison-bar-chart";
 import { ProbabilityGauge } from "@/components/charts/probability-gauge";
-import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
+import {
+  REPORT_QUERY_FRESHNESS,
+  toReportFilters,
+  useReportFilters,
+} from "@/hooks/use-report-filters";
 import { fetchStatusAnalysis, fetchStatusMtd } from "@/lib/data/reports";
 import {
   formatCurrency,
@@ -42,12 +46,14 @@ export default function StatusMtdPage() {
     queryKey: ["status-mtd", reportFilters],
     queryFn: () => fetchStatusMtd(reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   const { data: analysisRows = [], isLoading: isAnalysisLoading } = useQuery({
     queryKey: ["status-analysis", groupBy, reportFilters],
     queryFn: () => fetchStatusAnalysis(groupBy, reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   const chartData = useMemo(

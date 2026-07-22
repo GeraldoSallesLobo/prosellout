@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
+import { ImportCompletionWatcher } from "@/components/imports/import-completion-watcher";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Sidebar } from "@/components/layout/sidebar";
 
@@ -35,6 +36,7 @@ export function PortalShell({ children }: PortalShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg">
+      <ImportCompletionWatcher />
       <Sidebar />
 
       {isMobileMenuOpen ? (

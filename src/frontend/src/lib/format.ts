@@ -20,6 +20,12 @@ const DECIMAL_FORMATTER = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo",
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
 const EMPTY_PLACEHOLDER = "—";
 
 export function formatCurrency(value: number | null | undefined): string {
@@ -61,6 +67,13 @@ export function formatIsoDate(value: string | null | undefined): string {
   const [year, month, day] = value.slice(0, 10).split("-");
   if (!year || !month || !day) return value;
   return `${day}/${month}/${year}`;
+}
+
+export function formatIsoDateTime(value: string | null | undefined): string {
+  if (!value) return EMPTY_PLACEHOLDER;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return DATE_TIME_FORMATTER.format(date);
 }
 
 export function formatCnpj(value: string | null | undefined): string {

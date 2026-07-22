@@ -118,10 +118,31 @@ O Supabase CLI envia o `seed.sql` como lote de prepared statements: **todos os s
 | `report_evolution_weekly(...)`             | buckets semanais                                                | Evoluções › Mensal  |
 | `report_three_month_history(...)`          | 3 linhas mensais                                                | Evoluções › 3M      |
 | `report_evolution_analysis(group_by, ...)` | atual × anterior por grupo                                      | Evoluções › Análise |
+| `delete_platform_data(...)`                | contagem de registros excluídos por IDs selecionados ou filtros, limitado a admins | Dados › Excluir     |
+| `set_distributor_status(...)`              | contagem de distribuidores ativados/inativados, limitado a admins | Cadastros › Distribuidor |
+| `inactivate_distributor(...)`              | wrapper compatível para inativação de distribuidor              | Cadastros › Distribuidor |
+| `list_platform_data_deletion_logs(...)`    | histórico paginado das exclusões administrativas                | Admin › Logs        |
 
 
-Todas `security definer` com `search_path = public`; execução liberada apenas para `authenticated`. Funções de ETL são exclusivas do service role.
+Todas `security definer` com `search_path = public`; execução liberada apenas para `authenticated`. Funções de ETL são exclusivas do service role. `delete_platform_data` valida `current_user_is_admin()` internamente antes de remover dados por `row_ids` selecionados ou pelos filtros do portal e registra a ação em `platform_data_deletion_logs`.
+
+### Exclusão administrativa e relações entre dados
+
+A exclusão admin não depende de `ON DELETE CASCADE` nas tabelas principais de negócio. As FKs preservam integridade e, quando uma exclusão precisa remover ou desvincular dados relacionados, a RPC `delete_platform_data` faz isso explicitamente em ordem controlada.
+
+| Dataset excluído | Efeito nos dados relacionados |
+| --- | --- |
+| `customers` | Remove primeiro `sales_targets` e `sell_out` dos clientes selecionados/filtrados, depois remove os próprios clientes. Não remove `sell_in`, porque Sell In é ligado a distribuidora/produto, não a cliente. |
+| `sales_reps` | Só remove vendedores (`role = 'seller'`). Antes do delete, limpa vínculos em `customers.sales_rep_id`, `sell_out.sales_rep_id`, `sales_targets.sales_rep_id`, `sales_reps.manager_id` e `sales_reps.supervisor_id`. Não remove clientes, vendas nem metas por causa do vendedor. |
+| `product_hierarchy` | Remove o nó selecionado e seus filhos. Antes do delete, remove produtos vinculados às subcategorias do escopo e limpa `sales_targets`, `sell_in_targets`, `stock_snapshots`, `sell_out` e `sell_in` desses produtos. |
+| `commercial_hierarchy` | Remove o supervisor/vendedor selecionado. Se o item for supervisor, remove também vendedores subordinados. Antes do delete, limpa vínculos em clientes, Sell Out, metas e relações internas de `sales_reps`. |
+| `sell_out` | Remove diretamente os lançamentos selecionados ou filtrados e atualiza as views/materializações de relatório. |
+| `sell_in` | Remove diretamente os lançamentos selecionados ou filtrados. |
+| `sales_targets` | Remove diretamente as metas selecionadas ou filtradas. |
+| `distributors` | Não faz delete físico. `set_distributor_status` alterna `distributors.status` e também `distributor_users.status`: inativar bloqueia usuários vinculados de acessar a plataforma; ativar libera o acesso novamente. O histórico é preservado e a ação entra no mesmo log administrativo. |
+
+O log de auditoria guarda o dataset, a ação (`delete`, `activate` ou `inactivate`), o modo da operação (`selected_rows` ou `filters`), os filtros/IDs usados, os itens afetados em `filters.items`, o admin executor, `deleted_count` e as distribuidoras afetadas em `filters.distributors` com `id`, `code`, `name` e `cnpj`. Para `customers` e `sales_reps`, `deleted_count` representa a quantidade de registros principais removidos, não a soma de registros auxiliares apagados ou desvinculados pela limpeza relacional.
 
 ## Segurança
 
-RLS habilitado em todas as tabelas. Perfis atuais: `authenticated` lê tudo e mantém cadastros; escrita transacional só pelo service role (ETL). A migration `000900_rls_hardening` fecha três brechas: revoga o EXECUTE default de `public`/`anon` nas RPCs (security definer), remove acesso direto de API à `mv_sell_out_daily` e habilita RLS nas partições (existentes e futuras — `ensure_month_partition` foi recriada para que partições novas já nasçam bloqueadas; **nunca crie partições manualmente**, sempre via essa função). Para papéis mais finos (ex.: vendedor vê só a própria carteira), adicionar claim de role no JWT e refinar as políticas.
+RLS habilitado em todas as tabelas. Perfis atuais: `authenticated` lê tudo e mantém cadastros; escrita transacional segue pelo service role (ETL), com exceção da exclusão administrativa filtrada via RPC `delete_platform_data`. A auditoria de exclusões fica em `platform_data_deletion_logs`, com leitura liberada apenas para admins. A migration `000900_rls_hardening` fecha três brechas: revoga o EXECUTE default de `public`/`anon` nas RPCs (security definer), remove acesso direto de API à `mv_sell_out_daily` e habilita RLS nas partições (existentes e futuras — `ensure_month_partition` foi recriada para que partições novas já nasçam bloqueadas; **nunca crie partições manualmente**, sempre via essa função). Para papéis mais finos (ex.: vendedor vê só a própria carteira), adicionar claim de role no JWT e refinar as políticas.

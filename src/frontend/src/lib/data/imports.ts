@@ -28,6 +28,28 @@ const UPLOADABLE_TARGET_TABLES = new Set([
 
 const READY_IMPORT_STATUSES = new Set<ImportStatus>(["completed", "completed_with_errors"]);
 
+const ACTIVE_IMPORT_STATUS_LIST: ImportStatus[] = ["pending", "validating", "processing"];
+
+export const ACTIVE_IMPORT_STATUSES: ReadonlySet<ImportStatus> = new Set(
+  ACTIVE_IMPORT_STATUS_LIST,
+);
+
+export const ACTIVE_IMPORT_COUNT_QUERY_KEY = ["active-import-count"] as const;
+
+export async function fetchActiveImportCount(): Promise<number> {
+  const supabase = getSupabaseBrowserClient();
+  // Demo imports never progress, so there is nothing for the watcher to track.
+  if (!supabase) return 0;
+
+  const { count, error } = await supabase
+    .from("file_imports")
+    .select("id", { count: "exact", head: true })
+    .in("status", ACTIVE_IMPORT_STATUS_LIST);
+  if (error) throw error;
+
+  return count ?? 0;
+}
+
 export function canUploadFileType(config: FileTypeConfig): boolean {
   return config.status === "active" && UPLOADABLE_TARGET_TABLES.has(config.targetTable);
 }

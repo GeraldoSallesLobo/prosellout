@@ -24,11 +24,16 @@ const TABLE_SPECS = {
     columns: [
       "distributor_code", "customer_pdv_code", "customer_cnpj", "sales_rep_code",
       "product_ean", "invoice_number", "invoice_date", "delivery_date",
-      "quantity", "gross_value", "unit_cost",
+      "quantity", "gross_value", "unit_cost", "channel_name", "cluster_name",
     ],
     optionalColumns: [
       "customer_pdv_code", "customer_cnpj", "invoice_number", "delivery_date", "unit_cost",
+      "channel_name", "cluster_name",
     ],
+    positionalFallbacks: {
+      channel_name: 9,
+      cluster_name: 10,
+    },
     aliases: {
       distribuidor: "distributor_code",
       cnpj_distribuidor: "distributor_code",
@@ -61,6 +66,9 @@ const TABLE_SPECS = {
       valor_bruto: "gross_value",
       custo: "unit_cost",
       custo_unitario: "unit_cost",
+      canal_do_pdv: "channel_name",
+      canal: "channel_name",
+      cluster: "cluster_name",
     },
   },
   sell_in: {
@@ -214,8 +222,13 @@ const TABLE_SPECS = {
     columns: [
       "distributor_code", "customer_pdv_code", "customer_cnpj", "sales_rep_code",
       "product_ean", "target_date", "delivery_date", "quantity", "gross_value",
+      "channel_name", "cluster_name",
     ],
-    optionalColumns: ["customer_cnpj", "delivery_date"],
+    optionalColumns: ["customer_cnpj", "delivery_date", "channel_name", "cluster_name"],
+    positionalFallbacks: {
+      channel_name: 9,
+      cluster_name: 10,
+    },
     aliases: {
       distribuidor: "distributor_code",
       cnpj_distribuidor: "distributor_code",
@@ -243,12 +256,32 @@ const TABLE_SPECS = {
       valor: "gross_value",
       valor_total_r_nf: "gross_value",
       valor_bruto: "gross_value",
+      canal_do_pdv: "channel_name",
+      canal: "channel_name",
+      cluster: "cluster_name",
     },
   },
 };
 
+function getCellValue(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value;
+  if (Array.isArray(value)) return value.map(getCellValue).join("");
+  if (typeof value !== "object") return value;
+
+  if ("result" in value && value.result !== undefined) return getCellValue(value.result);
+  if ("text" in value && value.text !== undefined) return getCellValue(value.text);
+  if ("richText" in value && Array.isArray(value.richText)) {
+    return value.richText.map((part) => getCellValue(part?.text)).join("");
+  }
+  if ("hyperlink" in value && "text" in value) return getCellValue(value.text);
+  if ("error" in value && value.error !== undefined) return getCellValue(value.error);
+
+  return "";
+}
+
 function normalizeHeader(header) {
-  return String(header ?? "")
+  return String(getCellValue(header))
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -259,7 +292,8 @@ function normalizeHeader(header) {
 
 function parseExcelDateSerial(value) {
   if (value === null || value === undefined || value === "") return null;
-  const serial = typeof value === "number" ? value : Number(String(value).trim());
+  const cellValue = getCellValue(value);
+  const serial = typeof cellValue === "number" ? cellValue : Number(String(cellValue).trim());
   const isExcelSerial =
     Number.isFinite(serial) &&
     serial > 0 &&
@@ -273,11 +307,12 @@ function parseExcelDateSerial(value) {
 
 /** "31/12/2026" -> "2026-12-31"; Excel serial -> ISO; Date -> ISO; ISO passes through. */
 function normalizeDate(value) {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  const excelSerialDate = parseExcelDateSerial(value);
+  const cellValue = getCellValue(value);
+  if (cellValue instanceof Date) return cellValue.toISOString().slice(0, 10);
+  const excelSerialDate = parseExcelDateSerial(cellValue);
   if (excelSerialDate) return excelSerialDate;
 
-  const text = String(value ?? "").trim();
+  const text = String(cellValue ?? "").trim();
   const brazilianDate = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (brazilianDate) return `${brazilianDate[3]}-${brazilianDate[2]}-${brazilianDate[1]}`;
   return text.slice(0, 10);
@@ -285,8 +320,9 @@ function normalizeDate(value) {
 
 /** "1.234,56" -> "1234.56". */
 function normalizeNumber(value) {
-  if (typeof value === "number") return String(value);
-  const text = String(value ?? "").trim();
+  const cellValue = getCellValue(value);
+  if (typeof cellValue === "number") return String(cellValue);
+  const text = String(cellValue ?? "").trim();
   if (text.includes(",")) return text.replaceAll(".", "").replace(",", ".");
   return text;
 }
@@ -297,7 +333,7 @@ function normalizeCell(column, value) {
     "quantity", "gross_value", "unit_cost", "box_count",
     "units_per_pack", "portfolio_size",
   ].includes(column)) return normalizeNumber(value);
-  return String(value ?? "").trim();
+  return String(getCellValue(value) ?? "").trim();
 }
 
 async function connectDatabase() {
@@ -350,6 +386,10 @@ function buildColumnMapper(spec, headerRow) {
     const column = spec.aliases[normalized] ?? (spec.columns.includes(normalized) ? normalized : null);
     if (column && !positions.has(column)) positions.set(column, index);
   });
+
+  for (const [column, index] of Object.entries(spec.positionalFallbacks ?? {})) {
+    if (!positions.has(column)) positions.set(column, index);
+  }
 
   const optionalColumns = new Set(spec.optionalColumns ?? []);
   const requiredColumns = spec.columns.filter((column) => !optionalColumns.has(column));
@@ -432,7 +472,7 @@ async function processUpload(bucket, key) {
         mapColumns = buildColumnMapper(spec, rawRow);
         continue;
       }
-      const isEmptyRow = rawRow.every((cell) => String(cell ?? "").trim() === "");
+      const isEmptyRow = rawRow.every((cell) => String(getCellValue(cell) ?? "").trim() === "");
       if (isEmptyRow) continue;
       await writer.add([importId, lineNumber, ...mapColumns(rawRow)]);
     }

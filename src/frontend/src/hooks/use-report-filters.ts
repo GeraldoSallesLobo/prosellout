@@ -52,6 +52,14 @@ type LegacyStoredReportFilterState = Partial<
 const STORAGE_KEY = "prosellout-report-filters";
 const PREVIOUS_YEAR_OFFSET = -1;
 
+/**
+ * Report queries mount disabled until `isHydrated`, so React Query never
+ * applies `refetchOnMount` to them; once enabled they only refetch when the
+ * cache is stale. A zero stale time forces a refetch on every visit, so report
+ * screens always show current data (e.g. right after a file import).
+ */
+export const REPORT_QUERY_FRESHNESS = { staleTime: 0 } as const;
+
 function buildDefaultState(): ReportFilterState {
   const currentPeriod = getCurrentMonthToDate();
   const targetPeriod = getFullMonth(new Date());

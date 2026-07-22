@@ -18,6 +18,8 @@ import { sortByValue, type SortState } from "@/lib/sort";
 export type { SortState } from "@/lib/sort";
 export type { SearchState } from "@/lib/search";
 
+export type DataTableRowKey = string | number;
+
 export interface DataTableColumn<T> {
   key: string;
   header: string;
@@ -45,7 +47,7 @@ export interface DataTableColumn<T> {
 interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   rows: T[];
-  rowKey: (row: T) => string | number;
+  rowKey: (row: T) => DataTableRowKey;
   isLoading?: boolean;
   emptyMessage?: string;
   /** Highlights a footer-like row (e.g. TOTAL). Fica fora da ordenação e da paginação. */
@@ -70,6 +72,10 @@ interface DataTableProps<T> {
   /** Quando presente, a busca é delegada ao chamador (com debounce interno). */
   onSearchChange?: (search: SearchState | null) => void;
   pageSizeOptions?: number[];
+  rowSelection?: {
+    selectedKeys: Set<DataTableRowKey>;
+    onSelectedKeysChange: (keys: Set<DataTableRowKey>) => void;
+  };
 }
 
 const SKELETON_ROW_COUNT = 6;
@@ -106,6 +112,7 @@ export function DataTable<T>({
   search,
   onSearchChange,
   pageSizeOptions,
+  rowSelection,
 }: DataTableProps<T>) {
   const sizeOptions = pageSizeOptions ?? DEFAULT_PAGE_SIZE_OPTIONS;
   const isSortControlled = Boolean(onSortChange);
@@ -120,8 +127,10 @@ export function DataTable<T>({
   const [searchKey, setSearchKey] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(search?.text ?? "");
   const lastCommittedSearch = useRef(search ? `${search.key}::${search.text}` : "");
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const activeSort = isSortControlled ? (sort ?? null) : internalSort;
+  const isSelectionEnabled = Boolean(rowSelection);
 
   const isColumnSearchable = (column: DataTableColumn<T>) =>
     isSearchControlled
@@ -199,6 +208,15 @@ export function DataTable<T>({
     ? sortedRows
     : sortedRows.slice((page - 1) * pageSize, page * pageSize);
   const renderedRows = [...visibleRows, ...footerRows];
+  const visibleRowKeys = useMemo(() => visibleRows.map(rowKey), [visibleRows, rowKey]);
+  const selectedVisibleCount = rowSelection
+    ? visibleRowKeys.filter((key) => rowSelection.selectedKeys.has(key)).length
+    : 0;
+  const hasVisibleRows = visibleRowKeys.length > 0;
+  const isEveryVisibleRowSelected =
+    Boolean(rowSelection) && hasVisibleRows && selectedVisibleCount === visibleRowKeys.length;
+  const hasPartialVisibleSelection =
+    Boolean(rowSelection) && selectedVisibleCount > 0 && !isEveryVisibleRowSelected;
 
   const handlePageChange = (nextPage: number) => {
     if (pagination) pagination.onPageChange(nextPage);
@@ -220,6 +238,37 @@ export function DataTable<T>({
   const activeSearchColumn = searchableColumns.find(
     (column) => column.key === activeSearchKey,
   );
+
+  useEffect(() => {
+    if (!isSearchControlled) return;
+    const signature = search ? `${search.key}::${search.text}` : "";
+    lastCommittedSearch.current = signature;
+    setSearchKey(search?.key ?? null);
+    setSearchInput(search?.text ?? "");
+  }, [isSearchControlled, search?.key, search?.text]);
+
+  useEffect(() => {
+    if (!selectAllRef.current) return;
+    selectAllRef.current.indeterminate = hasPartialVisibleSelection;
+  }, [hasPartialVisibleSelection]);
+
+  function handleRowSelectionChange(key: DataTableRowKey, isSelected: boolean): void {
+    if (!rowSelection) return;
+    const nextKeys = new Set(rowSelection.selectedKeys);
+    if (isSelected) nextKeys.add(key);
+    else nextKeys.delete(key);
+    rowSelection.onSelectedKeysChange(nextKeys);
+  }
+
+  function handleVisibleSelectionChange(isSelected: boolean): void {
+    if (!rowSelection) return;
+    const nextKeys = new Set(rowSelection.selectedKeys);
+    visibleRowKeys.forEach((key) => {
+      if (isSelected) nextKeys.add(key);
+      else nextKeys.delete(key);
+    });
+    rowSelection.onSelectedKeysChange(nextKeys);
+  }
 
   return (
     <div className="card overflow-hidden">
@@ -263,6 +312,19 @@ export function DataTable<T>({
         <table className="w-full text-[13px]">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="bg-bg3/60">
+              {isSelectionEnabled ? (
+                <th className="w-10 px-3 py-2.5 shadow-[inset_0_-1px_0_rgb(var(--line))]">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={isEveryVisibleRowSelected}
+                    disabled={!hasVisibleRows || isLoading}
+                    onChange={(event) => handleVisibleSelectionChange(event.target.checked)}
+                    aria-label="Selecionar linhas visíveis"
+                    className="h-4 w-4 rounded border-line accent-blue"
+                  />
+                </th>
+              ) : null}
               {columns.map((column) => {
                 const sortable = isColumnSortable(column);
                 const isActive = sortable && activeSort?.key === column.key;
@@ -317,6 +379,11 @@ export function DataTable<T>({
             {isLoading
               ? Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
                   <tr key={index} className="border-b border-line/60">
+                    {isSelectionEnabled ? (
+                      <td className="px-3 py-3">
+                        <Skeleton className="h-4 w-4" />
+                      </td>
+                    ) : null}
                     {columns.map((column) => (
                       <td key={column.key} className="px-4 py-3">
                         <Skeleton className="h-3.5 w-full max-w-32" />
@@ -326,14 +393,30 @@ export function DataTable<T>({
                 ))
               : renderedRows.map((row) => {
                   const isFooter = isFooterRow?.(row) ?? false;
+                  const key = rowKey(row);
                   return (
                     <tr
-                      key={rowKey(row)}
+                      key={key}
                       className={clsx(
                         "border-b border-line/60 transition-colors last:border-b-0",
                         isFooter ? "bg-text1/[0.04] font-bold" : "hover:bg-text1/[0.03]",
                       )}
                     >
+                      {isSelectionEnabled ? (
+                        <td className="px-3 py-2.5">
+                          {isFooter ? null : (
+                            <input
+                              type="checkbox"
+                              checked={rowSelection?.selectedKeys.has(key) ?? false}
+                              onChange={(event) =>
+                                handleRowSelectionChange(key, event.target.checked)
+                              }
+                              aria-label="Selecionar linha"
+                              className="h-4 w-4 rounded border-line accent-blue"
+                            />
+                          )}
+                        </td>
+                      ) : null}
                       {columns.map((column) => (
                         <td
                           key={column.key}
@@ -350,7 +433,10 @@ export function DataTable<T>({
                 })}
             {!isLoading && renderedRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-10 text-center text-text2">
+                <td
+                  colSpan={columns.length + (isSelectionEnabled ? 1 : 0)}
+                  className="px-4 py-10 text-center text-text2"
+                >
                   {emptyMessage}
                 </td>
               </tr>
@@ -363,6 +449,9 @@ export function DataTable<T>({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-2.5 text-xs text-text2">
           <span>
             {total.toLocaleString("pt-BR")} registros · página {page} de {totalPages}
+            {rowSelection && rowSelection.selectedKeys.size > 0
+              ? ` · ${rowSelection.selectedKeys.size.toLocaleString("pt-BR")} selecionados`
+              : ""}
           </span>
           <div className="flex items-center gap-3">
             {showPageSizeSelect ? (

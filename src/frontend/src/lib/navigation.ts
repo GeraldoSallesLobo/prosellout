@@ -7,6 +7,7 @@ import {
   CalendarRange,
   ClipboardList,
   Factory,
+  History,
   ListTree,
   Package,
   Settings2,
@@ -39,6 +40,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     label: "Admin",
     items: [
       { label: "Usuários", href: "/admin/usuarios", icon: ShieldCheck, visibility: "admin" },
+      { label: "Logs", href: "/admin/logs", icon: History, visibility: "admin" },
     ],
   },
   {

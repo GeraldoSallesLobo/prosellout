@@ -7,7 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ExportButton } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { ComboChart, type ComboChartDatum } from "@/components/charts/combo-chart";
-import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
+import {
+  REPORT_QUERY_FRESHNESS,
+  toReportFilters,
+  useReportFilters,
+} from "@/hooks/use-report-filters";
 import { fetchEvolutionWeekly } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
@@ -44,6 +48,7 @@ export default function MonthlyEvolutionPage() {
     queryKey: ["evolution-weekly", reportFilters],
     queryFn: () => fetchEvolutionWeekly(reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   return (

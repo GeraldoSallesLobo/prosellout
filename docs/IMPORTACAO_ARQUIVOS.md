@@ -217,11 +217,14 @@ Colunas opcionais:
 
 - `Data Entrega`
 - `CNPJ/CPF`
+- `Canal do PDV`
+- `CLUSTER`
 
 Notas:
 
 - `Data Faturamento` define o mês da meta de Sell Out.
 - A meta de Sell Out é vinculada ao cliente, produto, vendedor e mês.
+- Quando `Canal do PDV`/`CLUSTER` vêm no arquivo, esses valores são gravados na meta como dimensão transacional para análises como **Fast Facts › Canais**.
 - Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.
 - Uma nova importação de Meta Sell Out substitui as metas anteriores dos meses presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas que foram removidas da planilha.
 
@@ -269,11 +272,14 @@ Colunas opcionais:
 - `NF`
 - `Custo Unitário`
 - `CNPJ/CPF`
+- `Canal do PDV`
+- `CLUSTER`
 
 Notas:
 
 - Produto e vendedor precisam existir para alimentar os relatórios corretamente.
 - Quando o `Cód. PDV` não existe em **Clientes**, o Sell Out cria um cadastro mínimo `PDV <código>` para que a venda entre nos totais; depois o usuário pode completar canal, cluster e demais dados cadastrais em **Clientes**.
+- Quando `Canal do PDV`/`CLUSTER` vêm no arquivo, esses valores são gravados na venda como dimensão transacional para análises como **Fast Facts › Canais**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
 
 ### SELL_IN — Sell In

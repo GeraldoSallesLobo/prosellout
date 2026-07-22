@@ -104,9 +104,10 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
       "Valor Total R$ NF",
       "Data Faturamento",
     ],
-    optionalColumns: ["Data Entrega", "CNPJ/CPF"],
+    optionalColumns: ["Data Entrega", "CNPJ/CPF", "Canal do PDV", "CLUSTER"],
     notes: [
       "Data Faturamento define o mês da meta de Sell Out.",
+      "Canal e cluster, quando informados, alimentam análises transacionais como Fast Facts por Canais.",
       "Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.",
     ],
   },
@@ -150,9 +151,10 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
       "Valor Total R$ NF",
       "Data Faturamento",
     ],
-    optionalColumns: ["Data Entrega", "NF", "Custo Unitário", "CNPJ/CPF"],
+    optionalColumns: ["Data Entrega", "NF", "Custo Unitário", "CNPJ/CPF", "Canal do PDV", "CLUSTER"],
     notes: [
       "Produto, vendedor e cliente precisam existir para alimentar os relatórios corretamente.",
+      "Canal e cluster, quando informados, alimentam análises transacionais como Fast Facts por Canais.",
       "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
     ],
   },

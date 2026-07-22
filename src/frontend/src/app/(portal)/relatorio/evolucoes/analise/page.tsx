@@ -8,7 +8,11 @@ import { ToggleBadges } from "@/components/ui/toggle-badges";
 import { ExportButton } from "@/components/ui/export-button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
-import { useReportFilters, toReportFilters } from "@/hooks/use-report-filters";
+import {
+  REPORT_QUERY_FRESHNESS,
+  toReportFilters,
+  useReportFilters,
+} from "@/hooks/use-report-filters";
 import { fetchEvolutionAnalysis } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatVariation } from "@/lib/format";
 import type { EvolutionAnalysisRow, EvolutionGroupBy } from "@/types/reports";
@@ -81,6 +85,7 @@ export default function EvolutionAnalysisPage() {
     queryKey: ["evolution-analysis", groupBy, reportFilters],
     queryFn: () => fetchEvolutionAnalysis(groupBy, reportFilters),
     enabled: isHydrated,
+    ...REPORT_QUERY_FRESHNESS,
   });
 
   const accessors = METRIC_ACCESSORS[metricTab];

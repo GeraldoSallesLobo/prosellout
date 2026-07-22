@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { AdminDeleteFilteredDataButton } from "@/components/data/admin-delete-filtered-data-button";
+import {
+  DataTable,
+  type DataTableColumn,
+  type DataTableRowKey,
+} from "@/components/ui/data-table";
 import { ExportButton } from "@/components/ui/export-button";
 import {
   PeriodFilterBar,
   type PeriodFilterState,
 } from "@/components/data/period-filter-bar";
+import {
+  CURRENT_USER_ACCESS_QUERY_KEY,
+  fetchCurrentUserAccess,
+} from "@/lib/data/access";
 import { DATA_PAGE_SIZE, fetchSellOutRows } from "@/lib/data/consolidated";
 import { formatCurrency, formatInteger, formatIsoDate } from "@/lib/format";
 import { getCurrentMonthToDate } from "@/lib/periods";
@@ -22,11 +31,17 @@ export default function SellOutPage() {
   const [pageSize, setPageSize] = useState(DATA_PAGE_SIZE);
   const [sort, setSort] = useState<SortState | null>(null);
   const [search, setSearch] = useState<SearchState | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Set<DataTableRowKey>>(new Set());
   const [filters, setFilters] = useState<PeriodFilterState>({
     start: initialPeriod.start,
     end: initialPeriod.end,
     distributorId: "",
   });
+  const { data: access } = useQuery({
+    queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
+    queryFn: fetchCurrentUserAccess,
+  });
+  const isAdmin = access?.isAdmin === true;
 
   const { data, isLoading } = useQuery({
     queryKey: ["sell-out-rows", page, pageSize, sort, search, filters],
@@ -62,20 +77,38 @@ export default function SellOutPage() {
         title="Sell Out Consolidado"
         description="Vendas dos distribuidores para o varejo"
         actions={
-          <ExportButton
-            fileName="sell-out"
-            getRows={() =>
-              (data?.rows ?? []).map((row) => ({
-                distribuidora: row.distributorName,
-                cliente: row.customerName,
-                ean: row.ean,
-                produto: row.productName,
-                data_faturamento: row.invoiceDate,
-                volume: row.quantity,
-                valor: row.grossValue,
-              }))
-            }
-          />
+          <>
+            <ExportButton
+              fileName="sell-out"
+              getRows={() =>
+                (data?.rows ?? []).map((row) => ({
+                  distribuidora: row.distributorName,
+                  cliente: row.customerName,
+                  ean: row.ean,
+                  produto: row.productName,
+                  data_faturamento: row.invoiceDate,
+                  volume: row.quantity,
+                  valor: row.grossValue,
+                }))
+              }
+            />
+            <AdminDeleteFilteredDataButton
+              dataset="sell_out"
+              label="sell out"
+              scopeDescription="A exclusão remove todos os lançamentos de Sell Out que correspondem ao período, distribuidora e busca atuais."
+              filters={{
+                start: filters.start || undefined,
+                end: filters.end || undefined,
+                distributorId: filters.distributorId || undefined,
+              }}
+              selectedRowIds={Array.from(selectedRowKeys)}
+              search={search}
+              onDeleted={() => {
+                setSelectedRowKeys(new Set());
+                setPage(1);
+              }}
+            />
+          </>
         }
       />
 
@@ -83,6 +116,7 @@ export default function SellOutPage() {
         filters={filters}
         onChange={(patch) => {
           setFilters((current) => ({ ...current, ...patch }));
+          setSelectedRowKeys(new Set());
           setPage(1);
         }}
       />
@@ -100,8 +134,17 @@ export default function SellOutPage() {
         search={search}
         onSearchChange={(next) => {
           setSearch(next);
+          setSelectedRowKeys(new Set());
           setPage(1);
         }}
+        rowSelection={
+          isAdmin
+            ? {
+                selectedKeys: selectedRowKeys,
+                onSelectedKeysChange: setSelectedRowKeys,
+              }
+            : undefined
+        }
         pagination={{
           page,
           pageSize,

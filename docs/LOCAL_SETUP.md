@@ -136,10 +136,11 @@ Abra `http://localhost:3000` → você será redirecionado para `/login` → ent
 2. **Badge-toggle** — em Status › Análise e Evoluções › Análise, alterne o agrupamento sem recarregar a página (consolidação de 5 telas do sistema antigo em 2).
 3. **Filtros persistentes e múltiplos** — configure um período no MTD, selecione mais de uma Categoria/SKU/Canal/Cluster e navegue para Evoluções: os filtros são mantidos na sessão.
 4. **Tabelas** — nas telas de Dados (Sell Out, Clientes etc.): paginação no servidor, ordenação e busca por coluna.
-5. **Export com feedback** — botão Exportar em qualquer relatório: gera CSV respeitando os filtros ativos e mostra toast de sucesso.
-6. **Cadastros** — inclua um distribuidor ou um nó de hierarquia: modal + toast + atualização imediata (grava no banco local de verdade).
-7. **Importação** (`/arquivos/importacao`) — histórico com status e log de erros por linha vindos do seed. *Novos uploads exigem `NEXT_PUBLIC_UPLOAD_API_URL` apontando para o deploy AWS do repo `cloud`; sem essa URL, a tela mantém o histórico, mas não processa arquivos novos. Os layouts esperados ficam em `docs/IMPORTACAO_ARQUIVOS.md`.*
-8. **Skeleton loading** — recarregue qualquer relatório e observe os placeholders animados durante a consulta.
+5. **Exclusão/ativação admin** — entre como admin, marque linhas nas telas de Dados e use **Excluir selecionados**. Sem seleção, o botão **Excluir** remove os registros que batem com os filtros atuais. Nas árvores de Hierarquia de Produtos e Hierarquia Comercial, use o ícone de lixeira do nó. Em Distribuidor, use **Inativar** ou **Ativar**. Os modais exigem digitar `EXCLUIR`, `INATIVAR` ou `ATIVAR`; Estoque não tem exclusão direta porque é calculado a partir de Sell In e Sell Out. Depois confira o registro em **Admin › Logs**. Para validar relações: excluir Clientes remove metas e Sell Out vinculados; excluir Vendedores só limpa vínculos e não apaga clientes/vendas/metas; excluir hierarquia de produtos remove produtos e movimentos vinculados; inativar distribuidor bloqueia os usuários vinculados e preserva histórico; ativar distribuidor libera o acesso novamente.
+6. **Export com feedback** — botão Exportar em qualquer relatório: gera CSV respeitando os filtros ativos e mostra toast de sucesso.
+7. **Cadastros** — inclua um distribuidor ou um nó de hierarquia: modal + toast + atualização imediata (grava no banco local de verdade).
+8. **Importação** (`/arquivos/importacao`) — histórico com status e log de erros por linha vindos do seed. *Novos uploads exigem `NEXT_PUBLIC_UPLOAD_API_URL` apontando para o deploy AWS do repo `cloud`; sem essa URL, a tela mantém o histórico, mas não processa arquivos novos. Os layouts esperados ficam em `docs/IMPORTACAO_ARQUIVOS.md`.*
+9. **Skeleton loading** — recarregue qualquer relatório e observe os placeholders animados durante a consulta.
 
 ## Problemas comuns
 
