@@ -43,7 +43,7 @@ Para uma base nova, importe nesta ordem:
 1. `PRODUCTS` — produtos e hierarquia de produtos.
 2. `SELLERS` — vendedores e supervisores.
 3. `CUSTOMERS` — clientes/PDVs.
-4. `TARGETS` — Meta Sell Out por cliente/SKU/vendedor/mês.
+4. `TARGETS` — Meta Sell Out diária por cliente/SKU/vendedor.
 5. `SELL_IN_TARGETS` — metas de Sell In por SKU/mês.
 6. `SELL_IN` — compras/entrada por produto.
 7. `SELL_OUT` — vendas para PDV por produto.
@@ -222,11 +222,11 @@ Colunas opcionais:
 
 Notas:
 
-- `Data Faturamento` define o mês da meta de Sell Out.
-- A meta de Sell Out é vinculada ao cliente, produto, vendedor e mês.
+- `Data Faturamento` define a data diária da meta de Sell Out. A leitura segue o mesmo conceito do Sell Out realizado: filtros parciais somam somente as linhas de meta dentro do intervalo selecionado.
+- A meta de Sell Out é vinculada ao cliente, produto, vendedor e data.
 - Quando `Canal do PDV`/`CLUSTER` vêm no arquivo, esses valores são gravados na meta como dimensão transacional para análises como **Fast Facts › Canais**.
-- Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.
-- Uma nova importação de Meta Sell Out substitui as metas anteriores dos meses presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas que foram removidas da planilha.
+- Linhas repetidas no mesmo cliente + SKU + vendedor + data são somadas dentro da importação.
+- Uma nova importação de Meta Sell Out substitui as metas anteriores das datas presentes no arquivo. Isso permite reenviar uma base corrigida sem manter metas removidas da planilha para essas datas.
 
 ### SELL_IN_TARGETS — Meta Sell In
 

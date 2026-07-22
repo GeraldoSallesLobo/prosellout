@@ -123,7 +123,7 @@ Mudancas recomendadas:
 
 Pontos de atencao:
 
-- `TARGETS` e `SELL_IN_TARGETS` substituem metas mensalmente: uma nova carga remove metas antigas dos meses importados. A API precisa documentar isso com destaque.
+- `TARGETS` substitui metas de Sell Out por data importada; `SELL_IN_TARGETS` substitui metas de Sell In mensalmente. A API precisa documentar isso com destaque.
 - `SELL_OUT` e `SELL_IN` dependem de particoes mensais. As funcoes atuais ja chamam `ensure_month_partition`.
 - a dimensao futura **Marca/Industria** ainda nao esta implementada. Nao deve ser prometida na documentacao externa ate o contrato estar fechado.
 
@@ -545,7 +545,7 @@ Opcionais:
 - `sellerCode`
 - `deliveryDate`
 
-Regra critica: a carga de metas substitui metas anteriores dos meses presentes no envio.
+Regra critica: a carga de Meta Sell Out substitui metas anteriores das datas presentes no envio. A carga de Meta Sell In substitui metas anteriores dos meses presentes no envio.
 
 ### `SELL_IN`
 
@@ -730,7 +730,7 @@ Adicionar rastreabilidade fim a fim:
 | Tema | Risco | Decisao recomendada |
 |---|---|---|
 | Duplicidade de vendas | Retry externo pode duplicar `SELL_OUT`/`SELL_IN` | Exigir idempotencia e estudar chave natural por origem |
-| Meta Sell Out / Meta Sell In | Reenvio substitui meses inteiros | Documentar com destaque e exigir confirmacao no contrato |
+| Meta Sell Out / Meta Sell In | Meta Sell Out substitui datas importadas; Meta Sell In substitui meses inteiros | Documentar com destaque e exigir confirmacao no contrato |
 | Marca/Industria | Requisito futuro ainda nao implementado | Nao incluir no MVP da API ate fechar contrato |
 | Payload grande | Worker/API pode estourar limites ou timeout | Usar lotes e processamento assincrono |
 | Divergencia de specs | `TABLE_SPECS` duplicado pode quebrar COPY posicional | Extrair modulo compartilhado e testar |

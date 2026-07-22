@@ -93,7 +93,7 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     screen: "Dados › Meta",
     targetTable: "sales_targets",
     status: "ready",
-    summary: "Grava metas de Sell Out por cliente, produto, vendedor e mês.",
+    summary: "Grava metas diárias de Sell Out por cliente, produto e vendedor.",
     prerequisiteCodes: ["PRODUCTS", "SELLERS", "CUSTOMERS"],
     requiredColumns: [
       "CNPJ Distribuidor",
@@ -106,9 +106,9 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     ],
     optionalColumns: ["Data Entrega", "CNPJ/CPF", "Canal do PDV", "CLUSTER"],
     notes: [
-      "Data Faturamento define o mês da meta de Sell Out.",
+      "Data Faturamento define a data diária da meta de Sell Out.",
       "Canal e cluster, quando informados, alimentam análises transacionais como Fast Facts por Canais.",
-      "Linhas repetidas no mesmo cliente + SKU + vendedor + mês são somadas dentro da importação.",
+      "Linhas repetidas no mesmo cliente + SKU + vendedor + data são somadas dentro da importação.",
     ],
   },
   {

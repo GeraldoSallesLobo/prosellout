@@ -101,7 +101,7 @@ Esse complemento adiciona 65 canais `Stress Channel XX`, cada um com cliente, Se
 
 ## Tipos de arquivo de importação
 
-`file_type_configs` (seed) registra os tipos conhecidos pela tela de Arquivos. Os layouts reais de `CUSTOMERS`, `PRODUCTS`, `SELLERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_OUT` e `SELL_IN` têm pipeline completo (staging + `process_*_staging` + spec nas Lambdas) e ficam ativos para upload. `TARGETS` representa `Layout SellOut_meta.xlsx` e grava metas de Sell Out por cliente/produto/vendedor/mês. `SELL_IN_TARGETS` representa `Layout SellIn_meta.xlsx` e grava metas de Sell In por distribuidor/produto/mês. Novos tipos futuros, como `STOCK` ou `PLANNER`, exigem criar tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas em `src/cloud` — ver contratos no `CLAUDE.md` da raiz.
+`file_type_configs` (seed) registra os tipos conhecidos pela tela de Arquivos. Os layouts reais de `CUSTOMERS`, `PRODUCTS`, `SELLERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_OUT` e `SELL_IN` têm pipeline completo (staging + `process_*_staging` + spec nas Lambdas) e ficam ativos para upload. `TARGETS` representa `Layout SellOut_meta.xlsx` e grava metas diárias de Sell Out por cliente/produto/vendedor/data. `SELL_IN_TARGETS` representa `Layout SellIn_meta.xlsx` e grava metas de Sell In por distribuidor/produto/mês. Novos tipos futuros, como `STOCK` ou `PLANNER`, exigem criar tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas em `src/cloud` — ver contratos no `CLAUDE.md` da raiz.
 
 ## Restrições do seed
 

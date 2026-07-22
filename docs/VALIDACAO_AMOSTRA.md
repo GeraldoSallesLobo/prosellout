@@ -30,7 +30,7 @@ python3 src/database/scripts/generate_seed_from_sample.py
 | Clientes (PDVs) | ~6.122 | Layout Clientes (+ stubs de PDVs só vistos no Sell Out) |
 | Sell Out | 3.057 | Layout SellOut + SellOut_aa (linhas sem volume/valor são ignoradas) |
 | Sell In | 30 | Layout SellIn + SellIn_aa |
-| Meta Sell Out | 1.436 | Layout SellOut_meta (agregada por cliente/produto/vendedor/mês) |
+| Meta Sell Out | 1.436 | Layout SellOut_meta (agregada por cliente/produto/vendedor/data) |
 | Meta Sell In | importação manual | Layout SellIn_meta (agregada por distribuidor/produto/mês) |
 
 Números-âncora para conferir no Status MTD (Junho/2026): Sell Out R$ ≈ 1.000.563, Un ≈ 14.188, Cobertura ≈ 327 PDVs, Ticket Médio ≈ R$ 3.059, Preço Médio ≈ R$ 70,52.
@@ -50,7 +50,8 @@ Ao cruzar a amostra com o schema, encontramos e corrigimos:
 ## Decisões posteriores
 
 - **Estoque**: não existe planilha de estoque. A tela **Dados › Estoque** calcula a posição como `Sell In volume acumulado - Sell Out volume acumulado` até a data de referência. Saldo negativo deve ser exibido como alerta de inconsistência.
-- **Meta Sell Out com PDV ausente em Clientes**: a regra validada é rejeitar a linha e registrar alerta no log. O usuário deve adicionar o PDV em **Clientes** ou ajustar a Meta Sell Out antes de importar novamente. Em 13/07/2026, `Layout SellOut_meta.xlsx` foi substituído por uma versão corrigida com 1.436 linhas e sem PDVs ausentes na base de Clientes. Reenvios de Meta Sell Out substituem as metas anteriores dos meses presentes no arquivo.
+- **Meta Sell Out com PDV ausente em Clientes**: a regra validada é rejeitar a linha e registrar alerta no log. O usuário deve adicionar o PDV em **Clientes** ou ajustar a Meta Sell Out antes de importar novamente. Em 13/07/2026, `Layout SellOut_meta.xlsx` foi substituído por uma versão corrigida com 1.436 linhas e sem PDVs ausentes na base de Clientes. Reenvios de Meta Sell Out substituem as metas anteriores das datas presentes no arquivo.
+- **Data da Meta Sell Out**: `Data Faturamento` é a data diária da meta, não apenas o mês. Relatórios e Fast Facts devem somar as linhas de Meta Sell Out no intervalo filtrado, com o mesmo racional usado para Sell Out realizado.
 - **Sell Out com PDV ausente em Clientes**: o sistema cria um cliente mínimo `PDV <código>` quando o arquivo informa `Cód. PDV`, produto e vendedor válidos. Isso preserva o faturamento/volume real do Sell Out e deixa o cadastro disponível para enriquecimento posterior em **Dados › Clientes**.
 - **Status MTD e Cobertura**: a planilha Excel de referência é mensal. Sem SKU específico, o Status MTD soma valor/volume no intervalo selecionado, mas calcula `Cobertura` e `Ticket Médio` usando os PDVs do mês inicial de cada período. Com um ou mais SKUs selecionados, a cobertura usa os PDVs únicos do intervalo selecionado.
 - **Mark Up**: a regra validada é `Preço Médio Sell Out / Preço Médio Sell In - 1`, exibida como percentual.
