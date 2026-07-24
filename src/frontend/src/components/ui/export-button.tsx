@@ -19,12 +19,12 @@ export interface ExportSection {
 
 const CSV_SEPARATOR = ";";
 
-/** Caracteres que o Excel interpreta como início de fórmula (CSV injection). */
+/** Characters Excel interprets as formula starters (CSV injection). */
 const FORMULA_TRIGGER_PATTERN = /^[=+\-@\t\r]/;
 
 function toCsvCell(value: unknown): string {
   let text = value === null || value === undefined ? "" : String(value);
-  // Neutraliza injeção de fórmula ao abrir o CSV em Excel/Sheets.
+  // Neutralize formula injection when opening the CSV in Excel/Sheets.
   if (FORMULA_TRIGGER_PATTERN.test(text)) text = `'${text}`;
   return `"${text.replaceAll('"', '""')}"`;
 }
