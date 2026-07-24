@@ -8,7 +8,13 @@ import { useToast } from "@/components/ui/toast";
 interface ExportButtonProps {
   fileName: string;
   /** Returns the rows to export (already filtered). */
-  getRows: () => Record<string, unknown>[];
+  getRows?: () => Record<string, unknown>[];
+  getSections?: () => ExportSection[];
+}
+
+export interface ExportSection {
+  title?: string;
+  rows: Record<string, unknown>[];
 }
 
 const CSV_SEPARATOR = ";";
@@ -23,7 +29,7 @@ function toCsvCell(value: unknown): string {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function buildCsv(rows: Record<string, unknown>[]): string {
+function buildCsvRows(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
   const headers = Object.keys(rows[0]);
   const lines = rows.map((row) =>
@@ -32,20 +38,34 @@ function buildCsv(rows: Record<string, unknown>[]): string {
   return [headers.map(toCsvCell).join(CSV_SEPARATOR), ...lines].join("\n");
 }
 
+function buildCsvSection(section: ExportSection): string {
+  const csvRows = buildCsvRows(section.rows);
+  return [section.title ? toCsvCell(section.title) : "", csvRows]
+    .filter((part) => part.length > 0)
+    .join("\n");
+}
+
+function buildCsv(sections: ExportSection[]): string {
+  return sections
+    .map(buildCsvSection)
+    .filter((section) => section.length > 0)
+    .join("\n\n");
+}
+
 /** Export with user feedback, as required by the proposal (toast + download). */
-export function ExportButton({ fileName, getRows }: ExportButtonProps) {
+export function ExportButton({ fileName, getRows, getSections }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const { showToast } = useToast();
 
   function handleExport() {
     setIsExporting(true);
     try {
-      const rows = getRows();
-      if (rows.length === 0) {
+      const sections = getSections?.() ?? [{ rows: getRows?.() ?? [] }];
+      if (!sections.some((section) => section.rows.length > 0)) {
         showToast("info", "Nada para exportar com os filtros atuais.");
         return;
       }
-      const csv = buildCsv(rows);
+      const csv = buildCsv(sections);
       const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");

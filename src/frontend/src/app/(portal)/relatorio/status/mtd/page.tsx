@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { KpiBlockCard, KpiCard } from "@/components/ui/kpi-card";
 import { KpiCardSkeleton } from "@/components/ui/skeleton";
 import { ToggleBadges } from "@/components/ui/toggle-badges";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { StatusAnalysisTable } from "@/components/reports/status-analysis-table";
 import { ComparisonBarChart } from "@/components/charts/comparison-bar-chart";
@@ -16,14 +16,16 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchStatusAnalysis, fetchStatusMtd } from "@/lib/data/reports";
+import { fetchFilterOptions, fetchStatusAnalysis, fetchStatusMtd } from "@/lib/data/reports";
 import {
   formatCurrency,
   formatDecimal,
   formatInteger,
   formatPercent,
+  formatVariation,
 } from "@/lib/format";
-import type { AnalysisRow, StatusGroupBy } from "@/types/reports";
+import { buildReportFilterExportRows } from "@/lib/report-export";
+import type { AnalysisRow, KpiBlock, StatusGroupBy, StatusMtdReport } from "@/types/reports";
 
 const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
   { value: "seller", label: "Vendedores" },
@@ -36,11 +38,82 @@ const KPI_GRID_CLASS_NAME =
 
 const KPI_SKELETON_COUNT = 11;
 
+function getCurrentVsPrevious(block: KpiBlock): number | null {
+  return block.current !== null && block.previous !== null && block.previous !== 0
+    ? block.current / block.previous - 1
+    : null;
+}
+
+function buildKpiExportRow(
+  indicator: string,
+  block: KpiBlock,
+  formatValue: (value: number | null) => string,
+): Record<string, string> {
+  return {
+    Indicador: indicator,
+    Atual: formatValue(block.current),
+    Meta: formatValue(block.target),
+    "Vs Meta": formatVariation(block.currentVsTarget),
+    "Ano anterior": formatValue(block.previous),
+    "Vs Ano anterior": formatVariation(getCurrentVsPrevious(block)),
+  };
+}
+
+function buildStatusMtdKpiExportRows(report: StatusMtdReport): Record<string, string>[] {
+  return [
+    buildKpiExportRow("Sell Out R$", report.sellOutValue, formatCurrency),
+    buildKpiExportRow("Sell Out Un", report.sellOutQuantity, formatInteger),
+    buildKpiExportRow("Cobertura UN", report.coverage, formatInteger),
+    buildKpiExportRow("Ticket Médio R$", report.avgTicket, formatCurrency),
+    buildKpiExportRow("Drop Size", report.dropSize, formatDecimal),
+    buildKpiExportRow("Preço Médio", report.avgPrice, formatCurrency),
+    buildKpiExportRow("Mark Up %", report.markupPct, formatPercent),
+    buildKpiExportRow("Margem %", report.marginPct, formatPercent),
+    buildKpiExportRow("Giro Médio", report.avgTurnover, formatDecimal),
+    buildKpiExportRow("Cobertura Média", report.avgCoverage, formatDecimal),
+    {
+      Indicador: "Tendência Sell Out R$",
+      Atual: formatCurrency(report.trendValue.projected),
+      Meta: "",
+      "Vs Meta": formatVariation(report.trendValue.projectedVsTarget),
+      "Ano anterior": "",
+      "Vs Ano anterior": "",
+    },
+  ];
+}
+
+function buildStatusAnalysisExportRows(rows: AnalysisRow[]): Record<string, string>[] {
+  return rows.map((row) => ({
+    Grupo: row.groupName,
+    "Sell Out R$ Atual": formatCurrency(row.currentValue),
+    Meta: formatCurrency(row.targetValue),
+    "Atual x Meta": formatVariation(row.currentVsTarget),
+    "Ano anterior": formatCurrency(row.previousValue),
+    "Atual x Ano anterior": formatVariation(
+      row.previousValue !== 0 ? row.currentValue / row.previousValue - 1 : null,
+    ),
+    "Cobertura UN": formatInteger(row.coverage),
+    "Ticket Médio": formatCurrency(row.avgTicket),
+    "Drop Size": formatDecimal(row.dropSize),
+    "Preço Médio": formatCurrency(row.avgPrice),
+    "Mark Up %": formatPercent(row.markupPct),
+    "Margem %": formatPercent(row.marginPct),
+    "Giro Médio": formatDecimal(row.avgTurnover),
+    "Cobertura Média": formatDecimal(row.avgCoverage),
+  }));
+}
+
 export default function StatusMtdPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
   const [groupBy, setGroupBy] = useState<StatusGroupBy>("seller");
 
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+    enabled: isHydrated,
+  });
 
   const { data: report, isLoading: isReportLoading } = useQuery({
     queryKey: ["status-mtd", reportFilters],
@@ -97,23 +170,28 @@ export default function StatusMtdPage() {
         actions={
           <ExportButton
             fileName="status-mtd"
-            getRows={() =>
-              analysisRows.map((row) => ({
-                grupo: row.groupName,
-                sell_out_atual: row.currentValue,
-                meta: row.targetValue,
-                atual_x_meta: row.currentVsTarget,
-                periodo_anterior: row.previousValue,
-                cobertura: row.coverage,
-                ticket_medio: row.avgTicket,
-                drop_size: row.dropSize,
-                preco_medio: row.avgPrice,
-                mark_up_pct: row.markupPct,
-                margem_pct: row.marginPct,
-                giro_medio: row.avgTurnover,
-                cobertura_media: row.avgCoverage,
-              }))
-            }
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: buildReportFilterExportRows(filters, filterOptions),
+                },
+              ];
+
+              if (report) {
+                sections.push({
+                  title: "Indicadores",
+                  rows: buildStatusMtdKpiExportRows(report),
+                });
+              }
+
+              sections.push({
+                title: "Análise por agrupamento",
+                rows: buildStatusAnalysisExportRows(analysisRows),
+              });
+
+              return sections;
+            }}
           />
         }
       />
@@ -183,7 +261,7 @@ export default function StatusMtdPage() {
               label="Tendência Sell Out R$"
               value={formatCurrency(report.trendValue.projected)}
               vsTarget={report.trendValue.projectedVsTarget}
-              footer="Projeção linear até o fim do período"
+              footer="Projeção pela meta até a data"
             />
           </div>
 

@@ -6,20 +6,21 @@ import clsx from "clsx";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import {
   REPORT_QUERY_FRESHNESS,
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchFastFacts } from "@/lib/data/reports";
+import { fetchFastFacts, fetchFilterOptions } from "@/lib/data/reports";
 import {
   formatCurrency,
   formatInteger,
   formatPercent,
   formatVariation,
 } from "@/lib/format";
+import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { FastFactsDimension, FastFactsHighlight } from "@/types/reports";
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -180,9 +181,37 @@ function FastFactsCard({ facts }: { facts: FastFactsDimension }) {
   );
 }
 
+function buildFastFactsExportRows(dimensions: FastFactsDimension[]): Record<string, string>[] {
+  return dimensions.map((facts) => ({
+    Dimensão: DIMENSION_LABELS[facts.dimension] ?? facts.dimension,
+    Avaliados: formatInteger(facts.eligibleCount),
+    "Na meta": formatInteger(facts.achievedCount),
+    Abaixo: formatInteger(facts.notAchievedCount),
+    "% na meta": formatPercent(facts.achievedPct),
+    Melhor: facts.best?.name ?? "—",
+    "Melhor realizado": formatCurrency(facts.best?.currentValue),
+    "Melhor meta": formatCurrency(facts.best?.targetValue),
+    "Melhor ano anterior": formatCurrency(facts.best?.previousValue),
+    "Melhor vs meta": formatVariation(facts.best?.currentVsTarget),
+    "Melhor vs ano anterior": formatVariation(facts.best?.currentVsPrevious),
+    Pior: facts.worst?.name ?? "—",
+    "Pior realizado": formatCurrency(facts.worst?.currentValue),
+    "Pior meta": formatCurrency(facts.worst?.targetValue),
+    "Pior ano anterior": formatCurrency(facts.worst?.previousValue),
+    "Pior vs meta": formatVariation(facts.worst?.currentVsTarget),
+    "Pior vs ano anterior": formatVariation(facts.worst?.currentVsPrevious),
+  }));
+}
+
 export default function FastFactsPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+    enabled: isHydrated,
+  });
 
   const { data: report, isLoading } = useQuery({
     queryKey: ["fast-facts", reportFilters],
@@ -203,23 +232,20 @@ export default function FastFactsPage() {
         actions={
           <ExportButton
             fileName="fast-facts"
-            getRows={() =>
-              dimensions.map((facts) => ({
-                dimensao: DIMENSION_LABELS[facts.dimension] ?? facts.dimension,
-                elegiveis: facts.eligibleCount,
-                atingiram_meta: facts.achievedCount,
-                nao_atingiram_meta: facts.notAchievedCount,
-                pct_atingiram: facts.achievedPct,
-                melhor: facts.best?.name,
-                melhor_sell_out: facts.best?.currentValue,
-                melhor_vs_meta: facts.best?.currentVsTarget,
-                melhor_vs_ano_anterior: facts.best?.currentVsPrevious,
-                pior: facts.worst?.name,
-                pior_sell_out: facts.worst?.currentValue,
-                pior_vs_meta: facts.worst?.currentVsTarget,
-                pior_vs_ano_anterior: facts.worst?.currentVsPrevious,
-              }))
-            }
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: buildReportFilterExportRows(filters, filterOptions, false),
+                },
+                {
+                  title: "Fast Facts",
+                  rows: buildFastFactsExportRows(dimensions),
+                },
+              ];
+
+              return sections;
+            }}
           />
         }
       />
