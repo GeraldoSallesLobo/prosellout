@@ -86,9 +86,9 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     ],
   },
   {
-    label: "Planificador",
+    label: "Planner",
     items: [
-      { label: "Batalha Naval", href: "/planificador/batalha-naval", icon: Anchor },
+      { label: "Batalha Naval", href: "/planner/batalha-naval", icon: Anchor },
     ],
   },
 ];

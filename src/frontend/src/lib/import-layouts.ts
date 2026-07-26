@@ -198,7 +198,7 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
   {
     code: "PLANNER",
     title: "Batalha Naval",
-    screen: "Planificador › Batalha Naval",
+    screen: "Planner › Batalha Naval",
     targetTable: "planner_entries",
     status: "planned",
     summary: "Representará entradas ou recomendações da matriz cliente × SKU.",

@@ -327,7 +327,7 @@ reabrir o contrato e revisar a Cobertura Média antes de trocar a fonte.
 
 ### PLANNER — Batalha Naval
 
-- Tela prevista: **Planificador › Batalha Naval**
+- Tela prevista: **Planner › Batalha Naval**
 - Tabela final prevista: ainda não definida.
 - Status: aguardando amostra real para decidir se será importação própria ou cálculo derivado.
 

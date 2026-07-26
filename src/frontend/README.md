@@ -25,7 +25,7 @@ src/
 │       ├── dados/{clientes, estoque, meta, sell-in, sell-out, vendedores}
 │       ├── relatorio/status/{mtd, analise, fast-facts}
 │       ├── relatorio/evolucoes/{mensal, historico-3m, analise}
-│       └── planificador/batalha-naval
+│       └── planner/batalha-naval
 ├── components/
 │   ├── layout/    # sidebar, breadcrumb
 │   ├── ui/        # design system (KpiCard, DataTable, Modal, TreeView, Toast,

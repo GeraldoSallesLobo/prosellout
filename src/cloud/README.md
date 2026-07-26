@@ -96,7 +96,7 @@ Hoje o ETL processa os layouts reais de clientes, produtos, vendedores, metas, s
 
 Estoque não tem arquivo próprio no contrato atual: a tela calcula a posição como
 Sell In acumulado menos Sell Out acumulado até a data de referência. Para um
-novo tipo futuro (ex.: planificador ou uma base física de estoque caso a regra
+novo tipo futuro (ex.: Planner ou uma base física de estoque caso a regra
 de negócio mude):
 
 1. No `database/`: criar tabela `staging_*` + função `process_*_staging` (migration) e registrar em `file_type_configs`.
