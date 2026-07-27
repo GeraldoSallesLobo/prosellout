@@ -54,14 +54,36 @@ export function getMonthStart(reference = new Date()): string {
   return toIsoDate(new Date(reference.getFullYear(), reference.getMonth(), 1));
 }
 
+export function getMonthStartFromIsoDate(isoDate: string): string {
+  const [year, month] = isoDate.split("-").map(Number);
+  if (!year || !month) return isoDate;
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
 const MONTH_LABELS = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
   "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 ];
+
+const DAYS_PER_WEEK = 7;
+const MILLISECONDS_PER_DAY = 86_400_000;
 
 /** "2026-07-01" -> "Jul/2026". */
 export function formatMonthLabel(isoDate: string): string {
   const [year, month] = isoDate.split("-").map(Number);
   if (!year || !month) return isoDate;
   return `${MONTH_LABELS[month - 1]}/${year}`;
+}
+
+/** Matches Excel WEEKNUM(date, 1): weeks start on Sunday and Jan 1 is week 1. */
+export function getSundayWeekNumber(isoDate: string): number | null {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  const current = Date.UTC(year, month - 1, day);
+  const yearStart = Date.UTC(year, 0, 1);
+  const dayOfYear = Math.floor((current - yearStart) / MILLISECONDS_PER_DAY) + 1;
+  const yearStartWeekday = new Date(yearStart).getUTCDay();
+
+  return Math.floor((dayOfYear + yearStartWeekday - 1) / DAYS_PER_WEEK) + 1;
 }

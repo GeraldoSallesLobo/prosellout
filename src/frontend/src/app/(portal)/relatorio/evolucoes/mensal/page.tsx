@@ -16,15 +16,15 @@ import { fetchEvolutionWeekly, fetchFilterOptions } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
   formatCurrency,
-  formatDecimal,
   formatInteger,
-  formatIsoDate,
 } from "@/lib/format";
 import { buildReportFilterExportRows } from "@/lib/report-export";
+import { getSundayWeekNumber } from "@/lib/periods";
 import type { WeeklyBucket } from "@/types/reports";
 
-function weekLabel(bucketStart: string, index: number): string {
-  return `Sem ${index + 1} (${bucketStart.slice(8, 10)}/${bucketStart.slice(5, 7)})`;
+function weekLabel(bucketStart: string): string {
+  const weekNumber = getSundayWeekNumber(bucketStart);
+  return weekNumber ? `Semana ${weekNumber}` : bucketStart;
 }
 
 function buildSeries(
@@ -32,8 +32,8 @@ function buildSeries(
   pickBar: (bucket: WeeklyBucket) => number,
   pickLine: (bucket: WeeklyBucket) => number,
 ): ComboChartDatum[] {
-  return buckets.map((bucket, index) => ({
-    name: weekLabel(bucket.bucketStart, index),
+  return buckets.map((bucket) => ({
+    name: weekLabel(bucket.bucketStart),
     barValue: pickBar(bucket),
     lineValue: pickLine(bucket),
   }));
@@ -44,15 +44,13 @@ function safeDivide(numerator: number, denominator: number): number {
 }
 
 function buildWeeklyExportRows(buckets: WeeklyBucket[]): Record<string, string>[] {
-  return buckets.map((bucket, index) => ({
-    Semana: weekLabel(bucket.bucketStart, index),
-    Início: formatIsoDate(bucket.bucketStart),
+  return buckets.map((bucket) => ({
+    Semana: weekLabel(bucket.bucketStart),
     "Sell Out R$": formatCurrency(bucket.totalValue),
-    "Sell Out Un": formatInteger(bucket.totalQuantity),
     Positivação: formatInteger(bucket.coverage),
-    Pedidos: formatInteger(bucket.invoiceCount),
     "Ticket Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.coverage)),
-    "Drop Size": formatDecimal(safeDivide(bucket.totalQuantity, bucket.invoiceCount)),
+    Volume: formatInteger(bucket.totalQuantity),
+    "Drop Size": formatInteger(safeDivide(bucket.totalQuantity, bucket.coverage)),
     "Preço Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.totalQuantity)),
   }));
 }
@@ -145,7 +143,7 @@ export default function MonthlyEvolutionPage() {
             data={buildSeries(
               buckets,
               (bucket) => bucket.totalQuantity,
-              (bucket) => safeDivide(bucket.totalQuantity, bucket.invoiceCount),
+              (bucket) => safeDivide(bucket.totalQuantity, bucket.coverage),
             )}
             formatBar={formatInteger}
             formatLine={formatInteger}

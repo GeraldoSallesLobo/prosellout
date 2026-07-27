@@ -5,13 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import {
   REPORT_QUERY_FRESHNESS,
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchThreeMonthHistory } from "@/lib/data/reports";
+import { fetchFilterOptions, fetchThreeMonthHistory } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
   formatCurrency,
@@ -19,7 +20,8 @@ import {
   formatPercent,
   formatVariation,
 } from "@/lib/format";
-import { formatMonthLabel, getMonthStart } from "@/lib/periods";
+import { formatMonthLabel, getMonthStartFromIsoDate } from "@/lib/periods";
+import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { MonthHistoryRow } from "@/types/reports";
 
 interface MetricSpec {
@@ -27,14 +29,48 @@ interface MetricSpec {
   label: string;
   pick: (row: MonthHistoryRow) => number | null;
   format: (value: number | null) => string;
+  exportFormat?: (value: number | null) => string;
 }
 
 function safeDivide(numerator: number, denominator: number): number | null {
   return denominator === 0 ? null : numerator / denominator;
 }
 
+function getVariation(currentValue: number | null, comparisonValue: number | null): number | null {
+  return currentValue !== null && comparisonValue !== null && comparisonValue !== 0
+    ? currentValue / comparisonValue - 1
+    : null;
+}
+
+function VariationBadge({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
+  if (value === null) return <span className="h-[18px]" />;
+
+  return (
+    <span
+      className={clsx(
+        "rounded-md px-1.5 py-0.5 text-[10px] font-bold",
+        value >= 0 ? "bg-green/10 text-green" : "bg-red/10 text-red",
+      )}
+    >
+      {label} {formatVariation(value)}
+    </span>
+  );
+}
+
 const METRIC_SPECS: MetricSpec[] = [
-  { key: "value", label: "Sell Out R$", pick: (row) => row.totalValue, format: formatCompactCurrency },
+  {
+    key: "value",
+    label: "Sell Out R$",
+    pick: (row) => row.totalValue,
+    format: formatCompactCurrency,
+    exportFormat: formatCurrency,
+  },
   { key: "quantity", label: "Sell Out Volume", pick: (row) => row.totalQuantity, format: formatInteger },
   { key: "coverage", label: "Cobertura", pick: (row) => row.coverage, format: formatInteger },
   {
@@ -52,7 +88,7 @@ const METRIC_SPECS: MetricSpec[] = [
   {
     key: "drop",
     label: "Drop Size",
-    pick: (row) => safeDivide(row.totalQuantity, row.invoiceCount),
+    pick: (row) => safeDivide(row.totalQuantity, row.coverage),
     format: formatInteger,
   },
   {
@@ -78,36 +114,29 @@ function MetricHistoryCard({
 }) {
   const values = months.map((month) => spec.pick(month));
   const currentValue = values[values.length - 1] ?? null;
-  const previousValue = values.length > 1 ? values[values.length - 2] : null;
-  const variation =
-    currentValue !== null && previousValue !== null && previousValue !== 0
-      ? currentValue / previousValue - 1
-      : null;
   const maxValue = Math.max(...values.map((value) => Math.abs(value ?? 0)), 1);
 
   return (
     <div className="card p-4">
-      <div className="flex items-center justify-between">
+      <div>
         <h3 className="text-[13px] font-bold text-text1">{spec.label}</h3>
-        {variation !== null ? (
-          <span
-            className={clsx(
-              "rounded-md px-1.5 py-0.5 text-[11px] font-bold",
-              variation >= 0 ? "bg-green/10 text-green" : "bg-red/10 text-red",
-            )}
-          >
-            {formatVariation(variation)}
-          </span>
-        ) : null}
       </div>
 
       <div className="mt-3 flex items-end justify-between gap-3">
         {months.map((month, index) => {
           const value = values[index];
           const isCurrent = index === months.length - 1;
+          const comparisonLabel =
+            index === months.length - 3 ? "M x M-2" : index === months.length - 2 ? "M x M-1" : "";
+          const variation = comparisonLabel ? getVariation(currentValue, value) : null;
           const barHeight = Math.max(8, Math.round(((value ?? 0) / maxValue) * 56));
           return (
             <div key={month.monthStart} className="flex flex-1 flex-col items-center gap-1.5">
+              {comparisonLabel ? (
+                <VariationBadge label={comparisonLabel} value={variation} />
+              ) : (
+                <span className="h-[18px]" />
+              )}
               <span
                 className={clsx(
                   "text-xs font-bold",
@@ -134,10 +163,44 @@ function MetricHistoryCard({
   );
 }
 
+function buildThreeMonthHistoryExportRows(months: MonthHistoryRow[]): Record<string, string>[] {
+  return METRIC_SPECS.map((spec) => {
+    const values = months.map((month) => spec.pick(month));
+    const currentValue = values[values.length - 1] ?? null;
+    const mTwoValue = values[values.length - 3] ?? null;
+    const mOneValue = values[values.length - 2] ?? null;
+    const formatExportValue = spec.exportFormat ?? spec.format;
+    const mTwoLabel = months[months.length - 3]?.monthStart
+      ? formatMonthLabel(months[months.length - 3].monthStart)
+      : "M-2";
+    const mOneLabel = months[months.length - 2]?.monthStart
+      ? formatMonthLabel(months[months.length - 2].monthStart)
+      : "M-1";
+    const currentLabel = months[months.length - 1]?.monthStart
+      ? formatMonthLabel(months[months.length - 1].monthStart)
+      : "M";
+
+    return {
+      Indicador: spec.label,
+      [mTwoLabel]: formatExportValue(mTwoValue),
+      "M x M-2": formatVariation(getVariation(currentValue, mTwoValue)),
+      [mOneLabel]: formatExportValue(mOneValue),
+      "M x M-1": formatVariation(getVariation(currentValue, mOneValue)),
+      [currentLabel]: formatExportValue(currentValue),
+    };
+  });
+}
+
 export default function ThreeMonthHistoryPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
-  const referenceMonth = getMonthStart();
+  const referenceMonth = getMonthStartFromIsoDate(filters.currentEnd || filters.currentStart);
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+    enabled: isHydrated,
+  });
 
   const { data: months = [], isLoading } = useQuery({
     queryKey: ["three-month-history", referenceMonth, reportFilters],
@@ -151,6 +214,28 @@ export default function ThreeMonthHistoryPage() {
       <PageHeader
         title="Análise Histórico 3 Meses"
         description="Cada métrica com M-2, M-1 e mês atual + variação"
+        actions={
+          <ExportButton
+            fileName="historico-3m"
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: buildReportFilterExportRows(filters, filterOptions, {
+                    showTargetPeriod: false,
+                    showPreviousPeriod: false,
+                  }),
+                },
+                {
+                  title: "Histórico 3 Meses",
+                  rows: buildThreeMonthHistoryExportRows(months),
+                },
+              ];
+
+              return sections;
+            }}
+          />
+        }
       />
 
       <ReportFilterBar
