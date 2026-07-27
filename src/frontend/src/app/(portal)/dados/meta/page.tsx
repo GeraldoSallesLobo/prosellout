@@ -9,7 +9,7 @@ import {
   type DataTableColumn,
   type DataTableRowKey,
 } from "@/components/ui/data-table";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import {
   PeriodFilterBar,
   type PeriodFilterState,
@@ -19,11 +19,23 @@ import {
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
 import { DATA_PAGE_SIZE, fetchTargetRows } from "@/lib/data/consolidated";
+import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatIsoDate } from "@/lib/format";
 import { getCurrentMonthToDate } from "@/lib/periods";
+import {
+  buildDataExportContextRows,
+  buildPeriodFilterExportRows,
+} from "@/lib/report-export";
 import type { SearchState } from "@/lib/search";
 import type { SortState } from "@/lib/sort";
 import type { TargetRow } from "@/types/domain";
+
+const SEARCH_LABELS: Record<string, string> = {
+  distributor: "Distribuidora",
+  customer: "Cliente",
+  ean: "EAN",
+  product: "Produto",
+};
 
 export default function TargetsPage() {
   const initialPeriod = getCurrentMonthToDate();
@@ -42,6 +54,10 @@ export default function TargetsPage() {
     queryFn: fetchCurrentUserAccess,
   });
   const isAdmin = access?.isAdmin === true;
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["target-rows", page, pageSize, sort, search, filters],
@@ -80,17 +96,38 @@ export default function TargetsPage() {
           <>
             <ExportButton
               fileName="metas"
-              getRows={() =>
-                (data?.rows ?? []).map((row) => ({
-                  distribuidora: row.distributorName,
-                  cliente: row.customerName,
-                  ean: row.ean,
-                  produto: row.productName,
-                  competencia: row.targetDate,
-                  volume: row.quantity,
-                  valor: row.grossValue,
-                }))
-              }
+              getSections={() => {
+                const sections: ExportSection[] = [
+                  {
+                    title: "Filtros",
+                    rows: [
+                      ...buildPeriodFilterExportRows(filters, filterOptions),
+                      ...buildDataExportContextRows({
+                        search,
+                        searchLabels: SEARCH_LABELS,
+                        page,
+                        pageSize,
+                        total: data?.total ?? 0,
+                        exportedCount: data?.rows.length ?? 0,
+                      }),
+                    ],
+                  },
+                  {
+                    title: "Metas",
+                    rows: (data?.rows ?? []).map((row) => ({
+                      Distribuidora: row.distributorName,
+                      Cliente: row.customerName,
+                      EAN: row.ean,
+                      Produto: row.productName,
+                      Competência: formatIsoDate(row.targetDate),
+                      Volume: formatInteger(row.quantity),
+                      Valor: formatCurrency(row.grossValue),
+                    })),
+                  },
+                ];
+
+                return sections;
+              }}
             />
             <AdminDeleteFilteredDataButton
               dataset="sales_targets"

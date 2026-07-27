@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { PageHeader } from "@/components/ui/page-header";
 import { ToggleBadges } from "@/components/ui/toggle-badges";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import {
@@ -13,8 +13,9 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchEvolutionAnalysis } from "@/lib/data/reports";
+import { fetchEvolutionAnalysis, fetchFilterOptions } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatVariation } from "@/lib/format";
+import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { EvolutionAnalysisRow, EvolutionGroupBy } from "@/types/reports";
 
 const GROUP_OPTIONS: { value: EvolutionGroupBy; label: string }[] = [
@@ -30,6 +31,10 @@ const METRIC_TABS: { value: MetricTab; label: string }[] = [
   { value: "quantity", label: "Volume" },
   { value: "ticket", label: "Ticket Médio" },
 ];
+
+const METRIC_LABELS = Object.fromEntries(
+  METRIC_TABS.map((tab) => [tab.value, tab.label]),
+) as Record<MetricTab, string>;
 
 const GROUP_HEADERS: Record<EvolutionGroupBy, string> = {
   category: "Categoria",
@@ -81,6 +86,12 @@ export default function EvolutionAnalysisPage() {
 
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
 
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+    enabled: isHydrated,
+  });
+
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["evolution-analysis", groupBy, reportFilters],
     queryFn: () => fetchEvolutionAnalysis(groupBy, reportFilters),
@@ -128,14 +139,31 @@ export default function EvolutionAnalysisPage() {
         actions={
           <ExportButton
             fileName={`evolucao-${groupBy}-${metricTab}`}
-            getRows={() =>
-              rows.map((row) => ({
-                grupo: row.groupName,
-                atual: accessors.current(row),
-                anterior: accessors.previous(row),
-                variacao: accessors.change(row),
-              }))
-            }
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: [
+                    ...buildReportFilterExportRows(filters, filterOptions, {
+                      showTargetPeriod: false,
+                    }),
+                    { Filtro: "Agrupamento", Valor: GROUP_HEADERS[groupBy] },
+                    { Filtro: "Métrica", Valor: METRIC_LABELS[metricTab] },
+                  ],
+                },
+                {
+                  title: "Análise de evolução",
+                  rows: rows.map((row) => ({
+                    [GROUP_HEADERS[groupBy]]: row.groupName,
+                    "Período Atual": accessors.format(accessors.current(row)),
+                    "Período Anterior": accessors.format(accessors.previous(row)),
+                    Variação: formatVariation(accessors.change(row)),
+                  })),
+                },
+              ];
+
+              return sections;
+            }}
           />
         }
       />

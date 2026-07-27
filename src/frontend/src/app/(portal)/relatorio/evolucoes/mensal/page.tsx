@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { ComboChart, type ComboChartDatum } from "@/components/charts/combo-chart";
 import {
@@ -12,12 +12,15 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchEvolutionWeekly } from "@/lib/data/reports";
+import { fetchEvolutionWeekly, fetchFilterOptions } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
   formatCurrency,
+  formatDecimal,
   formatInteger,
+  formatIsoDate,
 } from "@/lib/format";
+import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { WeeklyBucket } from "@/types/reports";
 
 function weekLabel(bucketStart: string, index: number): string {
@@ -40,6 +43,20 @@ function safeDivide(numerator: number, denominator: number): number {
   return denominator === 0 ? 0 : numerator / denominator;
 }
 
+function buildWeeklyExportRows(buckets: WeeklyBucket[]): Record<string, string>[] {
+  return buckets.map((bucket, index) => ({
+    Semana: weekLabel(bucket.bucketStart, index),
+    Início: formatIsoDate(bucket.bucketStart),
+    "Sell Out R$": formatCurrency(bucket.totalValue),
+    "Sell Out Un": formatInteger(bucket.totalQuantity),
+    Positivação: formatInteger(bucket.coverage),
+    Pedidos: formatInteger(bucket.invoiceCount),
+    "Ticket Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.coverage)),
+    "Drop Size": formatDecimal(safeDivide(bucket.totalQuantity, bucket.invoiceCount)),
+    "Preço Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.totalQuantity)),
+  }));
+}
+
 export default function MonthlyEvolutionPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
@@ -51,6 +68,12 @@ export default function MonthlyEvolutionPage() {
     ...REPORT_QUERY_FRESHNESS,
   });
 
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+    enabled: isHydrated,
+  });
+
   return (
     <div>
       <PageHeader
@@ -59,15 +82,23 @@ export default function MonthlyEvolutionPage() {
         actions={
           <ExportButton
             fileName="evolucao-mensal"
-            getRows={() =>
-              buckets.map((bucket) => ({
-                semana: bucket.bucketStart,
-                sell_out_valor: bucket.totalValue,
-                sell_out_unidades: bucket.totalQuantity,
-                positivacao: bucket.coverage,
-                pedidos: bucket.invoiceCount,
-              }))
-            }
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: buildReportFilterExportRows(filters, filterOptions, {
+                    showTargetPeriod: false,
+                    showPreviousPeriod: false,
+                  }),
+                },
+                {
+                  title: "Evolução semanal",
+                  rows: buildWeeklyExportRows(buckets),
+                },
+              ];
+
+              return sections;
+            }}
           />
         }
       />

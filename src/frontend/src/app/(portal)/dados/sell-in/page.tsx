@@ -9,7 +9,7 @@ import {
   type DataTableColumn,
   type DataTableRowKey,
 } from "@/components/ui/data-table";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import {
   PeriodFilterBar,
   type PeriodFilterState,
@@ -19,11 +19,22 @@ import {
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
 import { DATA_PAGE_SIZE, fetchSellInRows } from "@/lib/data/consolidated";
+import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatIsoDate } from "@/lib/format";
 import { getCurrentMonthToDate } from "@/lib/periods";
+import {
+  buildDataExportContextRows,
+  buildPeriodFilterExportRows,
+} from "@/lib/report-export";
 import type { SearchState } from "@/lib/search";
 import type { SortState } from "@/lib/sort";
 import type { SellInRow } from "@/types/domain";
+
+const SEARCH_LABELS: Record<string, string> = {
+  distributor: "Distribuidora",
+  ean: "EAN",
+  product: "Produto",
+};
 
 export default function SellInPage() {
   const initialPeriod = getCurrentMonthToDate();
@@ -42,6 +53,10 @@ export default function SellInPage() {
     queryFn: fetchCurrentUserAccess,
   });
   const isAdmin = access?.isAdmin === true;
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["sell-in-rows", page, pageSize, sort, search, filters],
@@ -79,16 +94,37 @@ export default function SellInPage() {
           <>
             <ExportButton
               fileName="sell-in"
-              getRows={() =>
-                (data?.rows ?? []).map((row) => ({
-                  distribuidora: row.distributorName,
-                  ean: row.ean,
-                  produto: row.productName,
-                  data_faturamento: row.invoiceDate,
-                  volume: row.quantity,
-                  valor: row.grossValue,
-                }))
-              }
+              getSections={() => {
+                const sections: ExportSection[] = [
+                  {
+                    title: "Filtros",
+                    rows: [
+                      ...buildPeriodFilterExportRows(filters, filterOptions),
+                      ...buildDataExportContextRows({
+                        search,
+                        searchLabels: SEARCH_LABELS,
+                        page,
+                        pageSize,
+                        total: data?.total ?? 0,
+                        exportedCount: data?.rows.length ?? 0,
+                      }),
+                    ],
+                  },
+                  {
+                    title: "Sell In",
+                    rows: (data?.rows ?? []).map((row) => ({
+                      Distribuidora: row.distributorName,
+                      EAN: row.ean,
+                      Produto: row.productName,
+                      "Data Fat.": formatIsoDate(row.invoiceDate),
+                      Volume: formatInteger(row.quantity),
+                      Valor: formatCurrency(row.grossValue),
+                    })),
+                  },
+                ];
+
+                return sections;
+              }}
             />
             <AdminDeleteFilteredDataButton
               dataset="sell_in"

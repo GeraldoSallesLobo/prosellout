@@ -475,6 +475,7 @@ export async function fetchStockRows(
 }
 
 const TARGET_SORT_COLUMNS: Record<string, string> = {
+  distributor: "distributors(name)",
   customer: "customers(legal_name)",
   ean: "products(ean)",
   product: "products(name)",
@@ -484,6 +485,7 @@ const TARGET_SORT_COLUMNS: Record<string, string> = {
 };
 
 const TARGET_DEMO_SORTS: DemoSortMap<TargetRow> = {
+  distributor: (row) => row.distributorName,
   customer: (row) => row.customerName,
   ean: (row) => row.ean,
   product: (row) => row.productName,
@@ -493,6 +495,7 @@ const TARGET_DEMO_SORTS: DemoSortMap<TargetRow> = {
 };
 
 const TARGET_SEARCH_COLUMNS: SearchColumnMap = {
+  distributor: { column: "name", relation: "distributors" },
   customer: { column: "legal_name", relation: "customers" },
   ean: { column: "ean", relation: "products" },
   product: { column: "name", relation: "products" },

@@ -4,17 +4,28 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import {
   PeriodFilterBar,
   type PeriodFilterState,
 } from "@/components/data/period-filter-bar";
 import { DATA_PAGE_SIZE, fetchStockRows } from "@/lib/data/consolidated";
+import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatIsoDate } from "@/lib/format";
 import { getCurrentMonthToDate } from "@/lib/periods";
+import {
+  buildDataExportContextRows,
+  buildPeriodFilterExportRows,
+} from "@/lib/report-export";
 import type { SearchState } from "@/lib/search";
 import type { SortState } from "@/lib/sort";
 import type { StockRow } from "@/types/domain";
+
+const SEARCH_LABELS: Record<string, string> = {
+  distributor: "Distribuidora",
+  ean: "EAN",
+  product: "Produto",
+};
 
 export default function StockPage() {
   const initialPeriod = getCurrentMonthToDate();
@@ -26,6 +37,10 @@ export default function StockPage() {
     start: initialPeriod.start,
     end: initialPeriod.end,
     distributorId: "",
+  });
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
   });
 
   const { data, isLoading } = useQuery({
@@ -77,16 +92,40 @@ export default function StockPage() {
         actions={
           <ExportButton
             fileName="estoque"
-            getRows={() =>
-              (data?.rows ?? []).map((row) => ({
-                distribuidora: row.distributorName,
-                ean: row.ean,
-                produto: row.productName,
-                posicao_em: row.snapshotDate,
-                quantidade: row.quantity,
-                valor_sell_in: row.grossValue,
-              }))
-            }
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: [
+                    ...buildPeriodFilterExportRows(filters, filterOptions, {
+                      showStartDate: false,
+                      endDateLabel: "Posição até",
+                    }),
+                    ...buildDataExportContextRows({
+                      search,
+                      searchLabels: SEARCH_LABELS,
+                      page,
+                      pageSize,
+                      total: data?.total ?? 0,
+                      exportedCount: data?.rows.length ?? 0,
+                    }),
+                  ],
+                },
+                {
+                  title: "Estoque",
+                  rows: (data?.rows ?? []).map((row) => ({
+                    Distribuidora: row.distributorName,
+                    EAN: row.ean,
+                    Produto: row.productName,
+                    "Posição em": formatIsoDate(row.snapshotDate),
+                    Quantidade: formatInteger(row.quantity),
+                    "Valor Sell In": formatCurrency(row.grossValue),
+                  })),
+                },
+              ];
+
+              return sections;
+            }}
           />
         }
       />

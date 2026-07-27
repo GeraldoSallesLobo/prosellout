@@ -24,7 +24,10 @@ import {
   formatPercent,
   formatVariation,
 } from "@/lib/format";
-import { buildReportFilterExportRows } from "@/lib/report-export";
+import {
+  buildReportFilterExportRows,
+  buildStatusAnalysisExportRows,
+} from "@/lib/report-export";
 import type { AnalysisRow, KpiBlock, StatusGroupBy, StatusMtdReport } from "@/types/reports";
 
 const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
@@ -80,27 +83,6 @@ function buildStatusMtdKpiExportRows(report: StatusMtdReport): Record<string, st
       "Vs Ano anterior": "",
     },
   ];
-}
-
-function buildStatusAnalysisExportRows(rows: AnalysisRow[]): Record<string, string>[] {
-  return rows.map((row) => ({
-    Grupo: row.groupName,
-    "Sell Out R$ Atual": formatCurrency(row.currentValue),
-    Meta: formatCurrency(row.targetValue),
-    "Atual x Meta": formatVariation(row.currentVsTarget),
-    "Ano anterior": formatCurrency(row.previousValue),
-    "Atual x Ano anterior": formatVariation(
-      row.previousValue !== 0 ? row.currentValue / row.previousValue - 1 : null,
-    ),
-    "Cobertura UN": formatInteger(row.coverage),
-    "Ticket Médio": formatCurrency(row.avgTicket),
-    "Drop Size": formatDecimal(row.dropSize),
-    "Preço Médio": formatCurrency(row.avgPrice),
-    "Mark Up %": formatPercent(row.markupPct),
-    "Margem %": formatPercent(row.marginPct),
-    "Giro Médio": formatDecimal(row.avgTurnover),
-    "Cobertura Média": formatDecimal(row.avgCoverage),
-  }));
 }
 
 export default function StatusMtdPage() {

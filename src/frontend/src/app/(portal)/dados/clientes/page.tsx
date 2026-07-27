@@ -13,7 +13,7 @@ import {
   type DataTableColumn,
   type DataTableRowKey,
 } from "@/components/ui/data-table";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
@@ -21,9 +21,29 @@ import {
 import { DATA_PAGE_SIZE, fetchCustomers } from "@/lib/data/consolidated";
 import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCnpj } from "@/lib/format";
+import {
+  buildDataExportContextRows,
+  formatSelectedFilterOptions,
+  getFilterOptionLabel,
+} from "@/lib/report-export";
 import type { SearchState } from "@/lib/search";
 import type { SortState } from "@/lib/sort";
 import type { Customer } from "@/types/domain";
+
+const SEARCH_LABELS: Record<string, string> = {
+  cnpj: "CNPJ",
+  name: "Razão Social",
+  district: "Bairro",
+  city: "Cidade",
+  state: "UF",
+  zip: "CEP",
+  channel: "Canal",
+  cluster: "Cluster",
+};
+
+function formatStatusLabel(status: Customer["status"]): string {
+  return status === "active" ? "Ativo" : "Inativo";
+}
 
 export default function CustomersPage() {
   const [page, setPage] = useState(1);
@@ -93,18 +113,55 @@ export default function CustomersPage() {
           <>
             <ExportButton
               fileName="clientes"
-              getRows={() =>
-                (data?.rows ?? []).map((row) => ({
-                  cnpj: row.cnpj,
-                  razao_social: row.legalName,
-                  bairro: row.district,
-                  cidade: row.city,
-                  uf: row.state,
-                  cep: row.zipCode,
-                  canal: row.channelName,
-                  cluster: row.clusterName,
-                }))
-              }
+              getSections={() => {
+                const sections: ExportSection[] = [
+                  {
+                    title: "Filtros",
+                    rows: [
+                      ...(canFilterByDistributor || distributorId
+                        ? [
+                            {
+                              Filtro: "Distribuidora",
+                              Valor: getFilterOptionLabel(options?.distributors, distributorId),
+                            },
+                          ]
+                        : []),
+                      {
+                        Filtro: "Canal",
+                        Valor: formatSelectedFilterOptions(options?.channels, channelIds),
+                      },
+                      {
+                        Filtro: "Cluster",
+                        Valor: getFilterOptionLabel(options?.clusters, clusterId),
+                      },
+                      ...buildDataExportContextRows({
+                        search,
+                        searchLabels: SEARCH_LABELS,
+                        page,
+                        pageSize,
+                        total: data?.total ?? 0,
+                        exportedCount: data?.rows.length ?? 0,
+                      }),
+                    ],
+                  },
+                  {
+                    title: "Clientes",
+                    rows: (data?.rows ?? []).map((row) => ({
+                      CNPJ: formatCnpj(row.cnpj),
+                      "Razão Social": row.legalName,
+                      Bairro: row.district ?? "—",
+                      Cidade: row.city ?? "—",
+                      UF: row.state ?? "—",
+                      CEP: row.zipCode ?? "—",
+                      Canal: row.channelName ?? "—",
+                      Cluster: row.clusterName ?? "—",
+                      Status: formatStatusLabel(row.status),
+                    })),
+                  },
+                ];
+
+                return sections;
+              }}
             />
             <AdminDeleteFilteredDataButton
               dataset="customers"

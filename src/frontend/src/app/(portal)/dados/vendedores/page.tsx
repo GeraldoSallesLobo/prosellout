@@ -11,15 +11,28 @@ import {
   type DataTableColumn,
   type DataTableRowKey,
 } from "@/components/ui/data-table";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
 import { fetchSellersBySupervisor } from "@/lib/data/consolidated";
 import { fetchFilterOptions } from "@/lib/data/reports";
+import {
+  buildDataExportContextRows,
+  getFilterOptionLabel,
+} from "@/lib/report-export";
 import { matchesSearch, type SearchState } from "@/lib/search";
 import type { SalesRep } from "@/types/domain";
+
+const SEARCH_LABELS: Record<string, string> = {
+  name: "Vendedor",
+  supervisor: "Supervisor",
+};
+
+function formatStatusLabel(status: SalesRep["status"]): string {
+  return status === "active" ? "Ativo" : "Inativo";
+}
 
 export default function SellersPage() {
   const [supervisorId, setSupervisorId] = useState("");
@@ -99,15 +112,38 @@ export default function SellersPage() {
           <>
             <ExportButton
               fileName="vendedores"
-              getRows={() =>
-                visibleSellers.map((row) => ({
-                  vendedor: row.name,
-                  supervisor: row.supervisorId
-                    ? supervisorNameById.get(row.supervisorId)
-                    : null,
-                  status: row.status,
-                }))
-              }
+              getSections={() => {
+                const sections: ExportSection[] = [
+                  {
+                    title: "Filtros",
+                    rows: [
+                      {
+                        Filtro: "Supervisor",
+                        Valor: getFilterOptionLabel(options?.supervisors, supervisorId),
+                      },
+                      ...buildDataExportContextRows({
+                        search,
+                        searchLabels: SEARCH_LABELS,
+                        scopeLabel: "Registros filtrados",
+                        total: visibleSellers.length,
+                        exportedCount: visibleSellers.length,
+                      }),
+                    ],
+                  },
+                  {
+                    title: "Vendedores",
+                    rows: visibleSellers.map((row) => ({
+                      Vendedor: row.name,
+                      Supervisor: row.supervisorId
+                        ? supervisorNameById.get(row.supervisorId) ?? "—"
+                        : "—",
+                      Status: formatStatusLabel(row.status),
+                    })),
+                  },
+                ];
+
+                return sections;
+              }}
             />
             <AdminDeleteFilteredDataButton
               dataset="sales_reps"

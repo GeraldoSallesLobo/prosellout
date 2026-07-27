@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { ToggleBadges } from "@/components/ui/toggle-badges";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportButton, type ExportSection } from "@/components/ui/export-button";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { StatusAnalysisTable } from "@/components/reports/status-analysis-table";
 import {
@@ -12,7 +12,11 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchStatusAnalysis } from "@/lib/data/reports";
+import { fetchFilterOptions, fetchStatusAnalysis } from "@/lib/data/reports";
+import {
+  buildReportFilterExportRows,
+  buildStatusAnalysisExportRows,
+} from "@/lib/report-export";
 import type { StatusGroupBy } from "@/types/reports";
 
 const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
@@ -21,11 +25,21 @@ const GROUP_OPTIONS: { value: StatusGroupBy; label: string }[] = [
   { value: "channel", label: "Canais" },
 ];
 
+const GROUP_LABELS = Object.fromEntries(
+  GROUP_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<StatusGroupBy, string>;
+
 export default function StatusAnalysisPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
   const [groupBy, setGroupBy] = useState<StatusGroupBy>("seller");
 
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: fetchFilterOptions,
+    enabled: isHydrated,
+  });
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["status-analysis-full", groupBy, reportFilters],
@@ -42,24 +56,23 @@ export default function StatusAnalysisPage() {
         actions={
           <ExportButton
             fileName={`analise-status-${groupBy}`}
-            getRows={() =>
-              rows.map((row) => ({
-                grupo: row.groupName,
-                sell_out_atual: row.currentValue,
-                meta: row.targetValue,
-                atual_x_meta: row.currentVsTarget,
-                periodo_anterior: row.previousValue,
-                anterior_x_meta: row.previousVsTarget,
-                cobertura_un: row.coverage,
-                ticket_medio: row.avgTicket,
-                drop_size: row.dropSize,
-                preco_medio: row.avgPrice,
-                mark_up_pct: row.markupPct,
-                margem_pct: row.marginPct,
-                giro_medio: row.avgTurnover,
-                cobertura_media: row.avgCoverage,
-              }))
-            }
+            getSections={() => {
+              const sections: ExportSection[] = [
+                {
+                  title: "Filtros",
+                  rows: [
+                    ...buildReportFilterExportRows(filters, filterOptions),
+                    { Filtro: "Agrupamento", Valor: GROUP_LABELS[groupBy] },
+                  ],
+                },
+                {
+                  title: "Análise por agrupamento",
+                  rows: buildStatusAnalysisExportRows(rows),
+                },
+              ];
+
+              return sections;
+            }}
           />
         }
       />
