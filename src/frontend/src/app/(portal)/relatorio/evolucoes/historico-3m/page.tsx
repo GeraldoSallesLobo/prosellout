@@ -42,6 +42,16 @@ function getVariation(currentValue: number | null, comparisonValue: number | nul
     : null;
 }
 
+function getMarkupPct(row: MonthHistoryRow): number | null {
+  if (row.totalCost === null || row.totalCost === 0) return null;
+  return (row.totalValue - row.totalCost) / row.totalCost;
+}
+
+function getMarginPct(row: MonthHistoryRow): number | null {
+  if (row.totalCost === null) return null;
+  return safeDivide(row.totalValue - row.totalCost, row.totalValue);
+}
+
 function VariationBadge({
   label,
   value,
@@ -94,13 +104,13 @@ const METRIC_SPECS: MetricSpec[] = [
   {
     key: "markup",
     label: "Mark Up %",
-    pick: (row) => (row.totalCost === 0 ? null : (row.totalValue - row.totalCost) / row.totalCost),
+    pick: getMarkupPct,
     format: formatPercent,
   },
   {
     key: "margin",
     label: "Margem %",
-    pick: (row) => safeDivide(row.totalValue - row.totalCost, row.totalValue),
+    pick: getMarginPct,
     format: formatPercent,
   },
 ];

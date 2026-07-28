@@ -57,7 +57,7 @@ export interface MonthHistoryRow {
   monthStart: string;
   totalValue: number;
   totalQuantity: number;
-  totalCost: number;
+  totalCost: number | null;
   coverage: number;
   invoiceCount: number;
 }

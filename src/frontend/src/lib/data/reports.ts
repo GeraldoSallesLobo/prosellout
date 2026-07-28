@@ -220,7 +220,7 @@ export async function fetchThreeMonthHistory(
     monthStart: String(row.month_start),
     totalValue: Number(row.total_value ?? 0),
     totalQuantity: Number(row.total_quantity ?? 0),
-    totalCost: Number(row.total_cost ?? 0),
+    totalCost: nullableNumber(row.total_cost),
     coverage: Number(row.coverage ?? 0),
     invoiceCount: Number(row.invoice_count ?? 0),
   }));
