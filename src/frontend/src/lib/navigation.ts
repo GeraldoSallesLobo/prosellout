@@ -73,12 +73,12 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     label: "Relatório de Status",
     items: [
       { label: "Status MTD", href: "/relatorio/status/mtd", icon: ClipboardList },
-      { label: "Análise", href: "/relatorio/status/analise", icon: BarChart3 },
+      { label: "Análise Detalhada", href: "/relatorio/status/analise", icon: BarChart3 },
       { label: "Fast Facts", href: "/relatorio/status/fast-facts", icon: Zap },
     ],
   },
   {
-    label: "Rel. Evoluções",
+    label: "Relatório de Evolução",
     items: [
       { label: "Análise Mensal", href: "/relatorio/evolucoes/mensal", icon: CalendarDays },
       { label: "Histórico 3M", href: "/relatorio/evolucoes/historico-3m", icon: CalendarRange },
