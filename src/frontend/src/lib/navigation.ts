@@ -82,7 +82,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     items: [
       { label: "Análise Mensal", href: "/relatorio/evolucoes/mensal", icon: CalendarDays },
       { label: "Histórico 3M", href: "/relatorio/evolucoes/historico-3m", icon: CalendarRange },
-      { label: "Análise", href: "/relatorio/evolucoes/analise", icon: Shuffle },
+      { label: "Análise Evolução", href: "/relatorio/evolucoes/analise", icon: Shuffle },
     ],
   },
   {

@@ -51,7 +51,7 @@ export default function StatusAnalysisPage() {
   return (
     <div>
       <PageHeader
-        title="Análise Consolidada"
+        title="Análise Detalhada"
         description="Vendas, categorias e canais em uma única tela — alterne o agrupamento"
         actions={
           <ExportButton
