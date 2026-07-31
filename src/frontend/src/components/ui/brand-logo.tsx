@@ -1,8 +1,8 @@
 import Image from "next/image";
 import clsx from "clsx";
 
-const LOGO_WIDTH = 1280;
-const LOGO_HEIGHT = 417;
+const LOGO_WIDTH = 1200;
+const LOGO_HEIGHT = 400;
 
 interface BrandLogoProps {
   className?: string;
