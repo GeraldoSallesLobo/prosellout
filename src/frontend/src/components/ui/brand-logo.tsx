@@ -24,7 +24,7 @@ export function BrandLogo({ className, priority = false, size = "sidebar" }: Bra
   return (
     <span
       className={clsx(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-1 ring-1 ring-black/5",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-1 ring-1 ring-black/5 dark:bg-black dark:ring-white/10",
         LOGO_SIZE_CLASSES[size],
         className,
       )}
@@ -36,7 +36,16 @@ export function BrandLogo({ className, priority = false, size = "sidebar" }: Bra
         height={LOGO_HEIGHT}
         priority={priority}
         sizes={LOGO_IMAGE_SIZES[size]}
-        className="h-full w-full object-contain"
+        className="h-full w-full object-contain dark:hidden"
+      />
+      <Image
+        src="/prosellout-logo-dark.jpeg"
+        alt="ProSellOut"
+        width={LOGO_WIDTH}
+        height={LOGO_HEIGHT}
+        priority={priority}
+        sizes={LOGO_IMAGE_SIZES[size]}
+        className="hidden h-full w-full object-contain dark:block"
       />
     </span>
   );
