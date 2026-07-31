@@ -1,8 +1,8 @@
 import Image from "next/image";
 import clsx from "clsx";
 
-const LOGO_WIDTH = 2312;
-const LOGO_HEIGHT = 988;
+const LOGO_WIDTH = 1280;
+const LOGO_HEIGHT = 417;
 
 interface BrandLogoProps {
   className?: string;
@@ -30,13 +30,13 @@ export function BrandLogo({ className, priority = false, size = "sidebar" }: Bra
       )}
     >
       <Image
-        src="/prosellout_logo.png"
+        src="/prosellout-logo.jpeg"
         alt="ProSellOut"
         width={LOGO_WIDTH}
         height={LOGO_HEIGHT}
         priority={priority}
         sizes={LOGO_IMAGE_SIZES[size]}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
       />
     </span>
   );
