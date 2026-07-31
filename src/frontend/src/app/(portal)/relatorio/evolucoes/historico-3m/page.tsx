@@ -73,6 +73,18 @@ function VariationBadge({
   );
 }
 
+function getComparisonLabel(isPreviousPeriod: boolean, isTwoMonthsBackPeriod: boolean): string {
+  if (isTwoMonthsBackPeriod) return "M x M-2";
+  if (isPreviousPeriod) return "M x M-1";
+  return "";
+}
+
+function getBarColorClass(isCurrent: boolean, isTwoMonthsBackPeriod: boolean): string {
+  if (isCurrent) return "bg-chartCurrent";
+  if (isTwoMonthsBackPeriod) return "bg-orange";
+  return "bg-chartPrevious";
+}
+
 const METRIC_SPECS: MetricSpec[] = [
   {
     key: "value",
@@ -136,10 +148,12 @@ function MetricHistoryCard({
         {months.map((month, index) => {
           const value = values[index];
           const isCurrent = index === months.length - 1;
-          const comparisonLabel =
-            index === months.length - 3 ? "M x M-2" : index === months.length - 2 ? "M x M-1" : "";
+          const isPreviousPeriod = index === months.length - 2;
+          const isTwoMonthsBackPeriod = index === months.length - 3;
+          const comparisonLabel = getComparisonLabel(isPreviousPeriod, isTwoMonthsBackPeriod);
           const variation = comparisonLabel ? getVariation(currentValue, value) : null;
           const barHeight = Math.max(8, Math.round(((value ?? 0) / maxValue) * 56));
+          const barColorClass = getBarColorClass(isCurrent, isTwoMonthsBackPeriod);
           return (
             <div key={month.monthStart} className="flex flex-1 flex-col items-center gap-1.5">
               {comparisonLabel ? (
@@ -158,7 +172,7 @@ function MetricHistoryCard({
               <div
                 className={clsx(
                   "w-full max-w-12 rounded-t",
-                  isCurrent ? "bg-chartCurrent" : "bg-chartPrevious",
+                  barColorClass,
                 )}
                 style={{ height: `${barHeight}px` }}
               />
