@@ -25,13 +25,16 @@ src/
 │       ├── dados/{clientes, estoque, meta, sell-in, sell-out, vendedores}
 │       ├── relatorio/status/{mtd, analise, fast-facts}
 │       ├── relatorio/evolucoes/{mensal, historico-3m, analise}
-│       └── planner/batalha-naval
+│       └── planner/{parametrizacao, automatico, batalha-naval-volume,
+│                    batalha-naval-positivacao, cobertura, rentabilidade,
+│                    planos, dashboard}
 ├── components/
 │   ├── layout/    # sidebar, breadcrumb
 │   ├── ui/        # design system (KpiCard, DataTable, Modal, TreeView, Toast,
 │   │              #   MultiSelectField, ThemeToggle...)
 │   ├── charts/    # Recharts (comparativo, combo barra+linha, gauge)
 │   ├── reports/   # filtros de relatório + tabela de análise com toggle
+│   ├── planner/   # wizards dos planificadores (semanas, top SKUs, resultado)
 │   └── data/      # filtros das telas de dados
 ├── hooks/         # useReportFilters (filtros na sessão), useLocalStorageState
 ├── lib/

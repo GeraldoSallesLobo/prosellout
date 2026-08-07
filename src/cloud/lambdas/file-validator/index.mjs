@@ -261,6 +261,36 @@ const TABLE_SPECS = {
       cluster: "cluster_name",
     },
   },
+  planner_route_visits: {
+    stagingTable: "staging_route_plans",
+    processFunction: "process_route_plans_staging",
+    columns: [
+      "brand_name", "distributor_code", "customer_key", "sales_rep_code",
+      "week_1", "week_2", "week_3", "week_4", "week_5",
+    ],
+    optionalColumns: ["brand_name", "week_4", "week_5"],
+    aliases: {
+      marca: "brand_name",
+      industria: "brand_name",
+      distribuidor: "distributor_code",
+      cnpj_distribuidor: "distributor_code",
+      cod_distribuidor: "distributor_code",
+      codigo_distribuidor: "distributor_code",
+      cnpj_cpf_cliente: "customer_key",
+      cnpj_cliente: "customer_key",
+      cliente: "customer_key",
+      cod_pdv: "customer_key",
+      codigo_pdv: "customer_key",
+      vendedor: "sales_rep_code",
+      cod_vendedor: "sales_rep_code",
+      codigo_vendedor: "sales_rep_code",
+      semana_1: "week_1",
+      semana_2: "week_2",
+      semana_3: "week_3",
+      semana_4: "week_4",
+      semana_5: "week_5",
+    },
+  },
 };
 
 function getCellValue(value) {

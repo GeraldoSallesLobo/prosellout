@@ -6,10 +6,16 @@ import {
   CalendarDays,
   CalendarRange,
   ClipboardList,
+  Crosshair,
   Factory,
   History,
+  Layers,
+  LayoutDashboard,
   ListTree,
   Package,
+  Percent,
+  Radar,
+  Route,
   Settings2,
   ShieldCheck,
   Shuffle,
@@ -18,9 +24,11 @@ import {
   Upload,
   UserRound,
   Users,
+  Wand2,
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import { PLANNER_MODEL_LABELS } from "@/lib/planner";
 
 export interface NavigationItem {
   label: string;
@@ -88,7 +96,22 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: "Planner",
     items: [
-      { label: "Batalha Naval", href: "/planner/batalha-naval", icon: Anchor },
+      { label: "Parametrização", href: "/planner/parametrizacao", icon: Route },
+      { label: PLANNER_MODEL_LABELS.automatic, href: "/planner/automatico", icon: Wand2 },
+      {
+        label: PLANNER_MODEL_LABELS.battleship_volume,
+        href: "/planner/batalha-naval-volume",
+        icon: Anchor,
+      },
+      {
+        label: PLANNER_MODEL_LABELS.battleship_positivation,
+        href: "/planner/batalha-naval-positivacao",
+        icon: Crosshair,
+      },
+      { label: PLANNER_MODEL_LABELS.coverage, href: "/planner/cobertura", icon: Radar },
+      { label: PLANNER_MODEL_LABELS.profitability, href: "/planner/rentabilidade", icon: Percent },
+      { label: "Planificadores", href: "/planner/planos", icon: Layers },
+      { label: "Dashboard", href: "/planner/dashboard", icon: LayoutDashboard },
     ],
   },
 ];

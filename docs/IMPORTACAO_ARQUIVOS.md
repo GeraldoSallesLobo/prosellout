@@ -47,6 +47,7 @@ Para uma base nova, importe nesta ordem:
 5. `SELL_IN_TARGETS` — metas de Sell In por SKU/mês.
 6. `SELL_IN` — compras/entrada por produto.
 7. `SELL_OUT` — vendas para PDV por produto.
+8. `ROUTE_PLAN` — roteiro de visitas do Planner (opcional; necessário para os planificadores Automático e Batalha Naval).
 
 ## Travas no frontend
 
@@ -63,12 +64,13 @@ Matriz de dependências:
 | `SELL_IN_TARGETS` | Não | Hier. Produtos |
 | `SELL_IN` | Não | Hier. Produtos |
 | `SELL_OUT` | Não | Hier. Produtos + Vendedores + Clientes |
+| `ROUTE_PLAN` | Não | Vendedores + Clientes |
 
 `SELL_OUT` exige `SELLERS` no frontend para evitar vendas sem vínculo de vendedor, o que quebraria análises por vendedor/supervisor mesmo que a linha transacional pudesse ser gravada sem esse vínculo.
 
 ## Status atual
 
-Em código, os tipos `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_IN` e `SELL_OUT` já têm contrato completo entre frontend, AWS Lambdas e Supabase:
+Em código, os tipos `PRODUCTS`, `SELLERS`, `CUSTOMERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_IN`, `SELL_OUT` e `ROUTE_PLAN` já têm contrato completo entre frontend, AWS Lambdas e Supabase:
 
 - `file_type_configs` ativo;
 - staging table;
@@ -84,8 +86,13 @@ deploy/QA está em `docs/DEPLOY_AWS_IMPORTACAO.md`.
 
 `STOCK` não é importado por arquivo próprio. A tela **Dados › Estoque** calcula
 a posição por produto usando `Sell In` acumulado menos `Sell Out` acumulado até
-a data de referência. `PLANNER` continua planejado até existir amostra real e
-contrato fechado.
+a data de referência. O antigo tipo planejado `PLANNER` virou `ROUTE_PLAN`
+(Roteiro de Visitas do Planner) — contrato completo em `docs/PLANNER_SPEC.md`.
+
+**Atenção (deploy):** as specs `planner_route_visits` foram adicionadas às
+Lambdas `file-validator` e `etl-loader`; para o upload de `ROUTE_PLAN` funcionar
+em produção é preciso reempacotar e aplicar o Terraform (`./build.sh` +
+`terraform apply` em `src/cloud`).
 
 ## Pendência estrutural: Indústria/Marca
 
@@ -306,6 +313,37 @@ Notas:
 - Produto precisa existir em **Hier. Produtos**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
 
+### ROUTE_PLAN — Roteiro de Visitas (Planner)
+
+- Tela: **Planner › Parametrização** (modelo para download) + upload em **Arquivos › Importação**
+- Tabela final: `planner_route_visits` (cabeçalho em `planner_route_plans`)
+- Rotina: `process_route_plans_staging`
+- Pré-requisitos: `SELLERS`, `CUSTOMERS`
+
+Colunas obrigatórias:
+
+- `CNPJ Distribuidor`
+- `CNPJ/CPF Cliente` (aceita também `Cód. PDV`)
+- `Cód. Vendedor`
+- `Semana 1`, `Semana 2`, `Semana 3` (marcar com `x` as semanas de visita)
+
+Colunas opcionais:
+
+- `Marca` (indústria — ignorada enquanto a base for mono-indústria)
+- `Semana 4`, `Semana 5` (layouts de 4 e 5 semanas)
+
+Regras:
+
+- Qualquer conteúdo na célula da semana conta como visita; repetições na mesma
+  semana colapsam em **1 visita/semana**. Visitas em mais de uma semana são
+  permitidas.
+- O cliente é resolvido por `Cód. PDV` ou pelos dígitos do CNPJ/CPF; cliente
+  desconhecido rejeita a linha (importar `CUSTOMERS`/`SELL_OUT` antes).
+- Cada importação cria um novo roteiro; o vigente é o mais recente. O número de
+  semanas (3–5) é inferido da maior semana com visita.
+- O roteiro alimenta os planificadores Automático e Batalha Naval
+  (`docs/PLANNER_SPEC.md`).
+
 ## Tipos calculados
 
 ### STOCK — Estoque
@@ -322,24 +360,3 @@ Regras:
 
 Se no futuro uma base física de estoque virar fonte oficial, será necessário
 reabrir o contrato e revisar a Cobertura Média antes de trocar a fonte.
-
-## Tipos planejados
-
-### PLANNER — Batalha Naval
-
-- Tela prevista: **Planner › Batalha Naval**
-- Tabela final prevista: ainda não definida.
-- Status: aguardando amostra real para decidir se será importação própria ou cálculo derivado.
-
-Contrato sugerido para amostra:
-
-- `Cód. PDV`
-- `EAN`
-- `Cód. Vendedor`
-- `Prioridade` ou `Recomendação`
-- `Volume Sugerido` opcional
-- `Valor Sugerido` opcional
-- `Motivo` opcional
-- `Data Referência` opcional
-
-Observação: a tela atual usa uma matriz demo cliente × SKU. A amostra real vai definir se `PLANNER` vira tabela própria ou uma RPC calculada a partir de clientes, produtos, vendedores, metas e sell-out.

@@ -14,7 +14,7 @@ A API deve suportar tudo que hoje entra pelo fluxo manual:
 - `SELL_IN` — compras/entrada;
 - `SELL_OUT` — vendas para PDV.
 
-`STOCK` permanece calculado por `Sell In acumulado - Sell Out acumulado`, como hoje. `PLANNER` continua fora do contrato ate existir amostra real e regra fechada.
+`STOCK` permanece calculado por `Sell In acumulado - Sell Out acumulado`, como hoje. O antigo tipo `PLANNER` virou `ROUTE_PLAN` (Roteiro de Visitas do Planner), com pipeline completo — ver `docs/PLANNER_SPEC.md` e `docs/IMPORTACAO_ARQUIVOS.md`.
 
 ## Estado atual
 

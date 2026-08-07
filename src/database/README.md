@@ -101,7 +101,7 @@ Esse complemento adiciona 65 canais `Stress Channel XX`, cada um com cliente, Se
 
 ## Tipos de arquivo de importação
 
-`file_type_configs` (seed) registra os tipos conhecidos pela tela de Arquivos. Os layouts reais de `CUSTOMERS`, `PRODUCTS`, `SELLERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_OUT` e `SELL_IN` têm pipeline completo (staging + `process_*_staging` + spec nas Lambdas) e ficam ativos para upload. `TARGETS` representa `Layout SellOut_meta.xlsx` e grava metas diárias de Sell Out por cliente/produto/vendedor/data. `SELL_IN_TARGETS` representa `Layout SellIn_meta.xlsx` e grava metas de Sell In por distribuidor/produto/mês. Novos tipos futuros, como `STOCK` ou `PLANNER`, exigem criar tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas em `src/cloud` — ver contratos no `CLAUDE.md` da raiz.
+`file_type_configs` (seed + migrations) registra os tipos conhecidos pela tela de Arquivos. Os layouts reais de `CUSTOMERS`, `PRODUCTS`, `SELLERS`, `TARGETS`, `SELL_IN_TARGETS`, `SELL_OUT`, `SELL_IN` e `ROUTE_PLAN` têm pipeline completo (staging + `process_*_staging` + spec nas Lambdas) e ficam ativos para upload. `TARGETS` representa `Layout SellOut_meta.xlsx` e grava metas diárias de Sell Out por cliente/produto/vendedor/data. `SELL_IN_TARGETS` representa `Layout SellIn_meta.xlsx` e grava metas de Sell In por distribuidor/produto/mês. `ROUTE_PLAN` importa o roteiro de visitas do Planner (`planner_route_plans`/`planner_route_visits` — ver `docs/PLANNER_SPEC.md`). Novos tipos futuros, como `STOCK`, exigem criar tabela staging, função `process_*` e entrada em `TABLE_SPECS` nas Lambdas em `src/cloud` — ver contratos no `CLAUDE.md` da raiz.
 
 ## Restrições do seed
 

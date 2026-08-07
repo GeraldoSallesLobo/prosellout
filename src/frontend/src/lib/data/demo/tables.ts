@@ -131,7 +131,7 @@ export const DEMO_FILE_TYPE_CONFIGS: FileTypeConfig[] = [
   { id: "ftc-6", code: "TARGETS", name: "Meta Sell Out", targetTable: "sales_targets", processingRoutine: "process_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
   { id: "ftc-7", code: "SELL_IN_TARGETS", name: "Meta Sell In", targetTable: "sell_in_targets", processingRoutine: "process_sell_in_targets_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
   { id: "ftc-8", code: "STOCK", name: "Estoque", targetTable: "stock_snapshots", processingRoutine: "upsert_stock", fileFormat: "csv", origin: "upload", status: "inactive" },
-  { id: "ftc-9", code: "PLANNER", name: "Batalha Naval", targetTable: "planner_entries", processingRoutine: "upsert_planner_entries", fileFormat: "xlsx", origin: "upload", status: "inactive" },
+  { id: "ftc-9", code: "ROUTE_PLAN", name: "Roteiro de Visitas (Planner)", targetTable: "planner_route_visits", processingRoutine: "process_route_plans_staging", fileFormat: "xlsx", origin: "upload", status: "active" },
 ];
 
 /** Fontes cíclicas do histórico demo, para o filtro "Tipo Arquivo" ter resultados variados. */

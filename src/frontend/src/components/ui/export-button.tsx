@@ -10,6 +10,8 @@ interface ExportButtonProps {
   /** Returns the rows to export (already filtered). */
   getRows?: () => Record<string, unknown>[];
   getSections?: () => ExportSection[];
+  /** Button text; override when two exports live side by side. */
+  label?: string;
 }
 
 export interface ExportSection {
@@ -53,7 +55,7 @@ function buildCsv(sections: ExportSection[]): string {
 }
 
 /** Export with user feedback, as required by the proposal (toast + download). */
-export function ExportButton({ fileName, getRows, getSections }: ExportButtonProps) {
+export function ExportButton({ fileName, getRows, getSections, label = "Exportar" }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const { showToast } = useToast();
 
@@ -84,7 +86,7 @@ export function ExportButton({ fileName, getRows, getSections }: ExportButtonPro
   return (
     <Button variant="secondary" onClick={handleExport} disabled={isExporting}>
       <Download size={14} />
-      {isExporting ? "Exportando..." : "Exportar"}
+      {isExporting ? "Exportando..." : label}
     </Button>
   );
 }

@@ -72,6 +72,15 @@ const TABLE_SPECS = {
       "delivery_date", "quantity", "gross_value", "channel_name", "cluster_name",
     ],
   },
+  planner_route_visits: {
+    stagingTable: "staging_route_plans",
+    processFunction: "process_route_plans_staging",
+    columns: [
+      "import_id", "line_number", "brand_name", "distributor_code",
+      "customer_key", "sales_rep_code", "week_1", "week_2", "week_3",
+      "week_4", "week_5",
+    ],
+  },
 };
 
 async function connectDatabase() {

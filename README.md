@@ -8,7 +8,7 @@ Repositório único com uma pasta por camada — deploys independentes, contrato
 
 | Pasta | Stack | Responsabilidade |
 |---|---|---|
-| `src/frontend/` | Next.js 14 + Tailwind + Recharts | Portal web (21 telas, temas claro/escuro) |
+| `src/frontend/` | Next.js 14 + Tailwind + Recharts | Portal web (28 telas, temas claro/escuro) |
 | `src/database/` | Supabase (Postgres 17) | Schema, migrations, RLS, funções de relatório, seed |
 | `src/cloud/` | Terraform + AWS Lambda (Node 20) | Ingestão de arquivos de alto volume (S3 → SQS → ETL) |
 
@@ -57,6 +57,16 @@ Documentação:
 3. **Particionamento mensal**: `sell_out` e `sell_in` são particionadas por mês. Consultas MTD tocam só a partição do mês; expurgo de dados antigos é `DROP PARTITION`.
 4. **Relatórios lêem agregados, não linhas**: materialized views diárias (`mv_sell_out_daily`) alimentam os relatórios. A tela MTD agrega ~30 linhas/dia por dimensão em vez de milhões de itens.
 5. **Frontend com cache**: TanStack Query + tabelas paginadas no servidor (`range()`), nunca carrega o dataset inteiro.
+
+### Planner (planificadores)
+
+Módulo de planejamento que desdobra a meta mensal de Sell Out em planos
+operacionais por PDV/semana/SKU e depois avalia planejado × realizado. São 5
+modelos (Automático, Batalha Naval Volume, Batalha Naval Positivação, Cobertura
+e Rentabilidade) + parametrização do roteiro de visitas (importação
+`ROUTE_PLAN`) + dashboard de avaliação. Cada planificador gerado recebe um
+código sequencial (`PLN-001`) para reconsulta. Especificação completa e regras
+de cálculo em `docs/PLANNER_SPEC.md`.
 
 ## Ordem de setup (produção)
 

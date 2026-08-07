@@ -242,12 +242,12 @@ function FileImportContent() {
         </div>
         <div className="rounded-md border border-line bg-bg px-3 py-2">
           <div className="mb-1 flex items-center gap-2">
-            <span className="text-sm font-semibold text-text1">Batalha Naval</span>
-            <Badge variant="yellow">Planejado</Badge>
+            <span className="text-sm font-semibold text-text1">Roteiro de Visitas (Planner)</span>
+            <Badge variant="blue">Disponível</Badge>
           </div>
           <p className="text-xs text-text2">
-            Ainda depende de amostra e contrato de layout antes de entrar no
-            pipeline de importação.
+            Roteiro de visitas por PDV × vendedor × semana usado pelos planificadores.
+            Baixe o modelo e acompanhe o roteiro vigente em Planner › Parametrização.
           </p>
         </div>
       </div>
