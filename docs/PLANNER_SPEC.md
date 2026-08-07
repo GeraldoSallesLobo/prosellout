@@ -339,15 +339,15 @@ Parâmetros com default (`p_channel_ids`, `p_extra_product_ids`, `p_distributor_
 | `planner_list_target_months(p_distributor_id)` | leitura | `table(month_start, total_quantity, total_value)` | meses com meta ≥ mês atual (passo 1 Automático) |
 | `planner_route_plan_summary(p_distributor_id)` | leitura | `jsonb` | roteiro vigente: semanas, visitas por semana, vendedores, data de importação |
 | `planner_top_skus(p_reference_month, p_metric volume\|positivation, p_channel_ids, p_extra_product_ids, p_distributor_id)` | leitura | `table(product_id, product_name, ean, positivation, total_quantity, is_extra)` | gráfico top 5 + SKUs extras |
-| `planner_sku_participation(p_reference_month, p_reference_product_id, p_channel_ids, p_distributor_id)` | leitura | `table(customer_id, pdv_code, customer_name, channel_id, channel_name, total_quantity, volume_share)` | passo 4 Batalha Naval (preview) |
-| `planner_uncovered_customers(p_product_id, p_start_date, p_end_date, p_channel_ids, p_distributor_id)` | leitura | `table(customer_id, pdv_code, customer_name, channel_id, channel_name, sales_rep_id)` | passo 4 Cobertura (preview) |
-| `planner_low_margin_customers(p_product_id, p_start_date, p_end_date, p_target_margin, p_channel_ids, p_distributor_id)` | leitura | `table(customer_id, pdv_code, customer_name, channel_id, channel_name, realized_value, realized_quantity, realized_margin, margin_gap, revenue_gap)` | passo 4–5 Rentabilidade (preview); `NO_COST_DATA` sem Sell In no período/fallback |
+| `planner_sku_participation(p_reference_month, p_reference_product_id, p_channel_ids, p_distributor_id, p_limit, p_offset)` | leitura | `table(customer_id, pdv_code, customer_name, channel_id, channel_name, total_quantity, volume_share, total_count)` | passo 4 Batalha Naval (preview paginado; `volume_share` continua sobre o total global) |
+| `planner_uncovered_customers(p_product_id, p_start_date, p_end_date, p_channel_ids, p_distributor_id, p_limit, p_offset)` | leitura | `table(customer_id, pdv_code, customer_name, channel_id, channel_name, sales_rep_id, total_count)` | passo 4 Cobertura (preview paginado — PostgREST corta respostas em 1.000 linhas; `p_limit` null devolve tudo, uso interno da geração) |
+| `planner_low_margin_customers(p_product_id, p_start_date, p_end_date, p_target_margin, p_channel_ids, p_distributor_id, p_limit, p_offset)` | leitura | `table(customer_id, pdv_code, customer_name, channel_id, channel_name, realized_value, realized_quantity, realized_margin, margin_gap, revenue_gap, total_count)` | passo 4–5 Rentabilidade (preview paginado); `NO_COST_DATA` sem Sell In no período/fallback |
 | `planner_generate_automatic(p_target_month, p_weeks jsonb, p_distributor_id)` | geração | `jsonb {plan_id, code, version, line_count, allocated_quantity, week_target_quantity}` | passos 1–3 Automático |
 | `planner_recalculate_route(p_plan_id)` | geração | `jsonb` | Recalcular Rota: nova versão redistribuindo o saldo nas semanas restantes |
 | `planner_generate_battleship(p_mode, p_reference_month, p_reference_product_id, p_target_month, p_weeks, p_channel_ids, p_distributor_id)` | geração | `jsonb` (inclui `week_target_quantity`) | BN Volume (`p_mode='volume'`) e BN Positivação (`'positivation'`) |
 | `planner_generate_coverage(p_product_id, p_start_date, p_end_date, p_target_kind value\|quantity, p_target_amount, p_execution_start, p_execution_end, p_channel_ids, p_distributor_id)` | geração | `jsonb` | Cobertura (prazo de execução obrigatório) |
 | `planner_generate_profitability(p_product_id, p_start_date, p_end_date, p_target_margin, p_execution_start, p_execution_end, p_channel_ids, p_distributor_id)` | geração | `jsonb` | Rentabilidade (prazo de execução obrigatório) |
-| `planner_list_plans(p_distributor_id)` | leitura | `table(...)` | listagem/reconsulta (código, modelo, versão, params, autor, data) |
+| `planner_list_plans(p_distributor_id)` | leitura | `table(..., route_file_name, ...)` | listagem/reconsulta (código, modelo, versão, params, **arquivo do roteiro usado**, totais, data) |
 | `planner_plan_lines_page(p_plan_id, p_limit, p_offset)` | leitura | `table(..., distributor_cnpj, total_count)` | linhas paginadas p/ tela e exportações (ordem determinística com tiebreaker `id`) |
 | `planner_dashboard(p_plan_id, p_eval_start, p_eval_end)` | leitura | `jsonb` | planejado×realizado: pizza atingido/não, melhor/pior vendedor, quebras por vendedor/cliente/canal/SKU |
 
@@ -481,6 +481,15 @@ frontend), ambas **aprovado com ressalvas**; todas as ressalvas médias foram co
   `PLANNER_MODEL_LABELS` (menu e exportações); troca de distribuidora (admin) reseta plano
   selecionado no Dashboard/Planificadores; meses de referência excluem o mês corrente.
 
+**Validação manual em produção (07/08/2026)** — 7 telas validadas pelo Geraldo com as bases
+reais; correções derivadas: tipo `ROUTE_PLAN` liberado no seletor de upload
+(`UPLOADABLE_TARGET_TABLES`), e os três previews que podem passar de 1.000 linhas
+(PDVs descobertos, PDVs abaixo da margem, participação do SKU) ganharam paginação de servidor +
+`total_count` + exportação completa (migration `20260807190000_paginate_planner_previews.sql`) —
+o PostgREST corta respostas em 1.000 linhas e o preview da Cobertura mostrava "1.000" com o plano
+gerando 5.854. Auditoria adversarial (`claude -p`) confirmou as 7 conclusões da validação e as
+correções.
+
 Limitações conhecidas e aceitas (documentadas):
 
 - **Semana ISO 53**: se o ano anterior não tiver semana 53, a referência desliza para a semana
@@ -490,6 +499,9 @@ Limitações conhecidas e aceitas (documentadas):
   de linhas do plano.
 - **Recalcular Rota em modo demo** sempre responde `NO_CLOSED_WEEKS` (planos demo não têm
   semana fechada).
+- **`planner_list_plans` sem paginação**: sofre o corte de 1.000 linhas do PostgREST apenas
+  após ~1.000 planos acumulados por distribuidor (contando versões) — paginar quando o volume
+  real se aproximar disso.
 
 **Dúvidas respondidas pelo Eduardo em 06/08/2026** (implementação ajustada no mesmo dia):
 

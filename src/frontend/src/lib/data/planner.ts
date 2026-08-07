@@ -4,16 +4,16 @@ import type {
   PlannerDashboard,
   PlannerDashboardGroupRow,
   PlannerGenerationResult,
-  PlannerLowMarginCustomer,
+  PlannerLowMarginPreview,
   PlannerPlanLine,
   PlannerPlanLinesPage,
   PlannerPlanSummary,
   PlannerRouteSummary,
-  PlannerSkuParticipationRow,
+  PlannerSkuParticipationPreview,
   PlannerTargetMonth,
   PlannerTopSku,
   PlannerTopSkuMetric,
-  PlannerUncoveredCustomer,
+  PlannerUncoveredPreview,
   PlannerWeekInput,
 } from "@/types/planner";
 import {
@@ -160,21 +160,28 @@ export async function fetchPlannerTopSkus(
 export async function fetchPlannerSkuParticipation(
   referenceMonth: string,
   referenceProductId: string,
+  limit: number,
+  offset: number,
   channelIds?: string[],
   distributorId?: string,
-): Promise<PlannerSkuParticipationRow[]> {
+): Promise<PlannerSkuParticipationPreview> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return simulateLatency(getDemoSkuParticipation());
+  if (!supabase) {
+    const rows = getDemoSkuParticipation();
+    return simulateLatency({ total: rows.length, rows: rows.slice(offset, offset + limit) });
+  }
 
   const { data, error } = await supabase.rpc("planner_sku_participation", {
     p_reference_month: referenceMonth,
     p_reference_product_id: referenceProductId,
     p_channel_ids: nullableArray(channelIds),
     p_distributor_id: distributorId ?? null,
+    p_limit: limit,
+    p_offset: offset,
   });
   if (error) throw error;
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
+  const rows = (data ?? []).map((row: Record<string, unknown>) => ({
     customerId: String(row.customer_id),
     pdvCode: nullableString(row.pdv_code),
     customerName: String(row.customer_name),
@@ -183,17 +190,24 @@ export async function fetchPlannerSkuParticipation(
     totalQuantity: Number(row.total_quantity ?? 0),
     volumeShare: nullableNumber(row.volume_share),
   }));
+  const total = data && data.length > 0 ? Number(data[0].total_count ?? rows.length) : 0;
+  return { total, rows };
 }
 
 export async function fetchPlannerUncoveredCustomers(
   productId: string,
   startDate: string,
   endDate: string,
+  limit: number,
+  offset: number,
   channelIds?: string[],
   distributorId?: string,
-): Promise<PlannerUncoveredCustomer[]> {
+): Promise<PlannerUncoveredPreview> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return simulateLatency(getDemoUncoveredCustomers());
+  if (!supabase) {
+    const rows = getDemoUncoveredCustomers();
+    return simulateLatency({ total: rows.length, rows: rows.slice(offset, offset + limit) });
+  }
 
   const { data, error } = await supabase.rpc("planner_uncovered_customers", {
     p_product_id: productId,
@@ -201,10 +215,12 @@ export async function fetchPlannerUncoveredCustomers(
     p_end_date: endDate,
     p_channel_ids: nullableArray(channelIds),
     p_distributor_id: distributorId ?? null,
+    p_limit: limit,
+    p_offset: offset,
   });
   if (error) throw error;
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
+  const rows = (data ?? []).map((row: Record<string, unknown>) => ({
     customerId: String(row.customer_id),
     pdvCode: nullableString(row.pdv_code),
     customerName: String(row.customer_name),
@@ -212,6 +228,29 @@ export async function fetchPlannerUncoveredCustomers(
     channelName: nullableString(row.channel_name),
     salesRepId: nullableString(row.sales_rep_id),
   }));
+  const total = data && data.length > 0 ? Number(data[0].total_count ?? rows.length) : 0;
+  return { total, rows };
+}
+
+/** Loads the whole uncovered list (paged internally) for the preview export. */
+export async function fetchAllPlannerUncoveredCustomers(
+  productId: string,
+  startDate: string,
+  endDate: string,
+  channelIds?: string[],
+  distributorId?: string,
+): Promise<PlannerUncoveredPreview["rows"]> {
+  const rows: PlannerUncoveredPreview["rows"] = [];
+  let offset = 0;
+  for (;;) {
+    const page = await fetchPlannerUncoveredCustomers(
+      productId, startDate, endDate, EXPORT_PAGE_SIZE, offset, channelIds, distributorId,
+    );
+    rows.push(...page.rows);
+    if (rows.length >= page.total || page.rows.length === 0) break;
+    offset += EXPORT_PAGE_SIZE;
+  }
+  return rows;
 }
 
 export async function fetchPlannerLowMarginCustomers(
@@ -219,11 +258,16 @@ export async function fetchPlannerLowMarginCustomers(
   startDate: string,
   endDate: string,
   targetMargin: number,
+  limit: number,
+  offset: number,
   channelIds?: string[],
   distributorId?: string,
-): Promise<PlannerLowMarginCustomer[]> {
+): Promise<PlannerLowMarginPreview> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return simulateLatency(getDemoLowMarginCustomers(targetMargin));
+  if (!supabase) {
+    const rows = getDemoLowMarginCustomers(targetMargin);
+    return simulateLatency({ total: rows.length, rows: rows.slice(offset, offset + limit) });
+  }
 
   const { data, error } = await supabase.rpc("planner_low_margin_customers", {
     p_product_id: productId,
@@ -232,10 +276,12 @@ export async function fetchPlannerLowMarginCustomers(
     p_target_margin: targetMargin,
     p_channel_ids: nullableArray(channelIds),
     p_distributor_id: distributorId ?? null,
+    p_limit: limit,
+    p_offset: offset,
   });
   if (error) throw error;
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
+  const rows = (data ?? []).map((row: Record<string, unknown>) => ({
     customerId: String(row.customer_id),
     pdvCode: nullableString(row.pdv_code),
     customerName: String(row.customer_name),
@@ -247,6 +293,31 @@ export async function fetchPlannerLowMarginCustomers(
     marginGap: Number(row.margin_gap ?? 0),
     revenueGap: Number(row.revenue_gap ?? 0),
   }));
+  const total = data && data.length > 0 ? Number(data[0].total_count ?? rows.length) : 0;
+  return { total, rows };
+}
+
+/** Loads the whole low-margin list (paged internally) for the preview export. */
+export async function fetchAllPlannerLowMarginCustomers(
+  productId: string,
+  startDate: string,
+  endDate: string,
+  targetMargin: number,
+  channelIds?: string[],
+  distributorId?: string,
+): Promise<PlannerLowMarginPreview["rows"]> {
+  const rows: PlannerLowMarginPreview["rows"] = [];
+  let offset = 0;
+  for (;;) {
+    const page = await fetchPlannerLowMarginCustomers(
+      productId, startDate, endDate, targetMargin,
+      EXPORT_PAGE_SIZE, offset, channelIds, distributorId,
+    );
+    rows.push(...page.rows);
+    if (rows.length >= page.total || page.rows.length === 0) break;
+    offset += EXPORT_PAGE_SIZE;
+  }
+  return rows;
 }
 
 export interface GenerateAutomaticPlanInput {
@@ -457,6 +528,7 @@ export async function fetchPlannerPlans(
     status: String(row.status) as PlannerPlanSummary["status"],
     params: (row.params ?? {}) as Record<string, unknown>,
     routePlanId: nullableString(row.route_plan_id),
+    routeFileName: nullableString(row.route_file_name),
     lineCount: Number(row.line_count ?? 0),
     totalQuantity: nullableNumber(row.total_quantity),
     totalValue: nullableNumber(row.total_value),

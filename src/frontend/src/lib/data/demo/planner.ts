@@ -217,6 +217,7 @@ export function generateDemoPlan(input: DemoGenerationInput): PlannerGenerationR
     status: "generated",
     params: input.params,
     routePlanId: input.weeks ? "demo-route-plan" : null,
+    routeFileName: input.weeks ? "roteiro-visitas-demo.xlsx" : null,
     lineCount: lines.length,
     totalQuantity: input.targetKind === "quantity" ? totalQuantity : null,
     totalValue: input.targetKind === "value" ? totalValue : null,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Radar } from "lucide-react";
+import { Download, Radar } from "lucide-react";
 import { PlanResultSection } from "@/components/planner/plan-result-section";
 import {
   PlannerDistributorField,
@@ -14,7 +14,12 @@ import { DateField, SelectField, TextField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { ToggleBadges } from "@/components/ui/toggle-badges";
 import { useToast } from "@/components/ui/toast";
-import { fetchPlannerUncoveredCustomers, generateCoveragePlan } from "@/lib/data/planner";
+import {
+  fetchAllPlannerUncoveredCustomers,
+  fetchPlannerUncoveredCustomers,
+  generateCoveragePlan,
+} from "@/lib/data/planner";
+import { ExportButton } from "@/components/ui/export-button";
 import { formatInteger } from "@/lib/format";
 import {
   formatPlanCode,
@@ -28,15 +33,17 @@ import type {
 } from "@/types/planner";
 
 const UNCOVERED_COLUMNS: DataTableColumn<PlannerUncoveredCustomer>[] = [
-  { key: "pdv", header: "Cód. PDV", render: (row) => row.pdvCode ?? "—", sortValue: (row) => row.pdvCode },
-  { key: "customer", header: "Cliente", render: (row) => row.customerName, sortValue: (row) => row.customerName },
-  { key: "channel", header: "Canal", render: (row) => row.channelName ?? "—", sortValue: (row) => row.channelName },
+  { key: "pdv", header: "Cód. PDV", render: (row) => row.pdvCode ?? "—", sortable: false },
+  { key: "customer", header: "Cliente", render: (row) => row.customerName, sortable: false },
+  { key: "channel", header: "Canal", render: (row) => row.channelName ?? "—", sortable: false },
 ];
 
 const TARGET_KIND_OPTIONS = [
   { value: "value" as const, label: "Meta financeira (R$)" },
   { value: "quantity" as const, label: "Meta de volume (un)" },
 ];
+
+const PREVIEW_DEFAULT_PAGE_SIZE = 25;
 
 export default function PlannerCoberturaPage() {
   const scope = usePlannerScope();
@@ -55,13 +62,33 @@ export default function PlannerCoberturaPage() {
   const [result, setResult] = useState<PlannerGenerationResult | null>(null);
   const [exportParams, setExportParams] = useState<Record<string, unknown>>({});
 
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewPageSize, setPreviewPageSize] = useState(PREVIEW_DEFAULT_PAGE_SIZE);
+
   const channelIds = channelId ? [channelId] : undefined;
   const hasFilters = Boolean(productId) && Boolean(startDate) && Boolean(endDate);
 
   const { data: uncovered, isLoading: isUncoveredLoading } = useQuery({
-    queryKey: ["planner-uncovered", productId, channelId, startDate, endDate, scope.distributorId],
+    queryKey: [
+      "planner-uncovered",
+      productId, channelId, startDate, endDate, scope.distributorId,
+      previewPage, previewPageSize,
+    ],
     queryFn: () =>
-      fetchPlannerUncoveredCustomers(productId, startDate, endDate, channelIds, scope.distributorId),
+      fetchPlannerUncoveredCustomers(
+        productId, startDate, endDate,
+        previewPageSize, (previewPage - 1) * previewPageSize,
+        channelIds, scope.distributorId,
+      ),
+    enabled: isPreviewEnabled && hasFilters,
+  });
+
+  const { data: allUncovered } = useQuery({
+    queryKey: ["planner-uncovered-all", productId, channelId, startDate, endDate, scope.distributorId],
+    queryFn: () =>
+      fetchAllPlannerUncoveredCustomers(
+        productId, startDate, endDate, channelIds, scope.distributorId,
+      ),
     enabled: isPreviewEnabled && hasFilters,
   });
 
@@ -105,7 +132,7 @@ export default function PlannerCoberturaPage() {
     hasFilters &&
     parsedAmount > 0 &&
     hasExecutionPeriod &&
-    (uncovered?.length ?? 0) > 0 &&
+    (uncovered?.total ?? 0) > 0 &&
     !generateMutation.isPending;
 
   return (
@@ -165,7 +192,10 @@ export default function PlannerCoberturaPage() {
           <Button
             variant="secondary"
             disabled={!hasFilters}
-            onClick={() => setIsPreviewEnabled(true)}
+            onClick={() => {
+              setPreviewPage(1);
+              setIsPreviewEnabled(true);
+            }}
           >
             <Radar size={14} />
             Passo 4 — Buscar PDVs descobertos
@@ -174,17 +204,47 @@ export default function PlannerCoberturaPage() {
 
         {isPreviewEnabled && hasFilters ? (
           <div className="grid gap-3">
-            <p className="text-xs text-text2">
-              {isUncoveredLoading
-                ? "Buscando PDVs sem venda no período..."
-                : `${formatInteger(uncovered?.length ?? 0)} PDVs sem venda do SKU no período selecionado.`}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-text2">
+                {isUncoveredLoading
+                  ? "Buscando PDVs sem venda no período..."
+                  : `${formatInteger(uncovered?.total ?? 0)} PDVs sem venda do SKU no período selecionado.`}
+              </p>
+              {allUncovered ? (
+                <ExportButton
+                  fileName="cobertura-pdvs-descobertos"
+                  label="Exportar PDVs descobertos"
+                  getRows={() =>
+                    allUncovered.map((row) => ({
+                      "Cód. PDV": row.pdvCode ?? "",
+                      Cliente: row.customerName,
+                      Canal: row.channelName ?? "",
+                    }))
+                  }
+                />
+              ) : (
+                <Button variant="secondary" disabled>
+                  <Download size={14} />
+                  Preparando exportação...
+                </Button>
+              )}
+            </div>
             <DataTable
               columns={UNCOVERED_COLUMNS}
-              rows={uncovered ?? []}
+              rows={uncovered?.rows ?? []}
               rowKey={(row) => row.customerId}
               isLoading={isUncoveredLoading}
               emptyMessage="Todos os PDVs do recorte tiveram venda no período"
+              pagination={{
+                page: previewPage,
+                pageSize: previewPageSize,
+                total: uncovered?.total ?? 0,
+                onPageChange: setPreviewPage,
+                onPageSizeChange: (size) => {
+                  setPreviewPageSize(size);
+                  setPreviewPage(1);
+                },
+              }}
             />
             <div className="grid gap-3">
               <h2 className="text-sm font-bold text-text1">Passo 5 — Meta a ser buscada</h2>

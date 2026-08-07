@@ -42,6 +42,7 @@ import type {
 } from "@/types/planner";
 
 const ALLOCATION_GAP_TOLERANCE_UNITS = 1;
+const PARTICIPATION_DEFAULT_PAGE_SIZE = 25;
 
 const PARTICIPATION_COLUMNS: DataTableColumn<PlannerSkuParticipationRow>[] = [
   { key: "pdv", header: "Cód. PDV", render: (row) => row.pdvCode ?? "—", sortable: false },
@@ -86,6 +87,10 @@ export function BattleshipWizard({ mode, title, description }: BattleshipWizardP
   const [channelId, setChannelId] = useState("");
   const [extraProductIds, setExtraProductIds] = useState<string[]>([]);
   const [referenceProductId, setReferenceProductId] = useState("");
+  const [participationPage, setParticipationPage] = useState(1);
+  const [participationPageSize, setParticipationPageSize] = useState(
+    PARTICIPATION_DEFAULT_PAGE_SIZE,
+  );
   const [targetMonth, setTargetMonth] = useState("");
   const [weeks, setWeeks] = useState<PlannerWeekInput[]>([]);
   const [result, setResult] = useState<PlannerGenerationResult | null>(null);
@@ -102,9 +107,17 @@ export function BattleshipWizard({ mode, title, description }: BattleshipWizardP
   });
 
   const { data: participation, isLoading: isParticipationLoading } = useQuery({
-    queryKey: ["planner-sku-participation", referenceMonth, referenceProductId, channelId, scope.distributorId],
+    queryKey: [
+      "planner-sku-participation",
+      referenceMonth, referenceProductId, channelId, scope.distributorId,
+      participationPage, participationPageSize,
+    ],
     queryFn: () =>
-      fetchPlannerSkuParticipation(referenceMonth, referenceProductId, channelIds, scope.distributorId),
+      fetchPlannerSkuParticipation(
+        referenceMonth, referenceProductId,
+        participationPageSize, (participationPage - 1) * participationPageSize,
+        channelIds, scope.distributorId,
+      ),
     enabled: Boolean(referenceMonth) && Boolean(referenceProductId),
   });
 
@@ -199,6 +212,7 @@ export function BattleshipWizard({ mode, title, description }: BattleshipWizardP
             onChange={(event) => {
               setReferenceMonth(event.target.value);
               setReferenceProductId("");
+              setParticipationPage(1);
               setResult(null);
             }}
             options={referenceMonthOptions}
@@ -211,6 +225,7 @@ export function BattleshipWizard({ mode, title, description }: BattleshipWizardP
               // reference SKU may no longer be valid — force a new selection.
               setChannelId(event.target.value);
               setReferenceProductId("");
+              setParticipationPage(1);
               setResult(null);
             }}
             options={(scope.filterOptions?.channels ?? []).map((channel) => ({
@@ -246,6 +261,7 @@ export function BattleshipWizard({ mode, title, description }: BattleshipWizardP
               value={referenceProductId}
               onChange={(event) => {
                 setReferenceProductId(event.target.value);
+                setParticipationPage(1);
                 setResult(null);
               }}
               options={skuOptions}
@@ -271,9 +287,19 @@ export function BattleshipWizard({ mode, title, description }: BattleshipWizardP
                     ? PARTICIPATION_COLUMNS
                     : PARTICIPATION_COLUMNS.filter((column) => column.key !== "share")
                 }
-                rows={participation ?? []}
+                rows={participation?.rows ?? []}
                 rowKey={(row) => row.customerId}
                 emptyMessage="Nenhuma venda do SKU no mês/canal selecionado"
+                pagination={{
+                  page: participationPage,
+                  pageSize: participationPageSize,
+                  total: participation?.total ?? 0,
+                  onPageChange: setParticipationPage,
+                  onPageSizeChange: (size) => {
+                    setParticipationPageSize(size);
+                    setParticipationPage(1);
+                  },
+                }}
               />
             )}
           </div>

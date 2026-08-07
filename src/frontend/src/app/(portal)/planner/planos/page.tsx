@@ -70,6 +70,12 @@ export default function PlannerPlanosPage() {
       render: (row) => PLANNER_MODEL_LABELS[row.model],
       sortValue: (row) => PLANNER_MODEL_LABELS[row.model],
     },
+    {
+      key: "routeFile",
+      header: "Roteiro",
+      render: (row) => row.routeFileName ?? "—",
+      sortValue: (row) => row.routeFileName,
+    },
     { key: "version", header: "Versão", render: (row) => `v${row.version}`, sortValue: (row) => row.version },
     {
       key: "status",
@@ -172,6 +178,7 @@ export default function PlannerPlanosPage() {
               Modelo: PLANNER_MODEL_LABELS[selectedPlan.model],
               Versão: selectedPlan.version,
               Status: selectedPlan.status === "generated" ? "Vigente" : "Substituído",
+              Roteiro: selectedPlan.routeFileName ?? "—",
               Parâmetros: JSON.stringify(selectedPlan.params),
             }}
           />

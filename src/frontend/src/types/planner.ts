@@ -69,6 +69,22 @@ export interface PlannerUncoveredCustomer {
   salesRepId: string | null;
 }
 
+export interface PlannerUncoveredPreview {
+  /** Real total of uncovered PDVs (the list below may be capped for display). */
+  total: number;
+  rows: PlannerUncoveredCustomer[];
+}
+
+export interface PlannerSkuParticipationPreview {
+  total: number;
+  rows: PlannerSkuParticipationRow[];
+}
+
+export interface PlannerLowMarginPreview {
+  total: number;
+  rows: PlannerLowMarginCustomer[];
+}
+
 export interface PlannerLowMarginCustomer {
   customerId: string;
   pdvCode: string | null;
@@ -102,6 +118,8 @@ export interface PlannerPlanSummary {
   status: PlannerPlanStatus;
   params: Record<string, unknown>;
   routePlanId: string | null;
+  /** Imported route file that fed the weekly models; null for Cobertura/Rentabilidade. */
+  routeFileName: string | null;
   lineCount: number;
   totalQuantity: number | null;
   totalValue: number | null;

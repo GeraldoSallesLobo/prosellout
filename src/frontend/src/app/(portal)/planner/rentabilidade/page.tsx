@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Percent } from "lucide-react";
+import { Download, Percent } from "lucide-react";
+import { ExportButton } from "@/components/ui/export-button";
 import { PlanResultSection } from "@/components/planner/plan-result-section";
 import {
   PlannerDistributorField,
@@ -14,6 +15,7 @@ import { DateField, SelectField, TextField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import {
+  fetchAllPlannerLowMarginCustomers,
   fetchPlannerLowMarginCustomers,
   generateProfitabilityPlan,
 } from "@/lib/data/planner";
@@ -26,40 +28,41 @@ import {
 import type { PlannerGenerationResult, PlannerLowMarginCustomer } from "@/types/planner";
 
 const LOW_MARGIN_COLUMNS: DataTableColumn<PlannerLowMarginCustomer>[] = [
-  { key: "pdv", header: "Cód. PDV", render: (row) => row.pdvCode ?? "—", sortValue: (row) => row.pdvCode },
-  { key: "customer", header: "Cliente", render: (row) => row.customerName, sortValue: (row) => row.customerName },
-  { key: "channel", header: "Canal", render: (row) => row.channelName ?? "—", sortValue: (row) => row.channelName },
+  { key: "pdv", header: "Cód. PDV", render: (row) => row.pdvCode ?? "—", sortable: false },
+  { key: "customer", header: "Cliente", render: (row) => row.customerName, sortable: false },
+  { key: "channel", header: "Canal", render: (row) => row.channelName ?? "—", sortable: false },
   {
     key: "value",
     header: "Faturamento",
     align: "right",
     render: (row) => formatCurrency(row.realizedValue),
-    sortValue: (row) => row.realizedValue,
+    sortable: false,
   },
   {
     key: "margin",
     header: "Margem praticada",
     align: "right",
     render: (row) => formatPercent(row.realizedMargin),
-    sortValue: (row) => row.realizedMargin,
+    sortable: false,
   },
   {
     key: "gap",
     header: "Gap de margem",
     align: "right",
     render: (row) => formatPercent(row.marginGap),
-    sortValue: (row) => row.marginGap,
+    sortable: false,
   },
   {
     key: "revenueGap",
     header: "Receita não capturada",
     align: "right",
     render: (row) => formatCurrency(row.revenueGap),
-    sortValue: (row) => row.revenueGap,
+    sortable: false,
   },
 ];
 
 const PERCENT_DIVISOR = 100;
+const PREVIEW_DEFAULT_PAGE_SIZE = 25;
 
 export default function PlannerRentabilidadePage() {
   const scope = usePlannerScope();
@@ -77,6 +80,9 @@ export default function PlannerRentabilidadePage() {
   const [result, setResult] = useState<PlannerGenerationResult | null>(null);
   const [exportParams, setExportParams] = useState<Record<string, unknown>>({});
 
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewPageSize, setPreviewPageSize] = useState(PREVIEW_DEFAULT_PAGE_SIZE);
+
   const channelIds = channelId ? [channelId] : undefined;
   const targetMargin = Number(marginInput.replace(",", ".")) / PERCENT_DIVISOR;
   const hasFilters =
@@ -87,9 +93,28 @@ export default function PlannerRentabilidadePage() {
     isLoading: isLowMarginLoading,
     error: lowMarginError,
   } = useQuery({
-    queryKey: ["planner-low-margin", productId, channelId, startDate, endDate, marginInput, scope.distributorId],
+    queryKey: [
+      "planner-low-margin",
+      productId, channelId, startDate, endDate, marginInput, scope.distributorId,
+      previewPage, previewPageSize,
+    ],
     queryFn: () =>
       fetchPlannerLowMarginCustomers(
+        productId, startDate, endDate, targetMargin,
+        previewPageSize, (previewPage - 1) * previewPageSize,
+        channelIds, scope.distributorId,
+      ),
+    enabled: isPreviewEnabled && hasFilters,
+    retry: false,
+  });
+
+  const { data: allLowMargin } = useQuery({
+    queryKey: [
+      "planner-low-margin-all",
+      productId, channelId, startDate, endDate, marginInput, scope.distributorId,
+    ],
+    queryFn: () =>
+      fetchAllPlannerLowMarginCustomers(
         productId, startDate, endDate, targetMargin, channelIds, scope.distributorId,
       ),
     enabled: isPreviewEnabled && hasFilters,
@@ -132,7 +157,7 @@ export default function PlannerRentabilidadePage() {
   const canGenerate =
     hasFilters &&
     hasExecutionPeriod &&
-    (lowMargin?.length ?? 0) > 0 &&
+    (lowMargin?.total ?? 0) > 0 &&
     !generateMutation.isPending;
 
   return (
@@ -203,7 +228,10 @@ export default function PlannerRentabilidadePage() {
           <Button
             variant="secondary"
             disabled={!hasFilters}
-            onClick={() => setIsPreviewEnabled(true)}
+            onClick={() => {
+              setPreviewPage(1);
+              setIsPreviewEnabled(true);
+            }}
           >
             <Percent size={14} />
             Buscar PDVs abaixo da margem
@@ -218,17 +246,51 @@ export default function PlannerRentabilidadePage() {
 
         {isPreviewEnabled && hasFilters && !lowMarginError ? (
           <div className="grid gap-3">
-            <p className="text-xs text-text2">
-              {isLowMarginLoading
-                ? "Calculando margens por PDV..."
-                : `${formatInteger(lowMargin?.length ?? 0)} PDVs com margem abaixo de ${marginInput}% no período.`}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-text2">
+                {isLowMarginLoading
+                  ? "Calculando margens por PDV..."
+                  : `${formatInteger(lowMargin?.total ?? 0)} PDVs com margem abaixo de ${marginInput}% no período.`}
+              </p>
+              {allLowMargin ? (
+                <ExportButton
+                  fileName="rentabilidade-pdvs-abaixo-margem"
+                  label="Exportar PDVs abaixo da margem"
+                  getRows={() =>
+                    allLowMargin.map((row) => ({
+                      "Cód. PDV": row.pdvCode ?? "",
+                      Cliente: row.customerName,
+                      Canal: row.channelName ?? "",
+                      Faturamento: row.realizedValue,
+                      "Margem praticada": formatPercent(row.realizedMargin),
+                      "Gap de margem": formatPercent(row.marginGap),
+                      "Receita não capturada": row.revenueGap,
+                    }))
+                  }
+                />
+              ) : (
+                <Button variant="secondary" disabled>
+                  <Download size={14} />
+                  Preparando exportação...
+                </Button>
+              )}
+            </div>
             <DataTable
               columns={LOW_MARGIN_COLUMNS}
-              rows={lowMargin ?? []}
+              rows={lowMargin?.rows ?? []}
               rowKey={(row) => row.customerId}
               isLoading={isLowMarginLoading}
               emptyMessage="Nenhum PDV abaixo da margem objetivo"
+              pagination={{
+                page: previewPage,
+                pageSize: previewPageSize,
+                total: lowMargin?.total ?? 0,
+                onPageChange: setPreviewPage,
+                onPageSizeChange: (size) => {
+                  setPreviewPageSize(size);
+                  setPreviewPage(1);
+                },
+              }}
             />
             <div className="grid max-w-md grid-cols-2 gap-3">
               <DateField
