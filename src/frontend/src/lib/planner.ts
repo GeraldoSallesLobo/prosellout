@@ -47,9 +47,21 @@ export const PLANNER_ERROR_MESSAGES: Record<string, string> = {
 
 const DEFAULT_PLANNER_ERROR = "Falha ao processar. Tente novamente.";
 
+/**
+ * Supabase RPC errors are plain objects ({ code, message, ... }), not Error
+ * instances — read the message from either shape before matching codes.
+ */
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message ?? "");
+  }
+  return String(error ?? "");
+}
+
 /** Resolves an RPC error into user-facing feedback (codes come from the DB). */
 export function resolvePlannerErrorMessage(error: unknown): string {
-  const raw = error instanceof Error ? error.message : String(error ?? "");
+  const raw = extractErrorMessage(error);
   const code = Object.keys(PLANNER_ERROR_MESSAGES).find((key) => raw.includes(key));
   return code ? PLANNER_ERROR_MESSAGES[code] : DEFAULT_PLANNER_ERROR;
 }
