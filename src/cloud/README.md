@@ -20,13 +20,13 @@ S3 uploads/ ──evento──▶ Lambda file-validator
 
 SQS ──(até 8 em paralelo)──▶ Lambda etl-loader
   · COPY da parte direto do S3 para staging_* (UNLOGGED, sem WAL)
-  · chama process_*_staging(import_id): valida em lote, resolve FKs,
-    insere na tabela particionada, loga rejeições
+  · chama process_*_staging(import_id): valida em lote, resolve FKs e loga rejeições
+  · Sell Out/Sell In acumulam partes válidas e ativam o arquivo completo de forma atômica
   · quando processed+errors == total → finish_file_import + refresh das MVs
   · falhas → retry (3x) → DLQ + alarme CloudWatch/SNS
 ```
 
-Por que aguenta volume: o portal nunca processa arquivo; cada parte é uma unidade de trabalho limitada e re-tentável; `COPY` em staging UNLOGGED elimina inserts linha a linha; a concorrência do loader é limitada (`maximum_concurrency = 8`) para não saturar o Postgres; partições mensais são criadas antes da carga.
+Por que aguenta volume: o portal nunca processa arquivo; cada parte é uma unidade de trabalho limitada e re-tentável; `COPY` em staging UNLOGGED elimina inserts linha a linha; a concorrência do loader é limitada (`maximum_concurrency = 8`) para não saturar o Postgres; partições mensais são criadas antes da carga. Para Sell Out e Sell In, retries são deduplicados por linha e a versão anterior continua ativa até todas as partes terminarem.
 
 ## Deploy
 

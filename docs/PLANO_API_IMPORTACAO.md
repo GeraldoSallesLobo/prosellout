@@ -123,7 +123,7 @@ Mudancas recomendadas:
 
 Pontos de atencao:
 
-- `TARGETS` substitui metas de Sell Out por data importada; `SELL_IN_TARGETS` substitui metas de Sell In mensalmente. A API precisa documentar isso com destaque.
+- `TARGETS` substitui metas de Sell Out por data importada; `SELL_IN_TARGETS` substitui metas de Sell In mensalmente; `SELL_OUT` e `SELL_IN` substituem realizados anteriores do mesmo distribuidor nas datas com linhas válidas no novo envio. A API precisa documentar essas regras com destaque.
 - `SELL_OUT` e `SELL_IN` dependem de particoes mensais. As funcoes atuais ja chamam `ensure_month_partition`.
 - a dimensao futura **Marca/Industria** ainda nao esta implementada. Nao deve ser prometida na documentacao externa ate o contrato estar fechado.
 
@@ -545,7 +545,7 @@ Opcionais:
 - `sellerCode`
 - `deliveryDate`
 
-Regra critica: a carga de Meta Sell Out substitui metas anteriores das datas presentes no envio. A carga de Meta Sell In substitui metas anteriores dos meses presentes no envio.
+Regra critica: a carga de Meta Sell Out substitui metas anteriores das datas presentes no envio. A carga de Meta Sell In substitui metas anteriores dos meses presentes no envio. Sell In e Sell Out substituem realizados anteriores do mesmo distribuidor nas datas com linhas válidas no novo envio.
 
 ### `SELL_IN`
 
@@ -667,7 +667,7 @@ Adicionar rastreabilidade fim a fim:
 - confirmar se a API sera JSON-only no MVP;
 - confirmar se a documentacao externa sera em PT-BR, EN ou ambos;
 - confirmar limites de lote por request;
-- confirmar politica de duplicidade para `SELL_IN` e `SELL_OUT`;
+- confirmar a idempotencia de retries e lotes da API sem alterar a substituicao por data de `SELL_IN` e `SELL_OUT`;
 - confirmar se Marca/Industria entra no MVP ou fica explicitamente fora.
 
 ### Fase 1 — Banco e auditoria
@@ -729,7 +729,7 @@ Adicionar rastreabilidade fim a fim:
 
 | Tema | Risco | Decisao recomendada |
 |---|---|---|
-| Duplicidade de vendas | Retry externo pode duplicar `SELL_OUT`/`SELL_IN` | Exigir idempotencia e estudar chave natural por origem |
+| Duplicidade de vendas | O pipeline de arquivos deduplica linhas pelo `import_id`, mas retries de requests na futura API podem criar novos lotes | Exigir `Idempotency-Key` na API e estudar chave natural por origem |
 | Meta Sell Out / Meta Sell In | Meta Sell Out substitui datas importadas; Meta Sell In substitui meses inteiros | Documentar com destaque e exigir confirmacao no contrato |
 | Marca/Industria | Requisito futuro ainda nao implementado | Nao incluir no MVP da API ate fechar contrato |
 | Payload grande | Worker/API pode estourar limites ou timeout | Usar lotes e processamento assincrono |

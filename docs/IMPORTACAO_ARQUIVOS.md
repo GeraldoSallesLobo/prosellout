@@ -288,6 +288,7 @@ Notas:
 - Quando o `Cód. PDV` não existe em **Clientes**, o Sell Out cria um cadastro mínimo `PDV <código>` para que a venda entre nos totais; depois o usuário pode completar canal, cluster e demais dados cadastrais em **Clientes**.
 - Quando `Canal do PDV`/`CLUSTER` vêm no arquivo, esses valores são gravados na venda como dimensão transacional para análises como **Fast Facts › Canais**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
+- Uma nova importação substitui o Sell Out anterior do mesmo distribuidor nas datas que possuem ao menos uma linha válida no novo arquivo. Por exemplo, reenviar os dias 1–16 substitui os dados anteriores desses dias em vez de somá-los novamente. A troca só acontece quando o arquivo inteiro termina de ser processado; se uma parte falhar, os dados anteriores continuam ativos.
 
 ### SELL_IN — Sell In
 
@@ -312,6 +313,7 @@ Notas:
 
 - Produto precisa existir em **Hier. Produtos**.
 - Quando `NF` não vem no arquivo, o sistema cria um número técnico por linha importada.
+- Uma nova importação substitui o Sell In anterior do mesmo distribuidor nas datas que possuem ao menos uma linha válida no novo arquivo. Por exemplo, reenviar os dias 1–16 substitui os dados anteriores desses dias em vez de somá-los novamente. A troca só acontece quando o arquivo inteiro termina de ser processado; se uma parte falhar, os dados anteriores continuam ativos.
 
 ### ROUTE_PLAN — Roteiro de Visitas (Planner)
 

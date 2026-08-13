@@ -53,7 +53,7 @@ Documentação:
 ### Por que aguenta alto volume
 
 1. **Ingestão fora do request**: o portal nunca processa arquivo — gera URL pré-assinada e o upload vai direto ao S3. Processamento é assíncrono (SQS), com retry e DLQ. Instabilidade no processamento não derruba o portal.
-2. **Carga em lote no Postgres**: o Lambda usa `COPY` para tabela de staging `UNLOGGED` e depois `INSERT ... SELECT` na tabela final — ordens de magnitude mais rápido que INSERTs linha a linha.
+2. **Carga em lote no Postgres**: o Lambda usa `COPY` para tabela de staging `UNLOGGED` e processamento set-based — ordens de magnitude mais rápido que INSERTs linha a linha. Sell Out e Sell In só ativam o novo arquivo depois que todas as partes terminam.
 3. **Particionamento mensal**: `sell_out` e `sell_in` são particionadas por mês. Consultas MTD tocam só a partição do mês; expurgo de dados antigos é `DROP PARTITION`.
 4. **Relatórios lêem agregados, não linhas**: materialized views diárias (`mv_sell_out_daily`) alimentam os relatórios. A tela MTD agrega ~30 linhas/dia por dimensão em vez de milhões de itens.
 5. **Frontend com cache**: TanStack Query + tabelas paginadas no servidor (`range()`), nunca carrega o dataset inteiro.

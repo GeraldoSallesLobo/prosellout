@@ -156,6 +156,7 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
       "Produto, vendedor e cliente precisam existir para alimentar os relatórios corretamente.",
       "Canal e cluster, quando informados, alimentam análises transacionais como Fast Facts por Canais.",
       "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
+      "Uma nova importação substitui o Sell Out anterior nas datas válidas somente após processar o arquivo inteiro.",
     ],
   },
   {
@@ -177,6 +178,7 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     notes: [
       "Produto precisa existir em Hier. Produtos.",
       "Quando NF não vem no arquivo, o sistema cria um número técnico por linha importada.",
+      "Uma nova importação substitui o Sell In anterior nas datas válidas somente após processar o arquivo inteiro.",
     ],
   },
   {

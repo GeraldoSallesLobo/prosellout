@@ -39,6 +39,12 @@ Terraform Cloud.
 Nunca use o pooler transaction mode na porta `6543`: o loader usa `COPY`
 streaming e esse modo não suporta a operação.
 
+Antes de aplicar migrations que alterem `process_sell_out_staging` ou
+`process_sell_in_staging`, confirme que não há cargas desses tipos com status
+`processing`. A migration de substituição por data faz essa verificação sob
+lock e aborta com segurança se a fila ainda não tiver drenado; aguarde as
+cargas terminarem e execute o `supabase db push` novamente.
+
 ## Autenticação AWS
 
 Use profile separado para não misturar com outras contas AWS:
