@@ -244,7 +244,7 @@ export function buildStatusAnalysisExportRows(rows: AnalysisRow[]): Record<strin
     "Anterior x Meta": formatVariation(row.previousVsTarget),
     "Cobertura UN": formatInteger(row.coverage),
     "Ticket Médio": formatCurrency(row.avgTicket),
-    "Drop Size": formatDecimal(row.dropSize),
+    "Drop Size": formatCurrency(row.dropSize),
     "Preço Médio": formatCurrency(row.avgPrice),
     "Mark Up %": formatPercent(row.markupPct),
     "Margem %": formatPercent(row.marginPct),

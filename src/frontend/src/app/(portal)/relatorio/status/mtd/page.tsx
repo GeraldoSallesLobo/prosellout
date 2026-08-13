@@ -68,7 +68,7 @@ function buildStatusMtdKpiExportRows(report: StatusMtdReport): Record<string, st
     buildKpiExportRow("Sell Out Un", report.sellOutQuantity, formatInteger),
     buildKpiExportRow("Cobertura UN", report.coverage, formatInteger),
     buildKpiExportRow("Ticket Médio R$", report.avgTicket, formatCurrency),
-    buildKpiExportRow("Drop Size", report.dropSize, formatDecimal),
+    buildKpiExportRow("Drop Size", report.dropSize, formatCurrency),
     buildKpiExportRow("Preço Médio", report.avgPrice, formatCurrency),
     buildKpiExportRow("Mark Up %", report.markupPct, formatPercent),
     buildKpiExportRow("Margem %", report.marginPct, formatPercent),
@@ -212,7 +212,7 @@ export default function StatusMtdPage() {
             <KpiBlockCard
               label="Drop Size"
               block={report.dropSize}
-              formatValue={formatInteger}
+              formatValue={formatCurrency}
             />
             <KpiBlockCard
               label="Preço Médio"

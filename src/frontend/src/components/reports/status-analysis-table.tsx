@@ -174,7 +174,7 @@ export function StatusAnalysisTable({
       key: "dropSize",
       header: "Drop Size",
       align: "right",
-      render: (row) => (row.dropSize === null ? "—" : formatInteger(row.dropSize)),
+      render: (row) => formatCurrency(row.dropSize),
       sortValue: (row) => row.dropSize,
     },
     {

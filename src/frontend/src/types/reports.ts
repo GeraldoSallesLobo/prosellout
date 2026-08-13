@@ -50,7 +50,7 @@ export interface WeeklyBucket {
   totalValue: number;
   totalQuantity: number;
   coverage: number;
-  invoiceCount: number;
+  orderCount: number;
 }
 
 export interface MonthHistoryRow {
@@ -59,7 +59,7 @@ export interface MonthHistoryRow {
   totalQuantity: number;
   totalCost: number | null;
   coverage: number;
-  invoiceCount: number;
+  orderCount: number;
 }
 
 export interface EvolutionAnalysisRow {

@@ -39,8 +39,8 @@ function buildSeries(
   }));
 }
 
-function safeDivide(numerator: number, denominator: number): number {
-  return denominator === 0 ? 0 : numerator / denominator;
+function safeDivide(numerator: number, denominator: number): number | null {
+  return denominator === 0 ? null : numerator / denominator;
 }
 
 function buildWeeklyExportRows(buckets: WeeklyBucket[]): Record<string, string>[] {
@@ -50,7 +50,7 @@ function buildWeeklyExportRows(buckets: WeeklyBucket[]): Record<string, string>[
     Positivação: formatInteger(bucket.coverage),
     "Ticket Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.coverage)),
     Volume: formatInteger(bucket.totalQuantity),
-    "Drop Size": formatInteger(safeDivide(bucket.totalQuantity, bucket.coverage)),
+    "Drop Size": formatCurrency(safeDivide(bucket.totalValue, bucket.orderCount)),
     "Preço Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.totalQuantity)),
   }));
 }
@@ -131,22 +131,22 @@ export default function MonthlyEvolutionPage() {
             data={buildSeries(
               buckets,
               (bucket) => bucket.totalValue,
-              (bucket) => safeDivide(bucket.totalValue, bucket.coverage),
+              (bucket) => safeDivide(bucket.totalValue, bucket.coverage) ?? 0,
             )}
             formatBar={formatCompactCurrency}
             formatLine={formatCurrency}
           />
           <ComboChart
-            title="Sell Out Unidade × Drop Size"
-            barLabel="Sell Out Un"
+            title="Sell Out R$ × Drop Size"
+            barLabel="Sell Out R$"
             lineLabel="Drop Size"
             data={buildSeries(
               buckets,
-              (bucket) => bucket.totalQuantity,
-              (bucket) => safeDivide(bucket.totalQuantity, bucket.coverage),
+              (bucket) => bucket.totalValue,
+              (bucket) => safeDivide(bucket.totalValue, bucket.orderCount) ?? 0,
             )}
-            formatBar={formatInteger}
-            formatLine={formatInteger}
+            formatBar={formatCompactCurrency}
+            formatLine={formatCurrency}
           />
           <ComboChart
             title="Sell Out Unidade × Preço Médio"
@@ -155,7 +155,7 @@ export default function MonthlyEvolutionPage() {
             data={buildSeries(
               buckets,
               (bucket) => bucket.totalQuantity,
-              (bucket) => safeDivide(bucket.totalValue, bucket.totalQuantity),
+              (bucket) => safeDivide(bucket.totalValue, bucket.totalQuantity) ?? 0,
             )}
             formatBar={formatInteger}
             formatLine={formatCurrency}

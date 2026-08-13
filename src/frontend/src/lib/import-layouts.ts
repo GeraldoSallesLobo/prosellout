@@ -117,7 +117,7 @@ const IMPORT_LAYOUT_SPECS: ImportLayoutSpec[] = [
     screen: "Relatório › Status MTD",
     targetTable: "sell_in_targets",
     status: "ready",
-    summary: "Grava metas de Sell In por produto e mês para Markup, Margem e Giro Médio.",
+    summary: "Grava metas de Sell In por produto e mês para Markup, Margem, Giro Médio e Cobertura Média.",
     prerequisiteCodes: ["PRODUCTS"],
     requiredColumns: [
       "CNPJ Distribuidor",

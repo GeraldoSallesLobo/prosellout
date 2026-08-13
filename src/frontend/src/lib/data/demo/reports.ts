@@ -17,12 +17,15 @@ export const DEMO_STATUS_MTD: StatusMtdReport = {
   sellOutQuantity: buildBlock(50_000, 48_000, 45_000),
   coverage: buildBlock(1_582, 1_500, 1_300),
   avgTicket: buildBlock(948.17, 966.67, 961.54),
-  dropSize: buildBlock(500, 455, 425),
+  // Sell Out R$ / orders, with orders = coverage × avg orders per customer.
+  dropSize: buildBlock(451.51, 460.32, 457.88),
   avgPrice: buildBlock(500, 400, 350),
   markupPct: buildBlock(0.25, 0.24, 0.23),
   marginPct: buildBlock(0.15, 0.14, 0.135),
-  avgTurnover: buildBlock(2.8, 2.6, 2.4),
-  avgCoverage: buildBlock(0.42, 0.4, 0.38),
+  // Stock volume / sell out volume (the ratio formerly shown as Cobertura Média).
+  avgTurnover: buildBlock(0.42, 0.4, 0.38),
+  // Stock volume (= quantity × turnover) / days in the demo period.
+  avgCoverage: buildBlock(700, 640, 570),
   trendValue: { projected: 1_620_000, projectedVsTarget: 1_620_000 / 1_450_000 - 1 },
   probabilityValue: 0.73,
   probabilityCoverage: 0.83,
@@ -75,18 +78,20 @@ const CHANNEL_ROWS: AnalysisSeed[] = [
   { id: "channel-4", name: "Até 4 Check", current: 858_320, target: 1_922_800, previous: 745_910, coverage: 88 },
 ];
 
-const AVG_INVOICES_PER_CUSTOMER = 2.1;
+const AVG_ORDERS_PER_CUSTOMER = 2.1;
 const DEMO_AVG_PRICE = 27.4;
 const DEMO_MARKUP = 0.25;
 const DEMO_MARGIN = 0.15;
-const DEMO_TURNOVER = 2.8;
-const DEMO_AVG_COVERAGE = 0.42;
+const DEMO_AVG_TURNOVER = 0.42;
+const DEMO_PERIOD_DAY_COUNT = 30;
 
 function toAnalysisRow(seed: AnalysisSeed, index: number): AnalysisRow {
   const random = createSeededRandom(index + 7);
   const avgTicket = seed.current / seed.coverage;
   const quantity = seed.current / DEMO_AVG_PRICE;
-  const invoiceCount = seed.coverage * AVG_INVOICES_PER_CUSTOMER;
+  const orderCount = seed.coverage * AVG_ORDERS_PER_CUSTOMER;
+  const avgTurnover = DEMO_AVG_TURNOVER * (0.8 + random() * 0.4);
+  const stockVolume = quantity * avgTurnover;
   return {
     groupId: seed.id,
     groupName: seed.name,
@@ -97,12 +102,12 @@ function toAnalysisRow(seed: AnalysisSeed, index: number): AnalysisRow {
     previousVsTarget: seed.previous / seed.target - 1,
     coverage: seed.coverage,
     avgTicket,
-    dropSize: quantity / invoiceCount,
+    dropSize: seed.current / orderCount,
     avgPrice: DEMO_AVG_PRICE * (0.9 + random() * 0.25),
     markupPct: DEMO_MARKUP * (0.9 + random() * 0.3),
     marginPct: DEMO_MARGIN * (0.9 + random() * 0.3),
-    avgTurnover: DEMO_TURNOVER * (0.85 + random() * 0.35),
-    avgCoverage: DEMO_AVG_COVERAGE * (0.8 + random() * 0.4),
+    avgTurnover,
+    avgCoverage: stockVolume / DEMO_PERIOD_DAY_COUNT,
   };
 }
 
@@ -187,7 +192,7 @@ export function getDemoWeeklyBuckets(): WeeklyBucket[] {
       totalValue,
       totalQuantity: totalValue / DEMO_AVG_PRICE,
       coverage,
-      invoiceCount: Math.round(coverage * AVG_INVOICES_PER_CUSTOMER),
+      orderCount: Math.round(coverage * AVG_ORDERS_PER_CUSTOMER),
     };
   });
 }
@@ -205,7 +210,7 @@ export function getDemoThreeMonthHistory(): MonthHistoryRow[] {
       totalQuantity: totalValue / DEMO_AVG_PRICE,
       totalCost: totalValue * (1 - DEMO_MARGIN),
       coverage,
-      invoiceCount: Math.round(coverage * AVG_INVOICES_PER_CUSTOMER),
+      orderCount: Math.round(coverage * AVG_ORDERS_PER_CUSTOMER),
     };
   });
 }

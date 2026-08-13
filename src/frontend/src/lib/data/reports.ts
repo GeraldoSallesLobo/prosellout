@@ -194,7 +194,7 @@ export async function fetchEvolutionWeekly(filters: ReportFilters): Promise<Week
     totalValue: Number(row.total_value ?? 0),
     totalQuantity: Number(row.total_quantity ?? 0),
     coverage: Number(row.coverage ?? 0),
-    invoiceCount: Number(row.invoice_count ?? 0),
+    orderCount: Number(row.order_count ?? 0),
   }));
 }
 
@@ -222,7 +222,7 @@ export async function fetchThreeMonthHistory(
     totalQuantity: Number(row.total_quantity ?? 0),
     totalCost: nullableNumber(row.total_cost),
     coverage: Number(row.coverage ?? 0),
-    invoiceCount: Number(row.invoice_count ?? 0),
+    orderCount: Number(row.order_count ?? 0),
   }));
 }
 

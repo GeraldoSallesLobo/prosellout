@@ -110,8 +110,8 @@ const METRIC_SPECS: MetricSpec[] = [
   {
     key: "drop",
     label: "Drop Size",
-    pick: (row) => safeDivide(row.totalQuantity, row.coverage),
-    format: formatInteger,
+    pick: (row) => safeDivide(row.totalValue, row.orderCount),
+    format: formatCurrency,
   },
   {
     key: "markup",

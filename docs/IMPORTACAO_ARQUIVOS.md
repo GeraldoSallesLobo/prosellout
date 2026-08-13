@@ -255,7 +255,7 @@ Notas:
 - A meta é vinculada ao distribuidor, produto e mês; não possui PDV nem vendedor.
 - Linhas repetidas no mesmo SKU + mês são somadas dentro da importação.
 - Uma nova importação de Meta Sell In substitui as metas anteriores dos meses presentes no arquivo.
-- No **Status MTD**, a Meta Sell In compõe a coluna **Meta** de `Mark Up %`, `Margem %` e `Giro Médio`, comparando Meta Sell Out contra Meta Sell In.
+- No **Status MTD**, a Meta Sell In compõe a coluna **Meta** de `Mark Up %`, `Margem %`, `Giro Médio` e `Cobertura Média`, comparando Meta Sell Out contra Meta Sell In.
 
 ### SELL_OUT — Sell Out
 
@@ -361,4 +361,4 @@ Regras:
 - Valor Sell In = soma acumulada do valor informado nos arquivos de Sell In.
 
 Se no futuro uma base física de estoque virar fonte oficial, será necessário
-reabrir o contrato e revisar a Cobertura Média antes de trocar a fonte.
+reabrir o contrato e revisar o Giro Médio e a Cobertura Média antes de trocar a fonte.
