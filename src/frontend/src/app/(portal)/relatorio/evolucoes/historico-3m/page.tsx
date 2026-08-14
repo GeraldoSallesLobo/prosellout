@@ -20,6 +20,7 @@ import {
   formatInteger,
   formatPercent,
   formatVariation,
+  toExportNumber,
 } from "@/lib/format";
 import { formatMonthLabel, getMonthStartFromIsoDate } from "@/lib/periods";
 import { buildReportFilterExportRows } from "@/lib/report-export";
@@ -30,7 +31,8 @@ interface MetricSpec {
   label: string;
   pick: (row: MonthHistoryRow) => number | null;
   format: (value: number | null) => string;
-  exportFormat?: (value: number | null) => string;
+  /** Export cell; defaults to the raw number so Excel reads it as numeric. */
+  exportValue?: (value: number | null) => string | number;
 }
 
 function safeDivide(numerator: number, denominator: number): number | null {
@@ -92,7 +94,6 @@ const METRIC_SPECS: MetricSpec[] = [
     label: "Sell Out R$",
     pick: (row) => row.totalValue,
     format: formatCompactCurrency,
-    exportFormat: formatCurrency,
   },
   { key: "quantity", label: "Sell Out Volume", pick: (row) => row.totalQuantity, format: formatInteger },
   { key: "coverage", label: "Cobertura", pick: (row) => row.coverage, format: formatInteger },
@@ -119,12 +120,14 @@ const METRIC_SPECS: MetricSpec[] = [
     label: "Mark Up %",
     pick: getMarkupPct,
     format: formatPercent,
+    exportValue: formatPercent,
   },
   {
     key: "margin",
     label: "Margem %",
     pick: getMarginPct,
     format: formatPercent,
+    exportValue: formatPercent,
   },
 ];
 
@@ -188,13 +191,15 @@ function MetricHistoryCard({
   );
 }
 
-function buildThreeMonthHistoryExportRows(months: MonthHistoryRow[]): Record<string, string>[] {
+function buildThreeMonthHistoryExportRows(
+  months: MonthHistoryRow[],
+): Record<string, string | number>[] {
   return METRIC_SPECS.map((spec) => {
     const values = months.map((month) => spec.pick(month));
     const currentValue = values[values.length - 1] ?? null;
     const mTwoValue = values[values.length - 3] ?? null;
     const mOneValue = values[values.length - 2] ?? null;
-    const formatExportValue = spec.exportFormat ?? spec.format;
+    const toExportValue = spec.exportValue ?? toExportNumber;
     const mTwoLabel = months[months.length - 3]?.monthStart
       ? formatMonthLabel(months[months.length - 3].monthStart)
       : "M-2";
@@ -207,11 +212,11 @@ function buildThreeMonthHistoryExportRows(months: MonthHistoryRow[]): Record<str
 
     return {
       Indicador: spec.label,
-      [mTwoLabel]: formatExportValue(mTwoValue),
+      [mTwoLabel]: toExportValue(mTwoValue),
       "M x M-2": formatVariation(getVariation(currentValue, mTwoValue)),
-      [mOneLabel]: formatExportValue(mOneValue),
+      [mOneLabel]: toExportValue(mOneValue),
       "M x M-1": formatVariation(getVariation(currentValue, mOneValue)),
-      [currentLabel]: formatExportValue(currentValue),
+      [currentLabel]: toExportValue(currentValue),
     };
   });
 }

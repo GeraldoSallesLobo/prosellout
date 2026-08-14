@@ -119,8 +119,8 @@ export default function TargetsPage() {
                       EAN: row.ean,
                       Produto: row.productName,
                       Competência: formatIsoDate(row.targetDate),
-                      Volume: formatInteger(row.quantity),
-                      Valor: formatCurrency(row.grossValue),
+                      Volume: row.quantity,
+                      Valor: row.grossValue,
                     })),
                   },
                 ];

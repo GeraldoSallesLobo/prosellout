@@ -117,8 +117,8 @@ export default function StockPage() {
                     EAN: row.ean,
                     Produto: row.productName,
                     "Posição em": formatIsoDate(row.snapshotDate),
-                    Quantidade: formatInteger(row.quantity),
-                    "Valor Sell In": formatCurrency(row.grossValue),
+                    Quantidade: row.quantity,
+                    "Valor Sell In": row.grossValue,
                   })),
                 },
               ];

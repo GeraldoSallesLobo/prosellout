@@ -23,11 +23,25 @@ const CSV_SEPARATOR = ";";
 
 /** Characters Excel interprets as formula starters (CSV injection). */
 const FORMULA_TRIGGER_PATTERN = /^[=+\-@\t\r]/;
+/** Signed numbers/percentages ("-77,59%") are data, not formulas — keep them parseable. */
+const NUMERIC_TEXT_PATTERN = /^[-+]?[\d.,]+%?$/;
+
+// Excel pt-BR only recognizes a cell as numeric with a comma decimal separator;
+// a dot decimal is silently misread as a thousands separator.
+const CSV_NUMBER_FORMATTER = new Intl.NumberFormat("pt-BR", {
+  useGrouping: false,
+  maximumFractionDigits: 6,
+});
 
 function toCsvCell(value: unknown): string {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? `"${CSV_NUMBER_FORMATTER.format(value)}"` : '""';
+  }
   let text = value === null || value === undefined ? "" : String(value);
   // Neutralize formula injection when opening the CSV in Excel/Sheets.
-  if (FORMULA_TRIGGER_PATTERN.test(text)) text = `'${text}`;
+  if (FORMULA_TRIGGER_PATTERN.test(text) && !NUMERIC_TEXT_PATTERN.test(text)) {
+    text = `'${text}`;
+  }
   return `"${text.replaceAll('"', '""')}"`;
 }
 

@@ -119,8 +119,8 @@ export default function SellOutPage() {
                       EAN: row.ean,
                       Produto: row.productName,
                       "Data Fat.": formatIsoDate(row.invoiceDate),
-                      Volume: formatInteger(row.quantity),
-                      Valor: formatCurrency(row.grossValue),
+                      Volume: row.quantity,
+                      Valor: row.grossValue,
                     })),
                   },
                 ];

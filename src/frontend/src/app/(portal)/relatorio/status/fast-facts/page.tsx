@@ -20,6 +20,7 @@ import {
   formatInteger,
   formatPercent,
   formatVariation,
+  toExportNumber,
 } from "@/lib/format";
 import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { FastFactsDimension, FastFactsHighlight } from "@/types/reports";
@@ -182,23 +183,25 @@ function FastFactsCard({ facts }: { facts: FastFactsDimension }) {
   );
 }
 
-function buildFastFactsExportRows(dimensions: FastFactsDimension[]): Record<string, string>[] {
+function buildFastFactsExportRows(
+  dimensions: FastFactsDimension[],
+): Record<string, string | number>[] {
   return dimensions.map((facts) => ({
     Dimensão: DIMENSION_LABELS[facts.dimension] ?? facts.dimension,
-    Avaliados: formatInteger(facts.eligibleCount),
-    "Na meta": formatInteger(facts.achievedCount),
-    Abaixo: formatInteger(facts.notAchievedCount),
+    Avaliados: facts.eligibleCount,
+    "Na meta": facts.achievedCount,
+    Abaixo: facts.notAchievedCount,
     "% na meta": formatPercent(facts.achievedPct),
     Melhor: facts.best?.name ?? "—",
-    "Melhor realizado": formatCurrency(facts.best?.currentValue),
-    "Melhor meta": formatCurrency(facts.best?.targetValue),
-    "Melhor ano anterior": formatCurrency(facts.best?.previousValue),
+    "Melhor realizado": toExportNumber(facts.best?.currentValue),
+    "Melhor meta": toExportNumber(facts.best?.targetValue),
+    "Melhor ano anterior": toExportNumber(facts.best?.previousValue),
     "Melhor vs meta": formatVariation(facts.best?.currentVsTarget),
     "Melhor vs ano anterior": formatVariation(facts.best?.currentVsPrevious),
     Pior: facts.worst?.name ?? "—",
-    "Pior realizado": formatCurrency(facts.worst?.currentValue),
-    "Pior meta": formatCurrency(facts.worst?.targetValue),
-    "Pior ano anterior": formatCurrency(facts.worst?.previousValue),
+    "Pior realizado": toExportNumber(facts.worst?.currentValue),
+    "Pior meta": toExportNumber(facts.worst?.targetValue),
+    "Pior ano anterior": toExportNumber(facts.worst?.previousValue),
     "Pior vs meta": formatVariation(facts.worst?.currentVsTarget),
     "Pior vs ano anterior": formatVariation(facts.worst?.currentVsPrevious),
   }));

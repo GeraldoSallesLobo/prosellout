@@ -18,6 +18,7 @@ import {
   formatCompactCurrency,
   formatCurrency,
   formatInteger,
+  toExportNumber,
 } from "@/lib/format";
 import { buildReportFilterExportRows } from "@/lib/report-export";
 import { getSundayWeekNumber } from "@/lib/periods";
@@ -44,15 +45,15 @@ function safeDivide(numerator: number, denominator: number): number | null {
   return denominator === 0 ? null : numerator / denominator;
 }
 
-function buildWeeklyExportRows(buckets: WeeklyBucket[]): Record<string, string>[] {
+function buildWeeklyExportRows(buckets: WeeklyBucket[]): Record<string, string | number>[] {
   return buckets.map((bucket) => ({
     Semana: weekLabel(bucket.bucketStart),
-    "Sell Out R$": formatCurrency(bucket.totalValue),
-    Positivação: formatInteger(bucket.coverage),
-    "Ticket Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.coverage)),
-    Volume: formatInteger(bucket.totalQuantity),
-    "Drop Size": formatCurrency(safeDivide(bucket.totalValue, bucket.orderCount)),
-    "Preço Médio": formatCurrency(safeDivide(bucket.totalValue, bucket.totalQuantity)),
+    "Sell Out R$": bucket.totalValue,
+    Positivação: bucket.coverage,
+    "Ticket Médio": toExportNumber(safeDivide(bucket.totalValue, bucket.coverage)),
+    Volume: bucket.totalQuantity,
+    "Drop Size": toExportNumber(safeDivide(bucket.totalValue, bucket.orderCount)),
+    "Preço Médio": toExportNumber(safeDivide(bucket.totalValue, bucket.totalQuantity)),
   }));
 }
 

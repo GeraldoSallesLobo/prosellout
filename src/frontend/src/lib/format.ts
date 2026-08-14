@@ -61,6 +61,11 @@ export function formatPercent(value: number | null | undefined): string {
   return `${DECIMAL_FORMATTER.format(value * 100)}%`;
 }
 
+/** Raw numeric CSV cell — the exporter renders it so Excel reads a number, not text. */
+export function toExportNumber(value: number | null | undefined): number | "" {
+  return value ?? "";
+}
+
 /** Formats an ISO date (YYYY-MM-DD) as DD/MM/YYYY. */
 export function formatIsoDate(value: string | null | undefined): string {
   if (!value) return EMPTY_PLACEHOLDER;

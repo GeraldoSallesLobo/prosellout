@@ -1,11 +1,4 @@
-import {
-  formatCurrency,
-  formatDecimal,
-  formatInteger,
-  formatIsoDate,
-  formatPercent,
-  formatVariation,
-} from "@/lib/format";
+import { formatIsoDate, formatPercent, formatVariation, toExportNumber } from "@/lib/format";
 import type { ReportFilterState } from "@/hooks/use-report-filters";
 import type { SearchState } from "@/lib/search";
 import type { AnalysisRow, FilterOption, FilterOptions } from "@/types/reports";
@@ -231,24 +224,26 @@ export function buildDataExportContextRows(context: DataExportContext): Record<s
   return rows;
 }
 
-export function buildStatusAnalysisExportRows(rows: AnalysisRow[]): Record<string, string>[] {
+export function buildStatusAnalysisExportRows(
+  rows: AnalysisRow[],
+): Record<string, string | number>[] {
   return rows.map((row) => ({
     Grupo: row.groupName,
-    "Sell Out R$ Atual": formatCurrency(row.currentValue),
-    Meta: formatCurrency(row.targetValue),
+    "Sell Out R$ Atual": row.currentValue,
+    Meta: toExportNumber(row.targetValue),
     "Atual x Meta": formatVariation(row.currentVsTarget),
-    "Ano anterior": formatCurrency(row.previousValue),
+    "Ano anterior": row.previousValue,
     "Atual x Ano anterior": formatVariation(
       row.previousValue !== 0 ? row.currentValue / row.previousValue - 1 : null,
     ),
     "Anterior x Meta": formatVariation(row.previousVsTarget),
-    "Cobertura UN": formatInteger(row.coverage),
-    "Ticket Médio": formatCurrency(row.avgTicket),
-    "Drop Size": formatCurrency(row.dropSize),
-    "Preço Médio": formatCurrency(row.avgPrice),
+    "Cobertura UN": row.coverage,
+    "Ticket Médio": toExportNumber(row.avgTicket),
+    "Drop Size": toExportNumber(row.dropSize),
+    "Preço Médio": toExportNumber(row.avgPrice),
     "Mark Up %": formatPercent(row.markupPct),
     "Margem %": formatPercent(row.marginPct),
-    "Giro Médio": formatDecimal(row.avgTurnover),
-    "Cobertura Média": formatDecimal(row.avgCoverage),
+    "Giro Médio": toExportNumber(row.avgTurnover),
+    "Cobertura Média": toExportNumber(row.avgCoverage),
   }));
 }

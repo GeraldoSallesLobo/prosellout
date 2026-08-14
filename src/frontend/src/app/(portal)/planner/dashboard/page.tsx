@@ -36,6 +36,41 @@ const WEEKLY_MODELS = new Set(["automatic", "battleship_volume", "battleship_pos
 const PIE_CHART_HEIGHT = 220;
 /** Mirrors customer_group_limit in the planner_dashboard RPC. */
 const CUSTOMER_GROUP_LIMIT = 50;
+const SELLER_HIGHLIGHT_LIMIT = 3;
+
+function getMissedShare(missed: number | null, planned: number | null): number | null {
+  if (missed === null || planned === null || planned === 0) return null;
+  return missed / planned;
+}
+
+/**
+ * Weekly plans are evaluated inside each configured week; the RPC eval_period
+ * falls back to the current month for them, so the export derives the real
+ * range from the plan's weeks.
+ */
+function getWeeklyEvalPeriodLabel(params: Record<string, unknown>): string | null {
+  const weeks = Array.isArray(params.weeks) ? (params.weeks as Record<string, unknown>[]) : [];
+  const startDates = weeks.map((week) => String(week.start_date ?? "")).filter(Boolean).sort();
+  const endDates = weeks.map((week) => String(week.end_date ?? "")).filter(Boolean).sort();
+  if (startDates.length === 0 || endDates.length === 0) return null;
+  return `${formatIsoDate(startDates[0])} a ${formatIsoDate(endDates[endDates.length - 1])}`;
+}
+
+/** Mirrors the best/worst seller ordering of the planner_dashboard RPC. */
+function rankSellersByAchievement(
+  rows: PlannerDashboardGroupRow[],
+  direction: "best" | "worst",
+): PlannerDashboardGroupRow[] {
+  return rows
+    .filter((row) => row.groupId !== null && row.totalLines > 0)
+    .sort((a, b) => {
+      const rateA = a.achievedLines / a.totalLines;
+      const rateB = b.achievedLines / b.totalLines;
+      if (rateA !== rateB) return direction === "best" ? rateB - rateA : rateA - rateB;
+      return (a.groupName ?? "").localeCompare(b.groupName ?? "", "pt-BR");
+    })
+    .slice(0, SELLER_HIGHLIGHT_LIMIT);
+}
 
 const DIMENSION_OPTIONS: { value: PlannerDashboardDimension; label: string }[] = [
   { value: "seller", label: "Por vendedor" },
@@ -174,6 +209,15 @@ export default function PlannerDashboardPage() {
       ]
     : [];
 
+  const bestSellers = dashboard ? rankSellersByAchievement(dashboard.bySeller, "best") : [];
+  const worstSellers = dashboard ? rankSellersByAchievement(dashboard.bySeller, "worst") : [];
+  const missedQuantityShare = dashboard
+    ? getMissedShare(dashboard.summary.missedQuantity, dashboard.summary.plannedQuantity)
+    : null;
+  const missedValueShare = dashboard
+    ? getMissedShare(dashboard.summary.missedValue, dashboard.summary.plannedValue)
+    : null;
+
   function buildExportSections() {
     if (!dashboard) return [];
     return [
@@ -184,13 +228,25 @@ export default function PlannerDashboardPage() {
             Planificador: formatPlanCode(dashboard.plan.code),
             Modelo: PLANNER_MODEL_LABELS[dashboard.plan.model],
             Versão: dashboard.plan.version,
-            "Período de avaliação": `${dashboard.evalPeriod.startDate} a ${dashboard.evalPeriod.endDate}`,
+            "Período de avaliação":
+              (WEEKLY_MODELS.has(dashboard.plan.model)
+                ? getWeeklyEvalPeriodLabel(dashboard.plan.params)
+                : null) ??
+              `${formatIsoDate(dashboard.evalPeriod.startDate)} a ${formatIsoDate(dashboard.evalPeriod.endDate)}`,
             "Total de planos": dashboard.summary.totalLines,
             Atingidos: dashboard.summary.achievedLines,
             "% Atingimento":
               dashboard.summary.achievementRate === null
                 ? ""
                 : formatPercent(dashboard.summary.achievementRate),
+            "Volume planejado": dashboard.summary.plannedQuantity ?? "",
+            "Volume não realizado": dashboard.summary.missedQuantity ?? "",
+            "% Volume não realizado":
+              missedQuantityShare === null ? "" : formatPercent(missedQuantityShare),
+            "Valor planejado": dashboard.summary.plannedValue ?? "",
+            "Valor não realizado": dashboard.summary.missedValue ?? "",
+            "% Valor não realizado":
+              missedValueShare === null ? "" : formatPercent(missedValueShare),
           },
         ],
       },
@@ -302,6 +358,11 @@ export default function PlannerDashboardPage() {
                   ? "—"
                   : formatDecimal(dashboard.summary.missedQuantity)
               }
+              footer={
+                missedQuantityShare === null
+                  ? undefined
+                  : `${formatPercent(missedQuantityShare)} do volume planejado (${formatDecimal(dashboard.summary.plannedQuantity)})`
+              }
             />
             <KpiCard
               label="Valor não realizado"
@@ -309,6 +370,11 @@ export default function PlannerDashboardPage() {
                 dashboard.summary.missedValue === null
                   ? "—"
                   : formatCurrency(dashboard.summary.missedValue)
+              }
+              footer={
+                missedValueShare === null
+                  ? undefined
+                  : `${formatPercent(missedValueShare)} do valor planejado (${formatCurrency(dashboard.summary.plannedValue)})`
               }
             />
           </div>
@@ -344,13 +410,13 @@ export default function PlannerDashboardPage() {
             </div>
 
             <SellerHighlightCard
-              title="Melhor vendedor"
-              row={dashboard.bestSeller}
+              title="Melhores vendedores"
+              rows={bestSellers}
               badgeVariant="green"
             />
             <SellerHighlightCard
-              title="Pior vendedor"
-              row={dashboard.worstSeller}
+              title="Piores vendedores"
+              rows={worstSellers}
               badgeVariant="red"
             />
           </div>
@@ -381,31 +447,37 @@ export default function PlannerDashboardPage() {
 
 function SellerHighlightCard({
   title,
-  row,
+  rows,
   badgeVariant,
 }: {
   title: string;
-  row: PlannerDashboardGroupRow | null;
+  rows: PlannerDashboardGroupRow[];
   badgeVariant: "green" | "red";
 }) {
   return (
     <div className="card p-4">
       <h2 className="mb-2 text-sm font-bold text-text1">{title}</h2>
-      {!row ? (
+      {rows.length === 0 ? (
         <p className="text-sm text-text2">Sem vendedores avaliados neste plano.</p>
       ) : (
-        <div className="grid gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-text1">{row.groupName ?? "—"}</span>
-            <Badge variant={badgeVariant}>
-              {row.achievementRate === null ? "—" : formatPercent(row.achievementRate)}
-            </Badge>
-          </div>
-          <p className="text-xs text-text2">
-            {formatInteger(row.achievedLines)} de {formatInteger(row.totalLines)} planos
-            atingidos
-          </p>
-        </div>
+        <ol className="grid gap-3">
+          {rows.map((row, index) => (
+            <li key={row.groupId ?? row.groupName ?? index} className="grid gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-text2">{index + 1}º</span>
+                <span className="text-sm font-bold text-text1">{row.groupName ?? "—"}</span>
+                <Badge variant={badgeVariant}>
+                  {row.achievementRate === null ? "—" : formatPercent(row.achievementRate)}
+                </Badge>
+              </div>
+              <p className="text-xs text-text2">
+                {formatInteger(row.achievedLines)} de {formatInteger(row.totalLines)} planos
+                atingidos · Volume realizado:{" "}
+                {row.realizedQuantity === null ? "—" : formatDecimal(row.realizedQuantity)}
+              </p>
+            </li>
+          ))}
+        </ol>
       )}
     </div>
   );

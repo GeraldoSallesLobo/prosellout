@@ -24,6 +24,7 @@ import {
   formatInteger,
   formatPercent,
   formatVariation,
+  toExportNumber,
 } from "@/lib/format";
 import {
   buildReportFilterExportRows,
@@ -51,33 +52,33 @@ function getCurrentVsPrevious(block: KpiBlock): number | null {
 function buildKpiExportRow(
   indicator: string,
   block: KpiBlock,
-  formatValue: (value: number | null) => string,
-): Record<string, string> {
+  toExportValue: (value: number | null) => string | number = toExportNumber,
+): Record<string, string | number> {
   return {
     Indicador: indicator,
-    Atual: formatValue(block.current),
-    Meta: formatValue(block.target),
+    Atual: toExportValue(block.current),
+    Meta: toExportValue(block.target),
     "Vs Meta": formatVariation(block.currentVsTarget),
-    "Ano anterior": formatValue(block.previous),
+    "Ano anterior": toExportValue(block.previous),
     "Vs Ano anterior": formatVariation(getCurrentVsPrevious(block)),
   };
 }
 
-function buildStatusMtdKpiExportRows(report: StatusMtdReport): Record<string, string>[] {
+function buildStatusMtdKpiExportRows(report: StatusMtdReport): Record<string, string | number>[] {
   return [
-    buildKpiExportRow("Sell Out R$", report.sellOutValue, formatCurrency),
-    buildKpiExportRow("Sell Out Un", report.sellOutQuantity, formatInteger),
-    buildKpiExportRow("Cobertura UN", report.coverage, formatInteger),
-    buildKpiExportRow("Ticket Médio R$", report.avgTicket, formatCurrency),
-    buildKpiExportRow("Drop Size", report.dropSize, formatCurrency),
-    buildKpiExportRow("Preço Médio", report.avgPrice, formatCurrency),
+    buildKpiExportRow("Sell Out R$", report.sellOutValue),
+    buildKpiExportRow("Sell Out Un", report.sellOutQuantity),
+    buildKpiExportRow("Cobertura UN", report.coverage),
+    buildKpiExportRow("Ticket Médio R$", report.avgTicket),
+    buildKpiExportRow("Drop Size", report.dropSize),
+    buildKpiExportRow("Preço Médio", report.avgPrice),
     buildKpiExportRow("Mark Up %", report.markupPct, formatPercent),
     buildKpiExportRow("Margem %", report.marginPct, formatPercent),
-    buildKpiExportRow("Giro Médio", report.avgTurnover, formatDecimal),
-    buildKpiExportRow("Cobertura Média", report.avgCoverage, formatDecimal),
+    buildKpiExportRow("Giro Médio", report.avgTurnover),
+    buildKpiExportRow("Cobertura Média", report.avgCoverage),
     {
       Indicador: "Tendência Sell Out R$",
-      Atual: formatCurrency(report.trendValue.projected),
+      Atual: toExportNumber(report.trendValue.projected),
       Meta: "",
       "Vs Meta": formatVariation(report.trendValue.projectedVsTarget),
       "Ano anterior": "",

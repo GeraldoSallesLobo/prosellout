@@ -15,7 +15,7 @@ import {
 } from "@/hooks/use-report-filters";
 import { useFilterOptions } from "@/hooks/use-filter-options";
 import { fetchEvolutionAnalysis } from "@/lib/data/reports";
-import { formatCurrency, formatInteger, formatVariation } from "@/lib/format";
+import { formatCurrency, formatInteger, formatVariation, toExportNumber } from "@/lib/format";
 import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { EvolutionAnalysisRow, EvolutionGroupBy } from "@/types/reports";
 
@@ -152,8 +152,8 @@ export default function EvolutionAnalysisPage() {
                   title: "Análise de evolução",
                   rows: rows.map((row) => ({
                     [GROUP_HEADERS[groupBy]]: row.groupName,
-                    "Período Atual": accessors.format(accessors.current(row)),
-                    "Período Anterior": accessors.format(accessors.previous(row)),
+                    "Período Atual": toExportNumber(accessors.current(row)),
+                    "Período Anterior": toExportNumber(accessors.previous(row)),
                     Variação: formatVariation(accessors.change(row)),
                   })),
                 },

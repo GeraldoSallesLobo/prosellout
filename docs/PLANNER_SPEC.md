@@ -208,7 +208,13 @@ Template visual final ainda **pendente com o Eduardo** (será similar ao Fast Fa
 2. **Resumo estilo Fast Facts**:
    - total de planos (cada **linha** do planificador = 1 plano), quantos **atingidos × não
      atingidos** (gráfico de pizza);
-   - melhor/pior por **vendedor** (quem atingiu o planificador proposto);
+   - volume/valor **não realizado** com o **% sobre o planejado** (não realizado ÷ planejado —
+     feedback de 14/08/2026 sobre o plano 009);
+   - **3 melhores / 3 piores por vendedor** (quem atingiu o planificador proposto), cada um com
+     % de atingimento, planos atingidos e **volume realizado** (mesmo feedback). A ordenação
+     replica no frontend o critério de melhor/pior da RPC (taxa de atingimento, empate por nome)
+     a partir do recorte `by_seller` — a RPC continua devolvendo `best_seller`/`worst_seller`
+     unitários;
    - mesmas variáveis do Fast Facts, trocando "bateu a meta" por "**executou/atingiu o
      planificador proposto**".
 3. **Relatório analítico (para o vendedor)**: tabela com visão alternável **por cliente / canal /
@@ -432,7 +438,7 @@ Rotas novas sob `app/(portal)/planner/` (UI pt-BR, labels dos modelos centraliza
 | `/planner/cobertura` | Wizard: SKU/canal/período → PDVs descobertos → meta R$ ou volume → gerar |
 | `/planner/rentabilidade` | Wizard: SKU/canal/período → margem objetivo → PDVs abaixo → gerar |
 | `/planner/planos` | Listagem dos planificadores gerados (código, modelo, versão, roteiro usado, parâmetros) + detalhe com resumo semanal e linhas paginadas + exportação; após Recalcular Rota o detalhe abre direto na versão criada |
-| `/planner/dashboard` | Seleção do plano → resumo (pizza atingido/não, melhor/pior) + tabela planejado×realizado×variação com toggle vendedor/cliente/canal + exportação |
+| `/planner/dashboard` | Seleção do plano → resumo (pizza atingido/não, % não realizado ÷ planejado, 3 melhores/3 piores vendedores com volume realizado) + tabela planejado×realizado×variação com toggle vendedor/cliente/canal + exportação |
 
 - A rota antiga `/planner/batalha-naval` (heatmap demo da fase 1) é **substituída** pelos módulos
   acima.
