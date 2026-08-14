@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import clsx from "clsx";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useTheme } from "@/components/theme-provider";
 import {
   PlannerDistributorField,
   usePlannerScope,
 } from "@/components/planner/planner-scope";
-import { Badge } from "@/components/ui/badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ExportButton } from "@/components/ui/export-button";
 import { DateField, SelectField } from "@/components/ui/field";
@@ -380,45 +381,39 @@ export default function PlannerDashboardPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <div className="card p-4">
+            <div className="card flex flex-col p-4">
               <h2 className="mb-2 text-sm font-bold text-text1">Atingido × não atingido</h2>
-              <ResponsiveContainer width="100%" height={PIE_CHART_HEIGHT}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={48}
-                    outerRadius={80}
-                    strokeWidth={0}
-                  >
-                    <Cell fill={colors.seriesCurrent} />
-                    <Cell fill={colors.seriesPrevious} />
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: colors.tooltipBg,
-                      border: `1px solid ${colors.tooltipBorder}`,
-                      borderRadius: 8,
-                      color: colors.tooltipText,
-                      fontSize: 12,
-                    }}
-                    formatter={(value: number, name: string) => [formatInteger(value), name]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex flex-1 items-center">
+                <ResponsiveContainer width="100%" height={PIE_CHART_HEIGHT}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={48}
+                      outerRadius={80}
+                      strokeWidth={0}
+                    >
+                      <Cell fill={colors.seriesCurrent} />
+                      <Cell fill={colors.seriesPrevious} />
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: colors.tooltipBg,
+                        border: `1px solid ${colors.tooltipBorder}`,
+                        borderRadius: 8,
+                        color: colors.tooltipText,
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number, name: string) => [formatInteger(value), name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            <SellerHighlightCard
-              title="Melhores vendedores"
-              rows={bestSellers}
-              badgeVariant="green"
-            />
-            <SellerHighlightCard
-              title="Piores vendedores"
-              rows={worstSellers}
-              badgeVariant="red"
-            />
+            <SellerHighlightCard title="Melhores vendedores" rows={bestSellers} type="best" />
+            <SellerHighlightCard title="Piores vendedores" rows={worstSellers} type="worst" />
           </div>
 
           <div className="grid gap-3">
@@ -445,36 +440,66 @@ export default function PlannerDashboardPage() {
   );
 }
 
+/** Mirrors the Melhor/Pior highlight style of the Fast Facts report. */
 function SellerHighlightCard({
   title,
   rows,
-  badgeVariant,
+  type,
 }: {
   title: string;
   rows: PlannerDashboardGroupRow[];
-  badgeVariant: "green" | "red";
+  type: "best" | "worst";
 }) {
+  const isBest = type === "best";
+  const Icon = isBest ? TrendingUp : TrendingDown;
+  const colorClassName = isBest ? "text-green" : "text-red";
+
   return (
     <div className="card p-4">
       <h2 className="mb-2 text-sm font-bold text-text1">{title}</h2>
       {rows.length === 0 ? (
         <p className="text-sm text-text2">Sem vendedores avaliados neste plano.</p>
       ) : (
-        <ol className="grid gap-3">
+        <ol className="grid gap-2">
           {rows.map((row, index) => (
-            <li key={row.groupId ?? row.groupName ?? index} className="grid gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-text2">{index + 1}º</span>
-                <span className="text-sm font-bold text-text1">{row.groupName ?? "—"}</span>
-                <Badge variant={badgeVariant}>
-                  {row.achievementRate === null ? "—" : formatPercent(row.achievementRate)}
-                </Badge>
+            <li
+              key={row.groupId ?? row.groupName ?? index}
+              className="min-w-0 rounded-md bg-bg px-3 py-2"
+            >
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-text2">
+                <Icon size={13} className={colorClassName} />
+                <span>{index + 1}º</span>
               </div>
-              <p className="text-xs text-text2">
-                {formatInteger(row.achievedLines)} de {formatInteger(row.totalLines)} planos
-                atingidos · Volume realizado:{" "}
-                {row.realizedQuantity === null ? "—" : formatDecimal(row.realizedQuantity)}
-              </p>
+              <div
+                className="truncate text-sm font-bold text-text1"
+                title={row.groupName ?? undefined}
+              >
+                {row.groupName ?? "—"}
+              </div>
+              <div className="mt-2 space-y-1 text-[11px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text2">Planos atingidos</span>
+                  <span className="text-right font-semibold text-text1">
+                    {formatInteger(row.achievedLines)} de {formatInteger(row.totalLines)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text2">% Atingimento</span>
+                  <span className={clsx("font-semibold", colorClassName)}>
+                    {row.achievementRate === null ? "—" : formatPercent(row.achievementRate)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text2">
+                    {row.realizedQuantity === null ? "Valor realizado" : "Volume realizado"}
+                  </span>
+                  <span className="text-right font-semibold text-text1">
+                    {row.realizedQuantity === null
+                      ? formatCurrency(row.realizedValue)
+                      : formatDecimal(row.realizedQuantity)}
+                  </span>
+                </div>
+              </div>
             </li>
           ))}
         </ol>
