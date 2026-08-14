@@ -12,7 +12,8 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchFilterOptions, fetchThreeMonthHistory } from "@/lib/data/reports";
+import { useFilterOptions } from "@/hooks/use-filter-options";
+import { fetchThreeMonthHistory } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
   formatCurrency,
@@ -220,11 +221,7 @@ export default function ThreeMonthHistoryPage() {
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
   const referenceMonth = getMonthStartFromIsoDate(filters.currentEnd || filters.currentStart);
 
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-    enabled: isHydrated,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   const { data: months = [], isLoading } = useQuery({
     queryKey: ["three-month-history", referenceMonth, reportFilters],

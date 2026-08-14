@@ -1,97 +1,138 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Settings2, UserPlus } from "lucide-react";
 import { AdminOnly } from "@/components/access/access-gate";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import { FieldWrapper, TextField } from "@/components/ui/field";
+import { FieldWrapper, SelectField, TextField } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { MultiSelectField } from "@/components/ui/multi-select-field";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 import {
-  createDistributorUser,
+  createPortalUser,
   fetchDistributorUsers,
+  grantDistributorAccess,
+  revokeDistributorAccess,
   type DistributorUser,
 } from "@/lib/data/admin";
+import { fetchDistributors } from "@/lib/data/master-data";
+import { INDUSTRY_LABELS } from "@/lib/industry";
 
-const CNPJ_DIGIT_COUNT = 14;
-const CNPJ_DIGIT_LIMIT = 14;
-const DISTRIBUTOR_CODE_PATTERN = /^[A-Z0-9_-]{3,32}$/;
+const MIN_PASSWORD_LENGTH = 6;
 
 const EMPTY_FORM = {
   email: "",
   password: "",
-  distributorCode: "",
-  distributorName: "",
-  distributorCnpj: "",
-  city: "",
-  state: "",
+  distributorIds: [] as string[],
 };
 
-function getDigits(value: string): string {
-  return value.replace(/\D/g, "");
+/** One row per portal user, aggregating that user's industry links. */
+interface PortalUserRow {
+  userId: string;
+  email: string;
+  createdAt: string;
+  links: DistributorUser[];
 }
 
-function formatCnpjInput(value: string): string {
-  const digits = getDigits(value).slice(0, CNPJ_DIGIT_LIMIT);
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
+function groupUsersByEmail(links: DistributorUser[]): PortalUserRow[] {
+  const rowsByUserId = new Map<string, PortalUserRow>();
+  links.forEach((link) => {
+    const row = rowsByUserId.get(link.userId);
+    if (!row) {
+      rowsByUserId.set(link.userId, {
+        userId: link.userId,
+        email: link.email,
+        createdAt: link.createdAt,
+        links: [link],
+      });
+      return;
+    }
+    row.links.push(link);
+    if (link.createdAt < row.createdAt) row.createdAt = link.createdAt;
+  });
+  return Array.from(rowsByUserId.values());
 }
 
-function formatDistributorCode(value: string): string {
-  return value.toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+function getActiveLinks(row: PortalUserRow): DistributorUser[] {
+  return row.links.filter((link) => link.status === "active");
 }
 
 function AdminUsersContent(): ReactElement {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [managedUserId, setManagedUserId] = useState<string | null>(null);
+  const [grantDistributorId, setGrantDistributorId] = useState("");
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: links = [], isLoading } = useQuery({
     queryKey: ["distributor-users"],
     queryFn: fetchDistributorUsers,
   });
 
-  const createMutation = useMutation({
-    mutationFn: createDistributorUser,
-    onSuccess: () => {
-      showToast("success", "Usuário e distribuidor cadastrados com sucesso.");
-      setIsModalOpen(false);
-      setForm(EMPTY_FORM);
-      queryClient.invalidateQueries({ queryKey: ["distributor-users"] });
-      queryClient.invalidateQueries({ queryKey: ["distributors"] });
-    },
-    onError: () => showToast("error", "Erro ao cadastrar usuário distribuidor."),
+  const { data: distributors = [] } = useQuery({
+    queryKey: ["distributors", "active"],
+    queryFn: () => fetchDistributors("active"),
   });
 
-  const cnpjDigits = getDigits(form.distributorCnpj);
-  const hasValidCnpj = cnpjDigits.length === 0 || cnpjDigits.length === CNPJ_DIGIT_COUNT;
-  const hasValidDistributorCode = DISTRIBUTOR_CODE_PATTERN.test(form.distributorCode);
-  const canSubmit =
-    form.email.trim().length > 0 &&
-    form.password.length >= 6 &&
-    hasValidDistributorCode &&
-    hasValidCnpj &&
-    form.distributorName.trim().length > 0;
+  const users = useMemo(() => groupUsersByEmail(links), [links]);
+  const managedUser = users.find((row) => row.userId === managedUserId) ?? null;
 
-  function handleCreateDistributorUser(): void {
-    createMutation.mutate({
-      ...form,
-      distributorCode: form.distributorCode.trim().toUpperCase(),
-      distributorCnpj: cnpjDigits,
-    });
+  function invalidateUsers(): void {
+    queryClient.invalidateQueries({ queryKey: ["distributor-users"] });
   }
 
-  const columns: DataTableColumn<DistributorUser>[] = [
+  const createMutation = useMutation({
+    mutationFn: createPortalUser,
+    onSuccess: () => {
+      showToast("success", "Usuário cadastrado com sucesso.");
+      setIsCreateModalOpen(false);
+      setForm(EMPTY_FORM);
+      invalidateUsers();
+    },
+    onError: () => showToast("error", "Erro ao cadastrar usuário."),
+  });
+
+  const grantMutation = useMutation({
+    mutationFn: ({ userId, distributorId }: { userId: string; distributorId: string }) =>
+      grantDistributorAccess(userId, distributorId),
+    onSuccess: () => {
+      showToast("success", "Acesso liberado.");
+      setGrantDistributorId("");
+      invalidateUsers();
+    },
+    onError: () => showToast("error", "Erro ao liberar acesso."),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: ({ userId, distributorId }: { userId: string; distributorId: string }) =>
+      revokeDistributorAccess(userId, distributorId),
+    onSuccess: () => {
+      showToast("success", "Acesso revogado.");
+      invalidateUsers();
+    },
+    onError: () => showToast("error", "Erro ao revogar acesso."),
+  });
+
+  const canSubmitCreate =
+    form.email.trim().length > 0 &&
+    form.password.length >= MIN_PASSWORD_LENGTH &&
+    form.distributorIds.length > 0;
+
+  const managedActiveLinkIds = new Set(
+    (managedUser ? getActiveLinks(managedUser) : []).map((link) => link.distributorId),
+  );
+  const grantableDistributors = distributors.filter(
+    (distributor) => !managedActiveLinkIds.has(distributor.id),
+  );
+
+  const columns: DataTableColumn<PortalUserRow>[] = [
     {
       key: "email",
       header: "Usuário",
@@ -99,24 +140,24 @@ function AdminUsersContent(): ReactElement {
       sortValue: (row) => row.email,
     },
     {
-      key: "distributor",
-      header: "Distribuidor",
-      render: (row) => row.distributorName,
-      sortValue: (row) => row.distributorName,
-    },
-    {
-      key: "code",
-      header: "Código",
-      render: (row) => <Badge variant="blue">{row.distributorCode}</Badge>,
-      sortValue: (row) => row.distributorCode,
-    },
-    {
-      key: "status",
-      header: "Status",
-      align: "center",
-      render: (row) => <StatusBadge isActive={row.status === "active"} />,
-      sortValue: (row) => row.status,
-      searchable: false,
+      key: "industries",
+      header: INDUSTRY_LABELS.switcherLabel + "s",
+      render: (row) => {
+        const activeLinks = getActiveLinks(row);
+        if (activeLinks.length === 0) {
+          return <span className="text-text2">Sem acesso</span>;
+        }
+        return (
+          <span className="flex flex-wrap gap-1">
+            {activeLinks.map((link) => (
+              <Badge key={link.distributorId} variant="blue">
+                {link.distributorName}
+              </Badge>
+            ))}
+          </span>
+        );
+      },
+      sortValue: (row) => getActiveLinks(row).length,
     },
     {
       key: "created",
@@ -124,15 +165,36 @@ function AdminUsersContent(): ReactElement {
       render: (row) => new Date(row.createdAt).toLocaleDateString("pt-BR"),
       sortValue: (row) => row.createdAt,
     },
+    {
+      key: "actions",
+      header: "Ações",
+      align: "center",
+      render: (row) => (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setGrantDistributorId("");
+            setManagedUserId(row.userId);
+          }}
+        >
+          <Settings2 size={14} /> Gerenciar acessos
+        </Button>
+      ),
+    },
   ];
 
   return (
     <div>
       <PageHeader
         title="Usuários"
-        description="Criação de usuários distribuidores com vínculo automático"
+        description="Usuários do portal e as indústrias que cada um pode acessar"
         actions={
-          <Button onClick={() => setIsModalOpen(true)}>
+          <Button
+            onClick={() => {
+              setForm(EMPTY_FORM);
+              setIsCreateModalOpen(true);
+            }}
+          >
             <UserPlus size={14} /> Novo usuário
           </Button>
         }
@@ -141,28 +203,27 @@ function AdminUsersContent(): ReactElement {
       <DataTable columns={columns} rows={users} rowKey={(row) => row.userId} isLoading={isLoading} />
 
       <Modal
-        title="Cadastrar usuário distribuidor"
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        title="Cadastrar usuário"
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
               Cancelar
             </Button>
             <Button
-              disabled={!canSubmit || createMutation.isPending}
-              onClick={handleCreateDistributorUser}
+              disabled={!canSubmitCreate || createMutation.isPending}
+              onClick={() => createMutation.mutate({ ...form, email: form.email.trim() })}
             >
               {createMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <TextField
             label="E-mail"
             type="email"
-            wrapperClassName="col-span-2"
             value={form.email}
             onChange={(event) => setForm({ ...form, email: event.target.value })}
             placeholder="distribuidora.exemplo@email.com"
@@ -186,49 +247,113 @@ function AdminUsersContent(): ReactElement {
               </button>
             </div>
           </FieldWrapper>
-          <FieldWrapper label="Código">
-            <input
-              className="input-base"
-              value={form.distributorCode}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  distributorCode: formatDistributorCode(event.target.value),
-                })
-              }
-              placeholder="DIST001"
-              maxLength={32}
-              aria-invalid={!hasValidDistributorCode && form.distributorCode.length > 0}
-            />
-          </FieldWrapper>
-          <TextField
-            label="CNPJ"
-            value={form.distributorCnpj}
-            onChange={(event) =>
-              setForm({ ...form, distributorCnpj: formatCnpjInput(event.target.value) })
-            }
-            placeholder="00.000.000/0000-00"
-            inputMode="numeric"
-            aria-invalid={!hasValidCnpj}
+          <MultiSelectField
+            label={INDUSTRY_LABELS.switcherLabel + "s"}
+            allLabel="Selecione"
+            options={distributors.map((distributor) => ({
+              value: distributor.id,
+              label: distributor.name,
+            }))}
+            values={form.distributorIds}
+            onChange={(distributorIds) => setForm({ ...form, distributorIds })}
           />
-          <TextField
-            label="Distribuidor"
-            value={form.distributorName}
-            onChange={(event) => setForm({ ...form, distributorName: event.target.value })}
-            placeholder="Razão social"
-          />
-          <TextField
-            label="Cidade"
-            value={form.city}
-            onChange={(event) => setForm({ ...form, city: event.target.value })}
-          />
-          <TextField
-            label="UF"
-            maxLength={2}
-            value={form.state}
-            onChange={(event) => setForm({ ...form, state: event.target.value.toUpperCase() })}
-          />
+          <p className="text-xs text-text2">
+            O usuário poderá alternar entre as indústrias selecionadas após o login.
+          </p>
         </div>
+      </Modal>
+
+      <Modal
+        title={managedUser ? `Acessos de ${managedUser.email}` : "Acessos"}
+        isOpen={managedUser !== null}
+        onClose={() => setManagedUserId(null)}
+        footer={
+          <Button variant="secondary" onClick={() => setManagedUserId(null)}>
+            Fechar
+          </Button>
+        }
+      >
+        {managedUser ? (
+          <div className="space-y-4">
+            <div>
+              <span className="label-base">Acessos atuais</span>
+              {managedUser.links.length === 0 ? (
+                <p className="text-sm text-text2">Nenhum acesso cadastrado.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {managedUser.links.map((link) => (
+                    <li
+                      key={link.distributorId}
+                      className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-text1">
+                          {link.distributorName}
+                        </span>
+                        <Badge variant="blue">{link.distributorCode}</Badge>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <StatusBadge isActive={link.status === "active"} />
+                        {link.status === "active" ? (
+                          <Button
+                            variant="secondary"
+                            disabled={revokeMutation.isPending}
+                            onClick={() =>
+                              revokeMutation.mutate({
+                                userId: managedUser.userId,
+                                distributorId: link.distributorId,
+                              })
+                            }
+                          >
+                            Revogar
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            disabled={grantMutation.isPending}
+                            onClick={() =>
+                              grantMutation.mutate({
+                                userId: managedUser.userId,
+                                distributorId: link.distributorId,
+                              })
+                            }
+                          >
+                            Reativar
+                          </Button>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex items-end gap-2">
+              <SelectField
+                label={`Adicionar ${INDUSTRY_LABELS.switcherLabel.toLowerCase()}`}
+                allLabel="Selecione"
+                wrapperClassName="min-w-0 flex-1"
+                options={grantableDistributors.map((distributor) => ({
+                  value: distributor.id,
+                  label: distributor.name,
+                }))}
+                value={grantDistributorId}
+                onChange={(event) => setGrantDistributorId(event.target.value)}
+              />
+              <Button
+                disabled={!grantDistributorId || grantMutation.isPending}
+                onClick={() =>
+                  grantMutation.mutate({
+                    userId: managedUser.userId,
+                    distributorId: grantDistributorId,
+                  })
+                }
+              >
+                {grantMutation.isPending ? "Adicionando..." : "Adicionar"}
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

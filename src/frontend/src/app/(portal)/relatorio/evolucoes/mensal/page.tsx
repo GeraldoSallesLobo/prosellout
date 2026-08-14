@@ -12,7 +12,8 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchEvolutionWeekly, fetchFilterOptions } from "@/lib/data/reports";
+import { useFilterOptions } from "@/hooks/use-filter-options";
+import { fetchEvolutionWeekly } from "@/lib/data/reports";
 import {
   formatCompactCurrency,
   formatCurrency,
@@ -66,11 +67,7 @@ export default function MonthlyEvolutionPage() {
     ...REPORT_QUERY_FRESHNESS,
   });
 
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-    enabled: isHydrated,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   return (
     <div>

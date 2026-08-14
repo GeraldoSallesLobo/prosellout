@@ -5,12 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ExportButton, type ExportSection } from "@/components/ui/export-button";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import {
   PeriodFilterBar,
   type PeriodFilterState,
 } from "@/components/data/period-filter-bar";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 import { DATA_PAGE_SIZE, fetchStockRows } from "@/lib/data/consolidated";
-import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatIsoDate } from "@/lib/format";
 import { getCurrentMonthToDate } from "@/lib/periods";
 import {
@@ -29,6 +30,7 @@ const SEARCH_LABELS: Record<string, string> = {
 
 export default function StockPage() {
   const initialPeriod = getCurrentMonthToDate();
+  const { selectedDistributorId } = useIndustryScope();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DATA_PAGE_SIZE);
   const [sort, setSort] = useState<SortState | null>(null);
@@ -36,12 +38,9 @@ export default function StockPage() {
   const [filters, setFilters] = useState<PeriodFilterState>({
     start: initialPeriod.start,
     end: initialPeriod.end,
-    distributorId: "",
+    distributorId: selectedDistributorId ?? "",
   });
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   const { data, isLoading } = useQuery({
     queryKey: ["stock-rows", page, pageSize, sort, search, filters],

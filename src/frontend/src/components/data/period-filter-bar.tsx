@@ -3,12 +3,13 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import { DateField, SelectField } from "@/components/ui/field";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
-import { fetchFilterOptions } from "@/lib/data/reports";
 
 export interface PeriodFilterState {
   start: string;
@@ -32,21 +33,23 @@ export function PeriodFilterBar({
   showStartDate = true,
   endDateLabel = "Período Fim",
 }: PeriodFilterBarProps) {
-  const { data: options } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-  });
+  const { selectedDistributorId } = useIndustryScope();
+  const { data: options } = useFilterOptions();
   const { data: access } = useQuery({
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
   });
   const canFilterByDistributor = showDistributor && access?.isAdmin === true;
 
+  // Distributor users always query the industry in scope, even when the
+  // select is hidden; pages initialize the state with it and this effect
+  // covers any leftover mismatch.
+  const scopedDistributorId = selectedDistributorId ?? "";
   useEffect(() => {
-    if (showDistributor && access && !access.isAdmin && filters.distributorId) {
-      onChange({ distributorId: "" });
+    if (access && !access.isAdmin && filters.distributorId !== scopedDistributorId) {
+      onChange({ distributorId: scopedDistributorId });
     }
-  }, [access, filters.distributorId, onChange, showDistributor]);
+  }, [access, filters.distributorId, onChange, scopedDistributorId]);
 
   return (
     <div

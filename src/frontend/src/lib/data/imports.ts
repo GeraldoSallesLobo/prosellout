@@ -14,6 +14,7 @@ export interface ImportFilters {
   status?: ImportStatus;
   start?: string;
   end?: string;
+  distributorId?: string;
 }
 
 const UPLOADABLE_TARGET_TABLES = new Set([
@@ -55,7 +56,7 @@ export function canUploadFileType(config: FileTypeConfig): boolean {
   return config.status === "active" && UPLOADABLE_TARGET_TABLES.has(config.targetTable);
 }
 
-export async function fetchCompletedImportCodes(): Promise<string[]> {
+export async function fetchCompletedImportCodes(distributorId?: string): Promise<string[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
     const codeByTypeName = new Map(
@@ -69,10 +70,13 @@ export async function fetchCompletedImportCodes(): Promise<string[]> {
     return simulateLatency(Array.from(new Set(completedCodes)));
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("file_imports")
     .select("status, file_type_configs(code)")
     .in("status", Array.from(READY_IMPORT_STATUSES));
+  if (distributorId) query = query.eq("distributor_id", distributorId);
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const completedCodes = (data ?? []).flatMap((row) => {
@@ -110,6 +114,7 @@ export async function fetchFileImports(filters: ImportFilters): Promise<FileImpo
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.start) query = query.gte("created_at", filters.start);
   if (filters.end) query = query.lte("created_at", `${filters.end}T23:59:59`);
+  if (filters.distributorId) query = query.eq("distributor_id", filters.distributorId);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -184,30 +189,16 @@ export async function fetchFileTypeConfigs(): Promise<FileTypeConfig[]> {
   }));
 }
 
-async function fetchCurrentDistributorId(): Promise<string> {
-  const supabase = getSupabaseBrowserClient();
-  if (!supabase) return "demo-distributor-id";
-
-  const { data, error } = await supabase
-    .from("distributor_users")
-    .select("distributor_id")
-    .eq("status", "active")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .single();
-  if (error) throw error;
-
-  return String(data.distributor_id);
-}
-
 /**
  * Registers an import and returns its id. The actual file goes to S3 through
- * a presigned URL (cloud repo); the ETL takes over from there.
+ * a presigned URL (cloud repo); the ETL takes over from there. The upload is
+ * always attributed to the industry the caller has in scope.
  */
 export async function registerFileImport(input: {
   fileName: string;
   sheetName: string | null;
   fileTypeId: string;
+  distributorId: string;
 }): Promise<string> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -216,7 +207,6 @@ export async function registerFileImport(input: {
   }
 
   const { data: userData } = await supabase.auth.getUser();
-  const distributorId = await fetchCurrentDistributorId();
   const { data, error } = await supabase
     .from("file_imports")
     .insert({
@@ -224,7 +214,7 @@ export async function registerFileImport(input: {
       sheet_name: input.sheetName,
       file_type_id: input.fileTypeId,
       imported_by: userData.user?.id ?? null,
-      distributor_id: distributorId,
+      distributor_id: input.distributorId,
     })
     .select("id")
     .single();
@@ -281,6 +271,7 @@ export async function registerAndUploadFileImport(input: {
   file: File;
   sheetName: string | null;
   fileTypeId: string;
+  distributorId: string;
 }): Promise<string> {
   const supabase = getSupabaseBrowserClient();
   if (supabase && !UPLOAD_API_URL) {
@@ -291,6 +282,7 @@ export async function registerAndUploadFileImport(input: {
     fileName: input.file.name,
     sheetName: input.sheetName,
     fileTypeId: input.fileTypeId,
+    distributorId: input.distributorId,
   });
 
   await uploadFileToStorage(importId, input.file);

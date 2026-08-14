@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { clearStoredIndustryId } from "@/lib/industry";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const STALE_TIME_MS = 60_000;
@@ -39,6 +40,10 @@ function AuthCacheSync({ queryClient }: AuthCacheSyncProps) {
       if (activeUserIdRef.current === nextUserId) return;
 
       activeUserIdRef.current = nextUserId;
+      // The industry in scope belongs to the session that picked it, so signing
+      // out or switching users must send the next login through the selection
+      // screen again instead of silently reusing the previous choice.
+      clearStoredIndustryId();
       queryClient.clear();
       router.refresh();
     });

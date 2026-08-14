@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import {
   getCurrentMonthToDate,
   getFullMonth,
@@ -142,6 +143,7 @@ function readStoredState(): ReportFilterState | null {
 export function useReportFilters() {
   const [filters, setFiltersState] = useState<ReportFilterState>(buildDefaultState);
   const [isStorageHydrated, setIsStorageHydrated] = useState(false);
+  const { selectedDistributorId } = useIndustryScope();
   const { data: access, isLoading: isAccessLoading } = useQuery({
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
@@ -174,13 +176,18 @@ export function useReportFilters() {
     });
   }, []);
 
+  // Distributor users are pinned to the industry in scope; the hydration gate
+  // below keeps report queries disabled until the state carries it, so no
+  // query ever runs with a stale or missing industry.
+  const scopedDistributorId = selectedDistributorId ?? "";
   useEffect(() => {
-    if (access && !access.isAdmin && filters.distributorId) {
-      setFilters({ distributorId: "" });
+    if (access && !access.isAdmin && filters.distributorId !== scopedDistributorId) {
+      setFilters({ distributorId: scopedDistributorId });
     }
-  }, [access, filters.distributorId, setFilters]);
+  }, [access, filters.distributorId, scopedDistributorId, setFilters]);
 
-  const hasResolvedDistributorScope = access?.isAdmin === true || !filters.distributorId;
+  const hasResolvedDistributorScope =
+    access?.isAdmin === true || filters.distributorId === scopedDistributorId;
   const isHydrated = isStorageHydrated && !isAccessLoading && hasResolvedDistributorScope;
 
   return { filters, setFilters, isHydrated };

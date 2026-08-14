@@ -16,7 +16,8 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchFilterOptions, fetchStatusAnalysis, fetchStatusMtd } from "@/lib/data/reports";
+import { useFilterOptions } from "@/hooks/use-filter-options";
+import { fetchStatusAnalysis, fetchStatusMtd } from "@/lib/data/reports";
 import {
   formatCurrency,
   formatDecimal,
@@ -91,11 +92,7 @@ export default function StatusMtdPage() {
 
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
 
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-    enabled: isHydrated,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   const { data: report, isLoading: isReportLoading } = useQuery({
     queryKey: ["status-mtd", reportFilters],

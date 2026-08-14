@@ -1,9 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/env";
-
-const LOGIN_ROUTE = "/login";
-const HOME_ROUTE = "/relatorio/status/mtd";
+import { HOME_ROUTE, LOGIN_ROUTE } from "@/lib/routes";
 
 /**
  * Guards every portal route: unauthenticated visitors are sent to /login and

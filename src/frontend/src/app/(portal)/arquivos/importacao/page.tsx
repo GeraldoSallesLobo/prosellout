@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Upload } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { UserOnly } from "@/components/access/access-gate";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { DateField, FieldWrapper, SelectField } from "@/components/ui/field";
@@ -61,6 +62,7 @@ function getMissingPrerequisiteLabels(
 }
 
 function FileImportContent() {
+  const { selectedDistributorId } = useIndustryScope();
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -78,18 +80,19 @@ function FileImportContent() {
   });
 
   const { data: completedImportCodes = [] } = useQuery({
-    queryKey: ["completed-import-codes"],
-    queryFn: fetchCompletedImportCodes,
+    queryKey: ["completed-import-codes", selectedDistributorId],
+    queryFn: () => fetchCompletedImportCodes(selectedDistributorId ?? undefined),
   });
 
   const { data: imports = [], isLoading } = useQuery({
-    queryKey: ["file-imports", statusFilter, typeFilter, startDate, endDate],
+    queryKey: ["file-imports", statusFilter, typeFilter, startDate, endDate, selectedDistributorId],
     queryFn: () =>
       fetchFileImports({
         status: (statusFilter || undefined) as ImportStatus | undefined,
         typeId: typeFilter || undefined,
         start: startDate || undefined,
         end: endDate || undefined,
+        distributorId: selectedDistributorId ?? undefined,
       }),
     refetchInterval: (query) => {
       const rows = (query.state.data ?? []) as FileImport[];
@@ -133,11 +136,12 @@ function FileImportContent() {
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedFile || !uploadTypeId || isUploadBlocked) return;
+      if (!selectedFile || !uploadTypeId || isUploadBlocked || !selectedDistributorId) return;
       await registerAndUploadFileImport({
         file: selectedFile,
         sheetName: null,
         fileTypeId: uploadTypeId,
+        distributorId: selectedDistributorId,
       });
     },
     onSuccess: () => {

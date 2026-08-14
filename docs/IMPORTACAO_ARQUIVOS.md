@@ -112,6 +112,16 @@ Isso ainda não é um contrato implementado. Para o QA atual, a orientação val
 ignora colunas extras não mapeadas, então um arquivo com `Marca` adicional pode
 continuar sendo processado, mas o valor não segmenta dados nem aparece nos filtros.
 
+**Caminho operacional adotado em 13/08/2026** (spec
+`.dev_files/SPEC_LOGIN_MULTI_INDUSTRIA.md`): sem mudar layouts ou ETL, cada
+registro de distribuidor passa a representar uma combinação
+distribuidor × indústria (ex.: "Atacadão – Marca A" e "Atacadão – Marca B" são
+dois cadastros, cada um importando os próprios arquivos). Um mesmo e-mail pode
+ser vinculado a vários desses registros: após o login o usuário escolhe a
+indústria e pode trocar pelo dropdown no topo do portal — o upload sempre entra
+na indústria selecionada. A dimensão importada via coluna `Marca` continua como
+evolução futura, dependendo dos itens abaixo.
+
 Antes de implementar a dimensão, ainda falta receber:
 
 - lista de marcas/indústrias válidas para os arquivos de teste;

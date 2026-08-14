@@ -156,9 +156,11 @@ export default function DistributorPage() {
         title="Distribuidor"
         description="Distribuidores cadastrados na plataforma"
         actions={
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus size={14} /> Incluir
-          </Button>
+          isAdmin ? (
+            <Button onClick={() => setIsModalOpen(true)}>
+              <Plus size={14} /> Incluir
+            </Button>
+          ) : undefined
         }
       />
 

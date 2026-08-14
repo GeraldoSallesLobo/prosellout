@@ -60,8 +60,9 @@ supabase db reset --linked --sql-paths ./seeds/admin-only.sql
 ```
 
 Esse comando aplica todas as migrations e roda apenas o seed mínimo. Ele cria
-`admin@email.com` / `123321` em `admin_users`; depois entre no portal como admin
-e crie o usuário distribuidor em **Admin › Usuários** para executar o QA de
+`admin@email.com` / `123321` em `admin_users`; depois entre no portal como admin,
+cadastre o distribuidor em **Cadastros › Distribuidor** e crie o usuário em
+**Admin › Usuários** (escolhendo as indústrias dele) para executar o QA de
 importação.
 
 Importante: o pipeline AWS deployado aponta para o Supabase cloud configurado nas
@@ -79,6 +80,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key impressa pelo supabase start — reveja 
 ```
 
 O seed padrão cria o admin local `admin@email.com` / `123321` em `admin_users` e o usuário distribuidor `distribuidora.83299743000130@email.com` / `123321` vinculado ao distribuidor da amostra em `distributor_users`. Aí `npm run dev` no frontend usa o banco local com auth real e isolamento por distribuidor.
+
+Um usuário pode ter vínculos com vários distribuidores (multi-indústria, migration `20260813210000`): `create_portal_user` cria o usuário com 1+ vínculos e `grant_distributor_access`/`revoke_distributor_access` gerenciam os acessos (revogar marca o vínculo como `inactive`; conceder de novo reativa). A antiga `create_distributor_user` (que criava distribuidor + usuário juntos) foi removida — distribuidores são cadastrados pelo portal (policy de insert admin-only em `distributors`).
 
 Para validar o gráfico de **Canais** em `/relatorio/status/mtd` com volume parecido com produção, rode o seed padrão junto do complemento de stress:
 

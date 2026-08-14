@@ -12,7 +12,8 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchFilterOptions, fetchStatusAnalysis } from "@/lib/data/reports";
+import { useFilterOptions } from "@/hooks/use-filter-options";
+import { fetchStatusAnalysis } from "@/lib/data/reports";
 import {
   buildReportFilterExportRows,
   buildStatusAnalysisExportRows,
@@ -35,11 +36,7 @@ export default function StatusAnalysisPage() {
 
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
 
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-    enabled: isHydrated,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["status-analysis-full", groupBy, reportFilters],

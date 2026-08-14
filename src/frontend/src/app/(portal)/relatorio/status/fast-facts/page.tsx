@@ -13,7 +13,8 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchFastFacts, fetchFilterOptions } from "@/lib/data/reports";
+import { useFilterOptions } from "@/hooks/use-filter-options";
+import { fetchFastFacts } from "@/lib/data/reports";
 import {
   formatCurrency,
   formatInteger,
@@ -207,11 +208,7 @@ export default function FastFactsPage() {
   const { filters, setFilters, isHydrated } = useReportFilters();
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
 
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-    enabled: isHydrated,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   const { data: report, isLoading } = useQuery({
     queryKey: ["fast-facts", reportFilters],

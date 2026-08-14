@@ -264,17 +264,28 @@ export async function fetchEvolutionAnalysis(
   }));
 }
 
-export async function fetchFilterOptions(): Promise<FilterOptions> {
+export async function fetchFilterOptions(
+  scopedDistributorId?: string,
+): Promise<FilterOptions> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return simulateLatency(DEMO_FILTER_OPTIONS);
+
+  let productsQuery = supabase
+    .from("products").select("id, name").eq("status", "active").order("name");
+  let repsQuery = supabase
+    .from("sales_reps").select("id, name, role").eq("status", "active").order("name");
+  if (scopedDistributorId) {
+    productsQuery = productsQuery.eq("distributor_id", scopedDistributorId);
+    repsQuery = repsQuery.eq("distributor_id", scopedDistributorId);
+  }
 
   const [distributors, hierarchy, products, channels, clusters, reps] = await Promise.all([
     supabase.from("distributors").select("id, name").eq("status", "active").order("name"),
     supabase.from("product_hierarchy").select("id, name, level").eq("status", "active").order("name"),
-    supabase.from("products").select("id, name").eq("status", "active").order("name"),
+    productsQuery,
     supabase.from("channels").select("id, name").eq("status", "active").order("name"),
     supabase.from("clusters").select("id, name").eq("status", "active").order("name"),
-    supabase.from("sales_reps").select("id, name, role").eq("status", "active").order("name"),
+    repsQuery,
   ]);
 
   const firstError =

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import { ImportCompletionWatcher } from "@/components/imports/import-completion-watcher";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { IndustrySwitcher } from "@/components/layout/industry-switcher";
 import { Sidebar } from "@/components/layout/sidebar";
 
 interface PortalShellProps {
@@ -12,6 +14,7 @@ interface PortalShellProps {
 
 export function PortalShell({ children }: PortalShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { selectedDistributorId } = useIndustryScope();
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -73,8 +76,18 @@ export function PortalShell({ children }: PortalShellProps) {
             <Menu size={18} />
           </button>
           <Breadcrumb />
+          <div className="ml-auto flex min-w-0 items-center">
+            <IndustrySwitcher />
+          </div>
         </header>
-        <main className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+        {/* Remounting on industry switch resets page-local state (filters,
+            pagination, selections) that referenced the previous industry. */}
+        <main
+          key={selectedDistributorId ?? "global"}
+          className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6"
+        >
+          {children}
+        </main>
       </div>
     </div>
   );

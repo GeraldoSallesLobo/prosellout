@@ -563,7 +563,10 @@ export async function fetchTargetRows(
   };
 }
 
-export async function fetchSellersBySupervisor(supervisorId?: string): Promise<SalesRep[]> {
+export async function fetchSellersBySupervisor(
+  supervisorId?: string,
+  distributorId?: string,
+): Promise<SalesRep[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
     const sellers = supervisorId
@@ -574,6 +577,7 @@ export async function fetchSellersBySupervisor(supervisorId?: string): Promise<S
 
   let query = supabase.from("sales_reps").select("*").eq("role", "seller").order("name");
   if (supervisorId) query = query.eq("supervisor_id", supervisorId);
+  if (distributorId) query = query.eq("distributor_id", distributorId);
   const { data, error } = await query;
   if (error) throw error;
 

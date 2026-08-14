@@ -10,6 +10,7 @@ import { SelectField, TextField } from "@/components/ui/field";
 import { TreeView, type TreeNode } from "@/components/ui/tree-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
@@ -34,6 +35,7 @@ const ROLE_OPTIONS = [
 const CONFIRMATION_TEXT = "EXCLUIR";
 
 export default function CommercialHierarchyPage() {
+  const { selectedDistributorId } = useIndustryScope();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nodeToDelete, setNodeToDelete] = useState<TreeNode | null>(null);
@@ -51,8 +53,9 @@ export default function CommercialHierarchyPage() {
   const isAdmin = access?.isAdmin === true;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["commercial-hierarchy", statusFilter],
-    queryFn: () => fetchCommercialHierarchy(statusFilter),
+    queryKey: ["commercial-hierarchy", statusFilter, selectedDistributorId],
+    queryFn: () =>
+      fetchCommercialHierarchy(statusFilter, selectedDistributorId ?? undefined),
   });
 
   const createMutation = useMutation({
@@ -164,6 +167,7 @@ export default function CommercialHierarchyPage() {
                   name,
                   role,
                   supervisorId: role === "seller" ? supervisorId : null,
+                  distributorId: selectedDistributorId,
                 })
               }
             >

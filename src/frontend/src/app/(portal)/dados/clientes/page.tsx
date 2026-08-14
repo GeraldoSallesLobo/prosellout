@@ -14,12 +14,13 @@ import {
   type DataTableRowKey,
 } from "@/components/ui/data-table";
 import { ExportButton, type ExportSection } from "@/components/ui/export-button";
+import { useIndustryScope } from "@/components/access/industry-provider";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
 import { DATA_PAGE_SIZE, fetchCustomers } from "@/lib/data/consolidated";
-import { fetchFilterOptions } from "@/lib/data/reports";
 import { formatCnpj } from "@/lib/format";
 import {
   buildDataExportContextRows,
@@ -46,19 +47,17 @@ function formatStatusLabel(status: Customer["status"]): string {
 }
 
 export default function CustomersPage() {
+  const { selectedDistributorId } = useIndustryScope();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DATA_PAGE_SIZE);
   const [sort, setSort] = useState<SortState | null>(null);
   const [search, setSearch] = useState<SearchState | null>(null);
   const [channelIds, setChannelIds] = useState<string[]>([]);
   const [clusterId, setClusterId] = useState("");
-  const [distributorId, setDistributorId] = useState("");
+  const [distributorId, setDistributorId] = useState(selectedDistributorId ?? "");
   const [selectedRowKeys, setSelectedRowKeys] = useState<Set<DataTableRowKey>>(new Set());
 
-  const { data: options } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-  });
+  const { data: options } = useFilterOptions();
   const { data: access } = useQuery({
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
@@ -66,13 +65,16 @@ export default function CustomersPage() {
   const isAdmin = access?.isAdmin === true;
   const canFilterByDistributor = isAdmin;
 
+  // Distributor users always query the industry in scope, even without the
+  // distributor select; this covers any mismatch left by cached state.
+  const scopedDistributorId = selectedDistributorId ?? "";
   useEffect(() => {
-    if (access && !access.isAdmin && distributorId) {
-      setDistributorId("");
+    if (access && !access.isAdmin && distributorId !== scopedDistributorId) {
+      setDistributorId(scopedDistributorId);
       setSelectedRowKeys(new Set());
       setPage(1);
     }
-  }, [access, distributorId]);
+  }, [access, distributorId, scopedDistributorId]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["customers", page, pageSize, sort, search, channelIds, clusterId, distributorId],

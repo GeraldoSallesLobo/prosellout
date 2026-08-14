@@ -2,36 +2,39 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useIndustryScope } from "@/components/access/industry-provider";
 import { SelectField } from "@/components/ui/field";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 import { CURRENT_USER_ACCESS_QUERY_KEY, fetchCurrentUserAccess } from "@/lib/data/access";
-import { fetchFilterOptions } from "@/lib/data/reports";
 import type { FilterOptions } from "@/types/reports";
 
 export interface PlannerScope {
   isAdmin: boolean;
-  /** Explicit distributor for admins; undefined lets the DB resolve the user's own. */
+  /** Admins pick a distributor explicitly; other users get the industry in scope. */
   distributorId: string | undefined;
   setDistributorId: (value: string) => void;
   filterOptions: FilterOptions | undefined;
 }
 
-/** Shared scope state for planner screens: admin distributor + filter options. */
+/** Shared scope state for planner screens: distributor in scope + filter options. */
 export function usePlannerScope(): PlannerScope {
-  const [distributorId, setDistributorId] = useState("");
+  const [adminDistributorId, setAdminDistributorId] = useState("");
+  const { selectedDistributorId } = useIndustryScope();
 
   const { data: access } = useQuery({
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
   });
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-  });
+  const { data: filterOptions } = useFilterOptions();
+
+  const isAdmin = access?.isAdmin === true;
 
   return {
-    isAdmin: access?.isAdmin === true,
-    distributorId: distributorId || undefined,
-    setDistributorId,
+    isAdmin,
+    distributorId: isAdmin
+      ? adminDistributorId || undefined
+      : selectedDistributorId ?? undefined,
+    setDistributorId: setAdminDistributorId,
     filterOptions,
   };
 }

@@ -8,8 +8,8 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/env";
+import { HOME_ROUTE } from "@/lib/routes";
 
-const HOME_ROUTE = "/relatorio/status/mtd";
 const LOGIN_THEME_ICON_SIZE = 18;
 
 /** Maps GoTrue/network errors to actionable messages (pt-BR). */

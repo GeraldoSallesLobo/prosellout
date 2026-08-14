@@ -13,7 +13,8 @@ import {
   toReportFilters,
   useReportFilters,
 } from "@/hooks/use-report-filters";
-import { fetchEvolutionAnalysis, fetchFilterOptions } from "@/lib/data/reports";
+import { useFilterOptions } from "@/hooks/use-filter-options";
+import { fetchEvolutionAnalysis } from "@/lib/data/reports";
 import { formatCurrency, formatInteger, formatVariation } from "@/lib/format";
 import { buildReportFilterExportRows } from "@/lib/report-export";
 import type { EvolutionAnalysisRow, EvolutionGroupBy } from "@/types/reports";
@@ -86,11 +87,7 @@ export default function EvolutionAnalysisPage() {
 
   const reportFilters = useMemo(() => toReportFilters(filters), [filters]);
 
-  const { data: filterOptions } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-    enabled: isHydrated,
-  });
+  const { data: filterOptions } = useFilterOptions();
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["evolution-analysis", groupBy, reportFilters],

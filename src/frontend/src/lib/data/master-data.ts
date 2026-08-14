@@ -132,7 +132,10 @@ export interface CommercialTree {
   sellersBySupervisor: Map<string, SalesRep[]>;
 }
 
-export async function fetchCommercialHierarchy(statusFilter: StatusFilter): Promise<CommercialTree> {
+export async function fetchCommercialHierarchy(
+  statusFilter: StatusFilter,
+  distributorId?: string,
+): Promise<CommercialTree> {
   const supabase = getSupabaseBrowserClient();
 
   let supervisors: SalesRep[];
@@ -143,7 +146,9 @@ export async function fetchCommercialHierarchy(statusFilter: StatusFilter): Prom
     sellers = DEMO_SELLERS;
     await simulateLatency(null);
   } else {
-    const { data, error } = await supabase.from("sales_reps").select("*").order("name");
+    let query = supabase.from("sales_reps").select("*").order("name");
+    if (distributorId) query = query.eq("distributor_id", distributorId);
+    const { data, error } = await query;
     if (error) throw error;
     const reps: SalesRep[] = (data ?? []).map((row) => ({
       id: row.id,
@@ -178,6 +183,7 @@ export async function createSalesRep(input: {
   name: string;
   role: SalesRep["role"];
   supervisorId: string | null;
+  distributorId: string | null;
 }): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -188,6 +194,7 @@ export async function createSalesRep(input: {
     name: input.name,
     role: input.role,
     supervisor_id: input.supervisorId,
+    distributor_id: input.distributorId,
   });
   if (error) throw error;
 }

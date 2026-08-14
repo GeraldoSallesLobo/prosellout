@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { DateField, SelectField } from "@/components/ui/field";
 import { MultiSelectField } from "@/components/ui/multi-select-field";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
-import { fetchFilterOptions } from "@/lib/data/reports";
 import type { FilterOptions } from "@/types/reports";
 import type { ReportFilterState } from "@/hooks/use-report-filters";
 
@@ -48,21 +47,14 @@ export function ReportFilterBar({
   showTargetPeriod = true,
   showPreviousPeriod = true,
 }: ReportFilterBarProps) {
-  const { data: options = EMPTY_OPTIONS } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-  });
+  const { data: options = EMPTY_OPTIONS } = useFilterOptions();
   const { data: access } = useQuery({
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
   });
+  // Distributor users have their industry pinned by useReportFilters; only
+  // admins get the explicit distributor filter.
   const canFilterByDistributor = access?.isAdmin === true;
-
-  useEffect(() => {
-    if (access && !access.isAdmin && filters.distributorId) {
-      onChange({ distributorId: "" });
-    }
-  }, [access, filters.distributorId, onChange]);
 
   return (
     <div className="card mb-5 space-y-4 p-4">

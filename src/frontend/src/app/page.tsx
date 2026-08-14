@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-
-const HOME_ROUTE = "/relatorio/status/mtd";
+import { HOME_ROUTE } from "@/lib/routes";
 
 export default function IndexPage() {
   redirect(HOME_ROUTE);

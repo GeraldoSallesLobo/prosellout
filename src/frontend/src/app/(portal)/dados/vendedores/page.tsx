@@ -12,12 +12,13 @@ import {
   type DataTableRowKey,
 } from "@/components/ui/data-table";
 import { ExportButton, type ExportSection } from "@/components/ui/export-button";
+import { useIndustryScope } from "@/components/access/industry-provider";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 import {
   CURRENT_USER_ACCESS_QUERY_KEY,
   fetchCurrentUserAccess,
 } from "@/lib/data/access";
 import { fetchSellersBySupervisor } from "@/lib/data/consolidated";
-import { fetchFilterOptions } from "@/lib/data/reports";
 import {
   buildDataExportContextRows,
   getFilterOptionLabel,
@@ -35,14 +36,12 @@ function formatStatusLabel(status: SalesRep["status"]): string {
 }
 
 export default function SellersPage() {
+  const { selectedDistributorId } = useIndustryScope();
   const [supervisorId, setSupervisorId] = useState("");
   const [search, setSearch] = useState<SearchState | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<Set<DataTableRowKey>>(new Set());
 
-  const { data: options } = useQuery({
-    queryKey: ["filter-options"],
-    queryFn: fetchFilterOptions,
-  });
+  const { data: options } = useFilterOptions();
   const { data: access } = useQuery({
     queryKey: CURRENT_USER_ACCESS_QUERY_KEY,
     queryFn: fetchCurrentUserAccess,
@@ -50,8 +49,9 @@ export default function SellersPage() {
   const isAdmin = access?.isAdmin === true;
 
   const { data: sellers = [], isLoading } = useQuery({
-    queryKey: ["sellers", supervisorId],
-    queryFn: () => fetchSellersBySupervisor(supervisorId || undefined),
+    queryKey: ["sellers", supervisorId, selectedDistributorId],
+    queryFn: () =>
+      fetchSellersBySupervisor(supervisorId || undefined, selectedDistributorId ?? undefined),
   });
 
   const supervisorNameById = useMemo(

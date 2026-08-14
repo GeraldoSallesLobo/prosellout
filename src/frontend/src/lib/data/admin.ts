@@ -23,14 +23,10 @@ interface DistributorUserRow {
   created_at: string;
 }
 
-export interface CreateDistributorUserInput {
+export interface CreatePortalUserInput {
   email: string;
   password: string;
-  distributorCode: string;
-  distributorName: string;
-  distributorCnpj: string;
-  city: string;
-  state: string;
+  distributorIds: string[];
 }
 
 export async function fetchDistributorUsers(): Promise<DistributorUser[]> {
@@ -51,21 +47,53 @@ export async function fetchDistributorUsers(): Promise<DistributorUser[]> {
   }));
 }
 
-export async function createDistributorUser(input: CreateDistributorUserInput): Promise<void> {
+export async function createPortalUser(input: CreatePortalUserInput): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
     await simulateLatency(null);
     return;
   }
 
-  const { error } = await supabase.rpc("create_distributor_user", {
+  const { error } = await supabase.rpc("create_portal_user", {
     p_email: input.email,
     p_password: input.password,
-    p_distributor_code: input.distributorCode,
-    p_distributor_name: input.distributorName,
-    p_distributor_cnpj: input.distributorCnpj || null,
-    p_city: input.city || null,
-    p_state: input.state || null,
+    p_distributor_ids: input.distributorIds,
+  });
+
+  if (error) throw error;
+}
+
+export async function grantDistributorAccess(
+  userId: string,
+  distributorId: string,
+): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    await simulateLatency(null);
+    return;
+  }
+
+  const { error } = await supabase.rpc("grant_distributor_access", {
+    p_user_id: userId,
+    p_distributor_id: distributorId,
+  });
+
+  if (error) throw error;
+}
+
+export async function revokeDistributorAccess(
+  userId: string,
+  distributorId: string,
+): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    await simulateLatency(null);
+    return;
+  }
+
+  const { error } = await supabase.rpc("revoke_distributor_access", {
+    p_user_id: userId,
+    p_distributor_id: distributorId,
   });
 
   if (error) throw error;

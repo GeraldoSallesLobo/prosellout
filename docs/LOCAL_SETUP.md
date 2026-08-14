@@ -83,7 +83,8 @@ supabase db reset --sql-paths ./seeds/admin-only.sql
 ```
 
 Esse reset cria apenas `admin@email.com` / `123321`. Depois entre no portal como
-admin e crie o usuário distribuidor em **Admin › Usuários** antes de importar os
+admin, cadastre o distribuidor em **Cadastros › Distribuidor** e crie o usuário
+em **Admin › Usuários** (escolhendo as indústrias dele) antes de importar os
 arquivos.
 
 Para conferir o que já foi aplicado: `supabase migration list --local`.
@@ -116,7 +117,7 @@ O seed cria automaticamente dois usuários locais:
 | Admin | `admin@email.com` | `123321` |
 | Usuário distribuidor | `distribuidora.83299743000130@email.com` | `123321` |
 
-Crie novos usuários distribuidores pela tela **Admin › Usuários**. Criar apenas pelo Auth do Supabase não faz o vínculo automático em `distributor_users`; sem esse vínculo o banco não retorna dados por tabela nem por RPC.
+Crie novos usuários pela tela **Admin › Usuários**: o admin informa e-mail + senha e escolhe **uma ou mais indústrias** (registros de distribuidor já cadastrados em **Cadastros › Distribuidor**). Um usuário com 2+ indústrias escolhe qual acessar após o login (`/selecionar-industria`) e pode trocar pelo dropdown "Indústria" no topo do portal; com 1 indústria, entra direto. Criar apenas pelo Auth do Supabase não faz o vínculo em `distributor_users`; sem esse vínculo o portal mostra a tela "Sem acesso".
 
 ### 5. Rodar o portal
 
