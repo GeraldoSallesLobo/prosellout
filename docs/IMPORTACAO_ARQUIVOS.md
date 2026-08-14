@@ -16,14 +16,36 @@ O arquivo pode ser `.xlsx` ou `.csv`. A primeira linha deve conter os cabeçalho
 6. A Lambda `etl-loader` faz `COPY` para staging e chama `process_*_staging`.
 7. A rotina cruza dados por distribuidor, PDV, EAN e vendedor, grava a tabela final e registra rejeições por linha.
 
-## Logs de erro
+## Logs por linha
 
-A tela **Arquivos › Importação** mostra logs por linha quando uma importação falha
-ou conclui com erros. Esses logs são texto para usuário final e devem indicar:
+A tela **Arquivos › Importação** mostra logs por linha e separa dois níveis:
+
+| Nível | Quando aparece | Efeito na importação |
+|---|---|---|
+| **Erro** (vermelho) | A linha tem um problema que impede gravar a venda: cadastro não encontrado, data inválida, número inválido (inclusive célula vazia). | Conta em `error_count` e a importação termina como **Concluído c/ erros** — ou **Falhou**, se nenhuma linha do arquivo pôde ser aproveitada. |
+| **Aviso** (amarelo) | A linha foi ignorada de propósito porque não havia nada para importar. | Conta em `skipped_count` (coluna **Ignoradas**), não afeta o status. |
+
+O único aviso por linha hoje é a **linha sem movimento**: Sell Out ou Sell In com
+volume **e** valor zerados não representa venda, então a linha é ignorada e as
+demais validações nem chegam a rodar. Volume zerado com valor preenchido (ou o
+contrário) continua sendo erro, porque indica inconsistência no arquivo.
+
+O log também traz avisos sem número de linha, como a data que não foi ativada
+porque já existe uma importação mais recente vigente para ela.
+
+A tela busca no máximo 500 ocorrências por importação, **erros primeiro**, e avisa
+quando trunca. Os totais reais ficam no resumo do modal e nas colunas
+**Ignoradas** e **Erros** da tabela.
+
+Os logs de erro são texto para usuário final e devem indicar:
 
 - o campo ou cadastro que falhou;
 - o valor recebido no arquivo;
 - a correção provável ou a base que precisa ser importada antes.
+
+Toda mensagem passa por `fn_format_import_log_message` (trigger `before insert`
+em `file_import_logs`): as rotinas de ETL gravam só uma chave em inglês e a
+tradução para pt-BR fica centralizada nessa função.
 
 Exemplos de causas esperadas:
 
@@ -35,6 +57,7 @@ Exemplos de causas esperadas:
 | Produto não encontrado | Informa o EAN recebido e orienta importar ou ajustar **Hier. Produtos** antes de Sell In/Sell Out/Meta Sell Out/Meta Sell In. |
 | Vendedor não encontrado | Informa o código recebido e orienta importar ou ajustar **Vendedores** antes de Sell Out/Meta Sell Out. |
 | Data ou número inválido | Mostra o valor inválido e o formato esperado. |
+| Linha sem movimento (volume e valor zerados) | Aviso, não erro: informa que a linha não foi importada porque não há venda a registrar e que nenhum dado foi perdido. |
 
 ## Ordem recomendada
 

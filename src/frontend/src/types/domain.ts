@@ -78,6 +78,8 @@ export interface FileImport {
   totalRecords: number;
   processedRecords: number;
   errorCount: number;
+  /** Lines the ETL left out on purpose (no movement to record), not failures. */
+  skippedCount: number;
   createdAt: string;
   importedBy: string | null;
 }

@@ -6,6 +6,7 @@ import {
   DEMO_FILE_IMPORTS,
   DEMO_FILE_TYPE_CONFIGS,
   DEMO_IMPORT_LOGS,
+  DEMO_IMPORT_WITH_LOGS_ID,
 } from "./demo/tables";
 import { simulateLatency } from "./demo/random";
 
@@ -37,6 +38,9 @@ export const ACTIVE_IMPORT_STATUSES: ReadonlySet<ImportStatus> = new Set(
 );
 
 export const ACTIVE_IMPORT_COUNT_QUERY_KEY = ["active-import-count"] as const;
+
+/** Log rows fetched per import; the screen tells the user when it truncates. */
+export const IMPORT_LOG_PAGE_SIZE = 500;
 
 export async function fetchActiveImportCount(): Promise<number> {
   const supabase = getSupabaseBrowserClient();
@@ -107,7 +111,7 @@ export async function fetchFileImports(filters: ImportFilters): Promise<FileImpo
 
   let query = supabase
     .from("file_imports")
-    .select("id, file_name, sheet_name, status, total_records, processed_records, error_count, created_at, imported_by, file_type_configs(code, name, target_table)")
+    .select("id, file_name, sheet_name, status, total_records, processed_records, error_count, skipped_count, created_at, imported_by, file_type_configs(code, name, target_table)")
     .order("created_at", { ascending: false })
     .limit(100);
   if (filters.typeId) query = query.eq("file_type_id", filters.typeId);
@@ -143,6 +147,7 @@ export async function fetchFileImports(filters: ImportFilters): Promise<FileImpo
       totalRecords: Number(record.total_records ?? 0),
       processedRecords: Number(record.processed_records ?? 0),
       errorCount: Number(record.error_count ?? 0),
+      skippedCount: Number(record.skipped_count ?? 0),
       createdAt: String(record.created_at),
       importedBy: (record.imported_by as string) ?? null,
     };
@@ -151,14 +156,19 @@ export async function fetchFileImports(filters: ImportFilters): Promise<FileImpo
 
 export async function fetchImportLogs(importId: string): Promise<FileImportLog[]> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return simulateLatency(DEMO_IMPORT_LOGS);
+  if (!supabase) {
+    return simulateLatency(importId === DEMO_IMPORT_WITH_LOGS_ID ? DEMO_IMPORT_LOGS : []);
+  }
 
+  // Errors first (the enum sorts info < warning < error): a file with thousands
+  // of skipped lines would otherwise push every error past the row cap.
   const { data, error } = await supabase
     .from("file_import_logs")
     .select("*")
     .eq("import_id", importId)
+    .order("level", { ascending: false })
     .order("id")
-    .limit(500);
+    .limit(IMPORT_LOG_PAGE_SIZE);
   if (error) throw error;
 
   return (data ?? []).map((row) => ({

@@ -145,6 +145,11 @@ const DEMO_IMPORT_SOURCES = [
   { filePrefix: "sellout", typeName: "Sell Out", sheetName: "Planilha1" },
 ] as const;
 
+/** Sell Out import used to show how skipped lines look in the log modal. */
+export const DEMO_IMPORT_WITH_LOGS_ID = "import-7";
+
+const DEMO_SKIPPED_LINE_NUMBERS = [4, 12, 22, 37];
+
 export const DEMO_FILE_IMPORTS: FileImport[] = (() => {
   const now = Date.now();
   const dayMs = 86_400_000;
@@ -152,19 +157,32 @@ export const DEMO_FILE_IMPORTS: FileImport[] = (() => {
     const source = DEMO_IMPORT_SOURCES[index % DEMO_IMPORT_SOURCES.length];
     const date = new Date(now - index * dayMs);
     const total = 18_000 + index * 977;
+    const id = `import-${index + 1}`;
+    const skipped = id === DEMO_IMPORT_WITH_LOGS_ID ? DEMO_SKIPPED_LINE_NUMBERS.length : 0;
     return {
-      id: `import-${index + 1}`,
+      id,
       fileName: `${source.filePrefix}_${date.toISOString().slice(0, 10).replaceAll("-", "")}.xlsx`,
       sheetName: source.sheetName,
       typeName: source.typeName,
       status: "completed",
       totalRecords: total,
-      processedRecords: total,
+      processedRecords: total - skipped,
       errorCount: 0,
+      skippedCount: skipped,
       createdAt: date.toISOString(),
       importedBy: "geraldo@barkreply.com",
     };
   });
 })();
 
-export const DEMO_IMPORT_LOGS: FileImportLog[] = [];
+export const DEMO_IMPORT_LOGS: FileImportLog[] = DEMO_SKIPPED_LINE_NUMBERS.map(
+  (lineNumber, index) => ({
+    id: index + 1,
+    lineNumber,
+    level: "warning",
+    message:
+      "Não foi importada porque volume e valor estão zerados: não há venda a registrar." +
+      " Nenhum dado foi perdido; ajuste a planilha apenas se esta linha deveria ter valores.",
+    createdAt: new Date().toISOString(),
+  }),
+);

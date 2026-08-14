@@ -19,7 +19,12 @@ import {
   fetchMyDistributors,
   type DistributorOption,
 } from "@/lib/data/access";
-import { INDUSTRY_LABELS, readStoredIndustryId, storeIndustryId } from "@/lib/industry";
+import {
+  INDUSTRY_LABELS,
+  clearStoredIndustryId,
+  readStoredIndustryId,
+  storeIndustryId,
+} from "@/lib/industry";
 import { LOGIN_ROUTE, SELECT_INDUSTRY_ROUTE } from "@/lib/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -162,9 +167,14 @@ export function IndustryProvider({ children }: { children: ReactNode }): ReactEl
     if (distributors.length === 0) return;
 
     const storedId = readStoredIndustryId();
-    if (storedId && distributors.some((distributor) => distributor.id === storedId)) {
-      setSelectedDistributorId(storedId);
-      return;
+    if (storedId) {
+      if (distributors.some((distributor) => distributor.id === storedId)) {
+        setSelectedDistributorId(storedId);
+        return;
+      }
+      // The stored industry is no longer accessible; dropping it keeps this
+      // resolution from reading the same dead id on every pass.
+      clearStoredIndustryId();
     }
 
     if (distributors.length === 1) {

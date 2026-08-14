@@ -21,6 +21,7 @@ import {
   fetchFileImports,
   fetchFileTypeConfigs,
   fetchImportLogs,
+  IMPORT_LOG_PAGE_SIZE,
   registerAndUploadFileImport,
 } from "@/lib/data/imports";
 import { formatInteger } from "@/lib/format";
@@ -30,7 +31,7 @@ import {
   getImportLayoutSpecByCode,
   getMissingImportPrerequisiteCodes,
 } from "@/lib/import-layouts";
-import type { FileImport, FileTypeConfig, ImportStatus } from "@/types/domain";
+import type { FileImport, FileImportLog, FileTypeConfig, ImportStatus } from "@/types/domain";
 
 const STATUS_LABELS: Record<ImportStatus, { label: string; variant: "green" | "red" | "blue" | "yellow" | "neutral" }> = {
   pending: { label: "Pendente", variant: "neutral" },
@@ -39,6 +40,15 @@ const STATUS_LABELS: Record<ImportStatus, { label: string; variant: "green" | "r
   completed: { label: "Concluído", variant: "green" },
   completed_with_errors: { label: "Concluído c/ erros", variant: "yellow" },
   failed: { label: "Falhou", variant: "red" },
+};
+
+const LOG_LEVEL_LABELS: Record<
+  FileImportLog["level"],
+  { label: string; variant: "red" | "yellow" | "blue" }
+> = {
+  error: { label: "Erro", variant: "red" },
+  warning: { label: "Aviso", variant: "yellow" },
+  info: { label: "Info", variant: "blue" },
 };
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, meta]) => ({
@@ -183,6 +193,18 @@ function FileImportContent() {
       align: "right",
       render: (row) => `${formatInteger(row.processedRecords)}/${formatInteger(row.totalRecords)}`,
       sortValue: (row) => row.processedRecords,
+    },
+    {
+      key: "skipped",
+      header: "Ignoradas",
+      align: "right",
+      render: (row) =>
+        row.skippedCount > 0 ? (
+          <span className="font-semibold text-yellow">{formatInteger(row.skippedCount)}</span>
+        ) : (
+          "0"
+        ),
+      sortValue: (row) => row.skippedCount,
     },
     {
       key: "errors",
@@ -333,7 +355,7 @@ function FileImportContent() {
           </FieldWrapper>
           <p className="text-xs text-text2">
             O arquivo é enviado ao storage e processado de forma assíncrona. Acompanhe o
-            status nesta tela; linhas rejeitadas ficam disponíveis no log.
+            status nesta tela; linhas rejeitadas e ignoradas ficam disponíveis no log.
           </p>
         </div>
       </Modal>
@@ -343,25 +365,48 @@ function FileImportContent() {
         isOpen={Boolean(logImport)}
         onClose={() => setLogImport(null)}
       >
+        {selectedLogImport ? (
+          <p className="mb-3 text-xs text-text2">
+            {formatInteger(selectedLogImport.processedRecords)} linhas importadas ·{" "}
+            <span className={selectedLogImport.skippedCount > 0 ? "text-yellow" : undefined}>
+              {formatInteger(selectedLogImport.skippedCount)} ignoradas
+            </span>{" "}
+            ·{" "}
+            <span className={selectedLogImport.errorCount > 0 ? "text-red" : undefined}>
+              {formatInteger(selectedLogImport.errorCount)} com erro
+            </span>
+          </p>
+        ) : null}
         {isLogsLoading ? (
           <p className="text-sm text-text2">Carregando log...</p>
         ) : logs.length === 0 ? (
           <p className="text-sm text-text2">Nenhuma ocorrência registrada.</p>
         ) : (
-          <div className="max-h-80 space-y-1.5 overflow-y-auto">
-            {logs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-start gap-2 rounded-md border border-line bg-bg px-3 py-2 text-xs"
-              >
-                <Badge variant={log.level === "error" ? "red" : "blue"}>
-                  {log.level === "error" ? "Erro" : "Info"}
-                </Badge>
-                <span className="text-text2">linha {log.lineNumber ?? "—"}</span>
-                <span className="text-text3">{log.message}</span>
-              </div>
-            ))}
-          </div>
+          <>
+            {logs.length >= IMPORT_LOG_PAGE_SIZE ? (
+              <p className="mb-2 text-xs text-text2">
+                Mostrando as primeiras {formatInteger(IMPORT_LOG_PAGE_SIZE)} ocorrências, erros
+                primeiro.
+              </p>
+            ) : null}
+            <div className="max-h-80 space-y-1.5 overflow-y-auto">
+              {logs.map((log) => {
+                const level = LOG_LEVEL_LABELS[log.level];
+                return (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-2 rounded-md border border-line bg-bg px-3 py-2 text-xs"
+                  >
+                    <Badge variant={level.variant}>{level.label}</Badge>
+                    {log.lineNumber === null ? null : (
+                      <span className="whitespace-nowrap text-text2">linha {log.lineNumber}</span>
+                    )}
+                    <span className="text-text3">{log.message}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </Modal>
     </div>

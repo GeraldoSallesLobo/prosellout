@@ -112,8 +112,10 @@ async function loadPart(database, { bucket, partKey, importId, spec }) {
 }
 
 async function finishImportIfComplete(database, importId) {
+  // Skipped rows (no movement to import) settle the file just like processed and
+  // rejected ones — leaving them out would stall the report refresh below.
   const { rows } = await database.query(
-    `select processed_records + error_count as done_records, total_records
+    `select processed_records + error_count + skipped_count as done_records, total_records
      from file_imports where id = $1`,
     [importId],
   );

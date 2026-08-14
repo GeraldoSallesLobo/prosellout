@@ -16,7 +16,7 @@ interface AuthCacheSyncProps {
 }
 
 function getSessionUserId(session: Session | null): string | null {
-  return session?.user.id ?? null;
+  return session?.user?.id ?? null;
 }
 
 function AuthCacheSync({ queryClient }: AuthCacheSyncProps) {
@@ -29,10 +29,16 @@ function AuthCacheSync({ queryClient }: AuthCacheSyncProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextUserId = getSessionUserId(session);
 
-      if (event === "INITIAL_SESSION") {
+      // The first observed event is the baseline, never a user switch. When a
+      // stored session is restored, the client emits SIGNED_IN (or
+      // TOKEN_REFRESHED near expiry) from inside the initialization that
+      // INITIAL_SESSION awaits, so it arrives first — comparing it against an
+      // unset ref would read a routine refresh as "another user" and reset the
+      // session mid-navigation.
+      if (activeUserIdRef.current === undefined) {
         activeUserIdRef.current = nextUserId;
         return;
       }
@@ -40,9 +46,9 @@ function AuthCacheSync({ queryClient }: AuthCacheSyncProps) {
       if (activeUserIdRef.current === nextUserId) return;
 
       activeUserIdRef.current = nextUserId;
-      // The industry in scope belongs to the session that picked it, so signing
-      // out or switching users must send the next login through the selection
-      // screen again instead of silently reusing the previous choice.
+      // Reaching here means the signed-in user really changed (sign in, sign
+      // out or account switch). The industry in scope belongs to the session
+      // that picked it, so the next login goes through the selection again.
       clearStoredIndustryId();
       queryClient.clear();
       router.refresh();
