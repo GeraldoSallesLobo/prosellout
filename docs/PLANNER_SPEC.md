@@ -349,6 +349,7 @@ Parâmetros com default (`p_channel_ids`, `p_extra_product_ids`, `p_distributor_
 | `planner_generate_profitability(p_product_id, p_start_date, p_end_date, p_target_margin, p_execution_start, p_execution_end, p_channel_ids, p_distributor_id)` | geração | `jsonb` | Rentabilidade (prazo de execução obrigatório) |
 | `planner_list_plans(p_distributor_id)` | leitura | `table(..., route_file_name, ...)` | listagem/reconsulta (código, modelo, versão, params, **arquivo do roteiro usado**, totais, data) |
 | `planner_plan_lines_page(p_plan_id, p_limit, p_offset)` | leitura | `table(..., distributor_cnpj, total_count)` | linhas paginadas p/ tela e exportações (ordem determinística com tiebreaker `id`) |
+| `planner_plan_week_summary(p_plan_id)` | leitura | `table(week_number, start_date, end_date, is_closed, line_count, quantity, gross_value, previous_quantity, previous_gross_value, previous_version, recalculated_from_week)` | distribuição por semana do plano + comparativo com a versão anterior (vazio nos modelos sem semana) |
 | `planner_dashboard(p_plan_id, p_eval_start, p_eval_end)` | leitura | `jsonb` | planejado×realizado: pizza atingido/não, melhor/pior vendedor, quebras por vendedor/cliente/canal/SKU |
 
 ### Algoritmos (detalhe)
@@ -430,11 +431,18 @@ Rotas novas sob `app/(portal)/planner/` (UI pt-BR, labels dos modelos centraliza
 | `/planner/batalha-naval-positivacao` | Idem, ranqueado por positivação, distribuição linear |
 | `/planner/cobertura` | Wizard: SKU/canal/período → PDVs descobertos → meta R$ ou volume → gerar |
 | `/planner/rentabilidade` | Wizard: SKU/canal/período → margem objetivo → PDVs abaixo → gerar |
-| `/planner/planos` | Listagem dos planificadores gerados (código, modelo, versão, parâmetros) + detalhe com linhas paginadas + exportação |
+| `/planner/planos` | Listagem dos planificadores gerados (código, modelo, versão, roteiro usado, parâmetros) + detalhe com resumo semanal e linhas paginadas + exportação; após Recalcular Rota o detalhe abre direto na versão criada |
 | `/planner/dashboard` | Seleção do plano → resumo (pizza atingido/não, melhor/pior) + tabela planejado×realizado×variação com toggle vendedor/cliente/canal + exportação |
 
 - A rota antiga `/planner/batalha-naval` (heatmap demo da fase 1) é **substituída** pelos módulos
   acima.
+- **Resumo por semana** (`components/planner/plan-week-summary.tsx`): faixa de cartões acima das
+  linhas do plano, mostrando o volume/valor de cada semana e a variação contra a versão anterior
+  quando houver. O rótulo do cartão descreve o que aquela versão fez: na v1, **Fechada/Em aberto**
+  (situação hoje); nas versões criadas por Recalcular Rota, **Preservada/Recalculada** (derivado de
+  `recalculated_from_week`), porque "fechada hoje" muda com o tempo e contradiz um delta que é
+  histórico. A seta de variação é **neutra** — redistribuição não é bom nem ruim, ao contrário do
+  verde/vermelho usado em realizado × meta.
 - Repositório `lib/data/planner.ts` com caminho Supabase (RPCs) **e** demo (fixtures em
   `lib/data/demo/planner.ts`; gerações em demo persistem em memória na sessão).
 - Tipos em `types/planner.ts` (espelham os retornos das RPCs; mapeamento snake→camel no
@@ -497,8 +505,13 @@ Limitações conhecidas e aceitas (documentadas):
 - **Dashboard por cliente**: limitado aos 50 clientes de maior valor planejado
   (`customer_group_limit`); a UI indica o corte e o detalhamento completo sai pela exportação
   de linhas do plano.
-- **Recalcular Rota em modo demo** sempre responde `NO_CLOSED_WEEKS` (planos demo não têm
-  semana fechada).
+- **Data de negócio**: `fn_planner_today()` devolve a data em `America/Sao_Paulo` e é usada por
+  todas as funções do Planner (semana fechada, saldo do recálculo, meses com meta). Antes cada
+  função usava `current_date`, que no banco em UTC virava o dia seguinte às 21h de Brasília —
+  fechando a semana três horas cedo.
+- **Recalcular Rota em modo demo** funciona: o plano semeado cobre o mês corrente (com semanas já
+  fechadas) e `recalculateDemoPlan` reproduz a regra — semanas fechadas preservadas, saldo
+  redistribuído nas abertas — para que a comparação entre versões seja verificável sem banco.
 - **`planner_list_plans` sem paginação**: sofre o corte de 1.000 linhas do PostgREST apenas
   após ~1.000 planos acumulados por distribuidor (contando versões) — paginar quando o volume
   real se aproximar disso.

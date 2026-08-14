@@ -30,8 +30,9 @@ export default function PlannerPlanosPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<PlannerPlanSummary | null>(null);
+  const [planIdToOpen, setPlanIdToOpen] = useState<string | null>(null);
 
-  const { data: plans, isLoading } = useQuery({
+  const { data: plans, isLoading, isFetching } = useQuery({
     queryKey: ["planner-plans", scope.distributorId],
     queryFn: () => fetchPlannerPlans(scope.distributorId),
   });
@@ -40,13 +41,25 @@ export default function PlannerPlanosPage() {
   // stay open in the detail section.
   useEffect(() => {
     setSelectedPlan(null);
+    setPlanIdToOpen(null);
   }, [scope.distributorId]);
+
+  // After a recalculation, open the version that was just created as soon as
+  // the refreshed listing includes it. If the refetch settles without it, drop
+  // the request instead of leaving it pending forever.
+  useEffect(() => {
+    if (!planIdToOpen || isFetching) return;
+    const created = plans?.find((plan) => plan.id === planIdToOpen);
+    if (created) setSelectedPlan(created);
+    if (plans) setPlanIdToOpen(null);
+  }, [planIdToOpen, plans, isFetching]);
 
   const recalculateMutation = useMutation({
     mutationFn: recalculatePlanRoute,
     onSuccess: (generated) => {
       queryClient.invalidateQueries({ queryKey: ["planner-plans"] });
       setSelectedPlan(null);
+      setPlanIdToOpen(generated.planId);
       showToast(
         "success",
         `Rota recalculada: ${formatPlanCode(generated.code)} agora na versão ${generated.version}.`,

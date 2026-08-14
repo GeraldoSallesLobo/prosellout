@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
+import { PlanWeekSummary } from "@/components/planner/plan-week-summary";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ExportButton } from "@/components/ui/export-button";
@@ -110,7 +111,8 @@ export function PlanResultSection({
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
+      <PlanWeekSummary planId={planId} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-text1">
           Linhas do planificador {formatPlanCode(planCode)}

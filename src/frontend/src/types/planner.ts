@@ -145,6 +145,23 @@ export interface PlannerPlanLinesPage {
   rows: PlannerPlanLine[];
 }
 
+export interface PlannerPlanWeek {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  /** Week already ended today — the next Recalcular Rota will preserve it. */
+  isClosed: boolean;
+  lineCount: number;
+  quantity: number | null;
+  grossValue: number | null;
+  /** Same week in the previous version of the plan (null on version 1). */
+  previousQuantity: number | null;
+  previousGrossValue: number | null;
+  previousVersion: number | null;
+  /** First week this version recalculated; earlier weeks were preserved. */
+  recalculatedFromWeek: number | null;
+}
+
 export interface PlannerDashboardGroupRow {
   groupId: string | null;
   groupName: string | null;

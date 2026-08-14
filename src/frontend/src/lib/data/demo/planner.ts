@@ -8,6 +8,7 @@ import type {
   PlannerPlanLine,
   PlannerPlanLinesPage,
   PlannerPlanSummary,
+  PlannerPlanWeek,
   PlannerRouteSummary,
   PlannerSkuParticipationRow,
   PlannerTargetMonth,
@@ -149,6 +150,7 @@ export function getDemoLowMarginCustomers(targetMargin: number): PlannerLowMargi
 interface DemoPlanRecord {
   summary: PlannerPlanSummary;
   lines: PlannerPlanLine[];
+  weeks: PlannerWeekInput[] | null;
 }
 
 /** In-memory store: demo generations persist for the browser session only. */
@@ -223,7 +225,7 @@ export function generateDemoPlan(input: DemoGenerationInput): PlannerGenerationR
     totalValue: input.targetKind === "value" ? totalValue : null,
     createdAt: new Date().toISOString(),
   };
-  demoPlanStore.unshift({ summary, lines });
+  demoPlanStore.unshift({ summary, lines, weeks: input.weeks });
 
   return {
     planId: summary.id,
@@ -238,15 +240,34 @@ export function generateDemoPlan(input: DemoGenerationInput): PlannerGenerationR
   };
 }
 
+const DEMO_WEEK_COUNT_IN_SEED = 4;
+const DAYS_PER_WEEK = 7;
+const DAY_IN_MS = 86_400_000;
+
+function toIsoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Weeks over the current month so the seeded plan always has closed weeks —
+ * without them Recalcular Rota (and the version comparison it produces) would
+ * be unreachable in demo mode.
+ */
+function buildDemoWeeks(): PlannerWeekInput[] {
+  const monthStart = new Date(`${currentMonthStart(0)}T00:00:00Z`);
+  return Array.from({ length: DEMO_WEEK_COUNT_IN_SEED }, (_, index) => {
+    const start = new Date(monthStart.getTime() + index * DAYS_PER_WEEK * DAY_IN_MS);
+    const end = new Date(start.getTime() + (DAYS_PER_WEEK - 1) * DAY_IN_MS);
+    return { weekNumber: index + 1, startDate: toIsoDate(start), endDate: toIsoDate(end) };
+  });
+}
+
 function ensureSeedPlans(): void {
   if (demoPlanStore.length > 0) return;
   generateDemoPlan({
     model: "automatic",
-    params: { target_month: currentMonthStart(1), weight_mode: "history" },
-    weeks: [
-      { weekNumber: 1, startDate: currentMonthStart(1), endDate: currentMonthStart(1) },
-      { weekNumber: 2, startDate: currentMonthStart(1), endDate: currentMonthStart(1) },
-    ],
+    params: { target_month: currentMonthStart(0), weight_mode: "history" },
+    weeks: buildDemoWeeks(),
     targetKind: "quantity",
     totalAmount: DEMO_MONTH_BASE_QUANTITY,
   });
@@ -273,6 +294,117 @@ export function getDemoPlanLines(
   const record = demoPlanStore.find((item) => item.summary.id === planId);
   if (!record) return { total: 0, rows: [] };
   return { total: record.lines.length, rows: record.lines.slice(offset, offset + limit) };
+}
+
+function sumWeek(lines: PlannerPlanLine[], weekNumber: number) {
+  const weekLines = lines.filter((line) => line.weekNumber === weekNumber);
+  return {
+    lineCount: weekLines.length,
+    quantity: weekLines.reduce((sum, line) => sum + (line.quantity ?? 0), 0) || null,
+    grossValue: weekLines.reduce((sum, line) => sum + (line.grossValue ?? 0), 0) || null,
+  };
+}
+
+function findPreviousDemoVersion(record: DemoPlanRecord): DemoPlanRecord | undefined {
+  return demoPlanStore.find(
+    (item) =>
+      item.summary.code === record.summary.code &&
+      item.summary.version === record.summary.version - 1,
+  );
+}
+
+export function getDemoPlanWeekSummary(planId: string): PlannerPlanWeek[] {
+  ensureSeedPlans();
+  const record = demoPlanStore.find((item) => item.summary.id === planId);
+  if (!record?.weeks) return [];
+
+  const previous = findPreviousDemoVersion(record);
+  const today = new Date().toISOString().slice(0, 10);
+  const recalculatedFromWeek = Number(record.summary.params.recalculated_from_week) || null;
+
+  return record.weeks.map((week) => {
+    const current = sumWeek(record.lines, week.weekNumber);
+    const previousWeek = previous ? sumWeek(previous.lines, week.weekNumber) : null;
+    return {
+      weekNumber: week.weekNumber,
+      startDate: week.startDate,
+      endDate: week.endDate,
+      isClosed: week.endDate < today,
+      lineCount: current.lineCount,
+      quantity: current.quantity,
+      grossValue: current.grossValue,
+      previousQuantity: previousWeek?.quantity ?? null,
+      previousGrossValue: previousWeek?.grossValue ?? null,
+      previousVersion: previous?.summary.version ?? null,
+      recalculatedFromWeek,
+    };
+  });
+}
+
+/** Share of the closed weeks' target that demo pretends was already sold. */
+const DEMO_REALIZED_RATE = 0.72;
+
+/**
+ * Demo counterpart of planner_recalculate_route: keeps the closed weeks as
+ * they were and splits the remaining balance across the open ones, so the
+ * version comparison can be exercised without a database.
+ */
+export function recalculateDemoPlan(planId: string): PlannerGenerationResult {
+  ensureSeedPlans();
+  const record = demoPlanStore.find((item) => item.summary.id === planId);
+  if (!record) throw new Error("PLAN_NOT_FOUND");
+  if (record.summary.status !== "generated") throw new Error("PLAN_ALREADY_REPLACED");
+  if (!record.weeks) throw new Error("PLAN_NOT_WEEKLY");
+
+  const today = new Date().toISOString().slice(0, 10);
+  const closedWeeks = record.weeks.filter((week) => week.endDate < today);
+  const openWeeks = record.weeks.filter((week) => week.endDate >= today);
+  if (closedWeeks.length === 0) throw new Error("NO_CLOSED_WEEKS");
+  if (openWeeks.length === 0) throw new Error("NO_REMAINING_WEEKS");
+
+  const monthTarget = record.lines.reduce((sum, line) => sum + (line.quantity ?? 0), 0);
+  const closedTarget = closedWeeks.reduce(
+    (sum, week) => sum + (sumWeek(record.lines, week.weekNumber).quantity ?? 0),
+    0,
+  );
+  const openTarget = monthTarget - closedTarget;
+  const balance = Math.max(monthTarget - closedTarget * DEMO_REALIZED_RATE, 0);
+  const scale = openTarget > 0 ? balance / openTarget : 1;
+
+  const openWeekNumbers = new Set(openWeeks.map((week) => week.weekNumber));
+  const lines = record.lines.map((line) => ({
+    ...line,
+    quantity:
+      line.quantity !== null && line.weekNumber !== null && openWeekNumbers.has(line.weekNumber)
+        ? Math.round(line.quantity * scale * 100) / 100
+        : line.quantity,
+  }));
+
+  const version = record.summary.version + 1;
+  const firstOpenWeek = openWeeks[0].weekNumber;
+  const summary: PlannerPlanSummary = {
+    ...record.summary,
+    id: `${record.summary.id}-v${version}`,
+    version,
+    status: "generated",
+    params: { ...record.summary.params, recalculated_from_week: firstOpenWeek },
+    totalQuantity: lines.reduce((sum, line) => sum + (line.quantity ?? 0), 0),
+    createdAt: new Date().toISOString(),
+  };
+  record.summary.status = "replaced";
+  demoPlanStore.unshift({ summary, lines, weeks: record.weeks });
+
+  return {
+    planId: summary.id,
+    code: summary.code,
+    version,
+    lineCount: lines.length,
+    allocatedQuantity: summary.totalQuantity,
+    weekTargetQuantity: monthTarget,
+    amountPerCustomer: null,
+    totalRevenueGap: null,
+    recalculatedFromWeek: firstOpenWeek,
+  };
 }
 
 function buildDemoGroupRows(

@@ -8,6 +8,7 @@ import type {
   PlannerPlanLine,
   PlannerPlanLinesPage,
   PlannerPlanSummary,
+  PlannerPlanWeek,
   PlannerRouteSummary,
   PlannerSkuParticipationPreview,
   PlannerTargetMonth,
@@ -22,11 +23,13 @@ import {
   getDemoLowMarginCustomers,
   getDemoPlanLines,
   getDemoPlans,
+  getDemoPlanWeekSummary,
   getDemoRouteSummary,
   getDemoSkuParticipation,
   getDemoTargetMonths,
   getDemoTopSkus,
   getDemoUncoveredCustomers,
+  recalculateDemoPlan,
 } from "./demo/planner";
 import { simulateLatency } from "./demo/random";
 
@@ -400,11 +403,7 @@ export async function generateBattleshipPlan(
 
 export async function recalculatePlanRoute(planId: string): Promise<PlannerGenerationResult> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) {
-    // Demo generations always have every week open, matching NO_CLOSED_WEEKS.
-    await simulateLatency(null);
-    throw new Error("NO_CLOSED_WEEKS");
-  }
+  if (!supabase) return simulateLatency(recalculateDemoPlan(planId));
 
   const { data, error } = await supabase.rpc("planner_recalculate_route", {
     p_plan_id: planId,
@@ -566,6 +565,32 @@ export async function fetchPlannerPlanLines(
   }));
   const total = data && data.length > 0 ? Number(data[0].total_count ?? rows.length) : 0;
   return { total, rows };
+}
+
+export async function fetchPlannerPlanWeekSummary(
+  planId: string,
+): Promise<PlannerPlanWeek[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return simulateLatency(getDemoPlanWeekSummary(planId));
+
+  const { data, error } = await supabase.rpc("planner_plan_week_summary", {
+    p_plan_id: planId,
+  });
+  if (error) throw error;
+
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    weekNumber: Number(row.week_number),
+    startDate: String(row.start_date),
+    endDate: String(row.end_date),
+    isClosed: Boolean(row.is_closed),
+    lineCount: Number(row.line_count ?? 0),
+    quantity: nullableNumber(row.quantity),
+    grossValue: nullableNumber(row.gross_value),
+    previousQuantity: nullableNumber(row.previous_quantity),
+    previousGrossValue: nullableNumber(row.previous_gross_value),
+    previousVersion: nullableNumber(row.previous_version),
+    recalculatedFromWeek: nullableNumber(row.recalculated_from_week),
+  }));
 }
 
 const EXPORT_PAGE_SIZE = 500;
