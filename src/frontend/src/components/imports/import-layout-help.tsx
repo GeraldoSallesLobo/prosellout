@@ -42,7 +42,7 @@ export function ImportLayoutHelp({
   }
 
   const statusMeta = {
-    ready: { label: "Suportado", variant: "green" },
+    ready: { label: "Suportado", variant: "blue" },
     planned: { label: "Planejado", variant: "yellow" },
     calculated: { label: "Calculado", variant: "blue" },
   } as const;

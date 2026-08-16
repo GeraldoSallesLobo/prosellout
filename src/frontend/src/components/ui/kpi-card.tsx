@@ -29,7 +29,7 @@ function VariationLine({
   }
   const isPositive = variation >= 0;
   return (
-    <div className={clsx("text-xs font-semibold", isPositive ? "text-green" : "text-red")}>
+    <div className={clsx("text-xs font-semibold", isPositive ? "text-blue" : "text-red")}>
       {isPositive ? "▲" : "▼"} {formatVariation(variation)}{" "}
       <span className="font-normal text-text2">{label}</span>
     </div>

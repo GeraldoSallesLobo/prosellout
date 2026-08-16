@@ -68,7 +68,7 @@ function VariationBadge({
     <span
       className={clsx(
         "rounded-md px-1.5 py-0.5 text-[10px] font-bold",
-        value >= 0 ? "bg-green/10 text-green" : "bg-red/10 text-red",
+        value >= 0 ? "bg-blue/10 text-blue" : "bg-red/10 text-red",
       )}
     >
       {label} {formatVariation(value)}

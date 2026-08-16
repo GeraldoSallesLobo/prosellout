@@ -74,7 +74,7 @@ const METRIC_ACCESSORS: Record<MetricTab, MetricAccessors> = {
 function ChangeCell({ value }: { value: number | null }) {
   if (value === null) return <span className="text-text2">—</span>;
   return (
-    <span className={clsx("font-semibold", value >= 0 ? "text-green" : "text-red")}>
+    <span className={clsx("font-semibold", value >= 0 ? "text-blue" : "text-red")}>
       {formatVariation(value)}
     </span>
   );

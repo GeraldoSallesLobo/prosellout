@@ -13,7 +13,7 @@ const MEDIUM_THRESHOLD = 0.4;
 
 /** Tailwind stroke classes resolve to theme CSS variables, so the gauge follows the active theme. */
 function gaugeColorClass(value: number): string {
-  if (value >= HIGH_THRESHOLD) return "stroke-green";
+  if (value >= HIGH_THRESHOLD) return "stroke-blue";
   if (value >= MEDIUM_THRESHOLD) return "stroke-yellow";
   return "stroke-red";
 }

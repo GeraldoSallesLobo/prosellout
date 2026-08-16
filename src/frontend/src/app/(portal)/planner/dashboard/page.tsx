@@ -452,7 +452,7 @@ function SellerHighlightCard({
 }) {
   const isBest = type === "best";
   const Icon = isBest ? TrendingUp : TrendingDown;
-  const colorClassName = isBest ? "text-green" : "text-red";
+  const colorClassName = isBest ? "text-blue" : "text-red";
 
   return (
     <div className="card p-4">

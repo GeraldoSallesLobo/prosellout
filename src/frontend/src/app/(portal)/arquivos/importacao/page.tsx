@@ -33,11 +33,11 @@ import {
 } from "@/lib/import-layouts";
 import type { FileImport, FileImportLog, FileTypeConfig, ImportStatus } from "@/types/domain";
 
-const STATUS_LABELS: Record<ImportStatus, { label: string; variant: "green" | "red" | "blue" | "yellow" | "neutral" }> = {
+const STATUS_LABELS: Record<ImportStatus, { label: string; variant: "red" | "blue" | "yellow" | "neutral" }> = {
   pending: { label: "Pendente", variant: "neutral" },
   validating: { label: "Validando", variant: "blue" },
   processing: { label: "Processando", variant: "blue" },
-  completed: { label: "Concluído", variant: "green" },
+  completed: { label: "Concluído", variant: "blue" },
   completed_with_errors: { label: "Concluído c/ erros", variant: "yellow" },
   failed: { label: "Falhou", variant: "red" },
 };

@@ -21,7 +21,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const TOAST_DURATION_MS = 4000;
 
 const VARIANT_STYLES: Record<ToastVariant, string> = {
-  success: "border-green/40 text-green",
+  success: "border-blue/40 text-blue",
   error: "border-red/40 text-red",
   info: "border-blue/40 text-blue",
 };

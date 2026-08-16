@@ -95,7 +95,7 @@ export default function PlannerPlanosPage() {
       header: "Status",
       render: (row) =>
         row.status === "generated" ? (
-          <Badge variant="green">Vigente</Badge>
+          <Badge variant="blue">Vigente</Badge>
         ) : (
           <Badge variant="neutral">Substituído</Badge>
         ),
