@@ -51,7 +51,7 @@ function VariationValue({ value }: { value: number | null }) {
   if (value === null) return <span className="font-semibold text-text2">—</span>;
 
   return (
-    <span className={clsx("font-semibold", value >= 0 ? "text-green" : "text-red")}>
+    <span className={clsx("font-semibold", value >= 0 ? "text-blue" : "text-red")}>
       {formatVariation(value)}
     </span>
   );
@@ -63,7 +63,7 @@ function AchievementDonut({ facts }: { facts: FastFactsDimension }) {
     : null;
   const radius = (DONUT_SIZE - DONUT_STROKE_WIDTH) / 2;
   const circumference = 2 * Math.PI * radius;
-  const greenDashOffset = circumference * (1 - (achievedRate ?? 0));
+  const achievedDashOffset = circumference * (1 - (achievedRate ?? 0));
   const missedCount = Math.max(facts.notAchievedCount, facts.eligibleCount - facts.achievedCount);
 
   return (
@@ -84,10 +84,10 @@ function AchievementDonut({ facts }: { facts: FastFactsDimension }) {
               cy={DONUT_SIZE / 2}
               r={radius}
               fill="none"
-              className="stroke-green"
+              className="stroke-blue"
               strokeWidth={DONUT_STROKE_WIDTH}
               strokeDasharray={circumference}
-              strokeDashoffset={greenDashOffset}
+              strokeDashoffset={achievedDashOffset}
             />
           ) : null}
         </svg>
@@ -104,7 +104,7 @@ function AchievementDonut({ facts }: { facts: FastFactsDimension }) {
       </div>
       <div className="grid w-full gap-1 text-[11px] leading-tight text-text2">
         <span className="flex items-center justify-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-green" />
+          <span className="h-2 w-2 rounded-full bg-blue" />
           {formatInteger(facts.achievedCount)} na meta
         </span>
         <span className="flex items-center justify-center gap-1">
@@ -127,7 +127,7 @@ function HighlightSummary({
 }) {
   const isBest = type === "best";
   const Icon = isBest ? TrendingUp : TrendingDown;
-  const colorClassName = isBest ? "text-green" : "text-red";
+  const colorClassName = isBest ? "text-blue" : "text-red";
   const labelPrefix = isBest ? "Melhor" : "Pior";
   const dimensionLabel = DIMENSION_SINGULAR_LABELS[dimension] ?? dimension;
 
