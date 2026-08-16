@@ -28,7 +28,7 @@ export interface ComparisonBarDatum {
 const CHART_HEIGHT = 280;
 const MIN_ITEM_WIDTH = 78;
 
-/** Footer chart of the MTD screen: current vs target vs previous per group. */
+/** Footer chart of the MTD screen: previous vs target vs current per group. */
 export function ComparisonBarChart({ data }: { data: ComparisonBarDatum[] }) {
   const { theme } = useTheme();
   const colors = CHART_COLORS[theme];
@@ -74,9 +74,9 @@ export function ComparisonBarChart({ data }: { data: ComparisonBarDatum[] }) {
           />
           <Legend wrapperStyle={{ fontSize: 12, color: colors.axisText }} />
           <Bar
-            dataKey="current"
-            name="Período Atual"
-            fill={colors.seriesCurrent}
+            dataKey="previous"
+            name="Período Anterior"
+            fill={colors.seriesPrevious}
             radius={[3, 3, 0, 0]}
           />
           <Bar
@@ -86,9 +86,9 @@ export function ComparisonBarChart({ data }: { data: ComparisonBarDatum[] }) {
             radius={[3, 3, 0, 0]}
           />
           <Bar
-            dataKey="previous"
-            name="Período Anterior"
-            fill={colors.seriesPrevious}
+            dataKey="current"
+            name="Período Atual"
+            fill={colors.seriesCurrent}
             radius={[3, 3, 0, 0]}
           />
         </BarChart>
